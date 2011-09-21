@@ -1,0 +1,16 @@
+package ro.zg.mdb.core.annotations;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface Sequenced {
+    String id();
+    long start() default 1;
+    long stop() default Long.MAX_VALUE;
+    long step() default 1;
+    boolean recycle() default false;
+}
