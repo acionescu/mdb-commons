@@ -1,14 +1,30 @@
+/*******************************************************************************
+ * Copyright 2011 Adrian Cristian Ionescu
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 package ro.zg.mdb.core.schema;
 
 import java.util.Map;
 
 import ro.zg.mdb.core.concurrency.ResourceLock;
 import ro.zg.mdb.core.meta.ObjectDataModel;
+import ro.zg.mdb.core.meta.Row;
 import ro.zg.mdb.core.meta.UniqueIndexValue;
 import ro.zg.mdb.util.RowIdProvider;
 
 public class ObjectContext<T> {
-    private RowIdProvider rowIdProvider;
+//    private RowIdProvider rowIdProvider;
     private ResourceLock rowLock;
     private ObjectDataModel<T> objectDataModel;
     private Map<String, String> indexedValues;
@@ -16,6 +32,39 @@ public class ObjectContext<T> {
     private Map<String, String> oldIndexedValues;
     private Map<String, UniqueIndexValue> oldUniqueValues;
     private String data;
+    private Row rowInfo;
+    
+    public ObjectContext(ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
+	    Map<String, UniqueIndexValue> uniqueValues, Map<String, String> oldIndexedValues,
+	    Map<String, UniqueIndexValue> oldUniqueValues, String rowId) {
+	super();
+	this.objectDataModel = objectDataModel;
+	this.data = data;
+	this.indexedValues = indexedValues;
+	this.uniqueValues = uniqueValues;
+	this.oldIndexedValues = oldIndexedValues;
+	this.oldUniqueValues = oldUniqueValues;
+	this.rowInfo=new Row(rowId);
+    }
+
+
+    public ObjectContext(ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
+	    Map<String, UniqueIndexValue> uniqueValues) {
+	super();
+	this.objectDataModel = objectDataModel;
+	this.data = data;
+	this.indexedValues = indexedValues;
+	this.uniqueValues = uniqueValues;
+	this.rowInfo=Row.buildFromData(data);
+    }
+
+
+    public ObjectContext(Map<String, String> oldIndexedValues, Map<String, UniqueIndexValue> oldUniqueValues) {
+	super();
+	this.oldIndexedValues = oldIndexedValues;
+	this.oldUniqueValues = oldUniqueValues;
+    }
+
     /**
      * @return the indexedValues
      */
@@ -90,29 +139,37 @@ public class ObjectContext<T> {
     public void setOldUniqueValues(Map<String, UniqueIndexValue> oldUniqueValues) {
         this.oldUniqueValues = oldUniqueValues;
     }
-    /**
-     * @return the rowIdProvider
-     */
-    public RowIdProvider getRowIdProvider() {
-        return rowIdProvider;
-    }
+//    /**
+//     * @return the rowIdProvider
+//     */
+//    public RowIdProvider getRowIdProvider() {
+//        return rowIdProvider;
+//    }
     /**
      * @return the rowLock
      */
     public ResourceLock getRowLock() {
         return rowLock;
     }
-    /**
-     * @param rowIdProvider the rowIdProvider to set
-     */
-    public void setRowIdProvider(RowIdProvider rowIdProvider) {
-        this.rowIdProvider = rowIdProvider;
-    }
+//    /**
+//     * @param rowIdProvider the rowIdProvider to set
+//     */
+//    public void setRowIdProvider(RowIdProvider rowIdProvider) {
+//        this.rowIdProvider = rowIdProvider;
+//    }
     /**
      * @param rowLock the rowLock to set
      */
     public void setRowLock(ResourceLock rowLock) {
         this.rowLock = rowLock;
+    }
+
+
+    /**
+     * @return the rowInfo
+     */
+    public Row getRowInfo() {
+        return rowInfo;
     }
     
 }

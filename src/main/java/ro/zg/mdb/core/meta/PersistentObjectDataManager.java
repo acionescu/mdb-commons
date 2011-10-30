@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2011 Adrian Cristian Ionescu
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
 import java.util.Arrays;
@@ -666,15 +681,28 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 
 	}
 	/* build object context */
-	ObjectContext<T> oc = new ObjectContext<T>();
-	oc.setData(data);
-	oc.setIndexedValues(indexedValues);
-	oc.setUniqueValues(uniqueValues);
-	oc.setObjectDataModel(odm);
-	return oc;
+	
+	//TODO: remove this
+//	ObjectContext<T> oc = new ObjectContext<T>();
+//	oc.setData(data);
+//	oc.setIndexedValues(indexedValues);
+//	oc.setUniqueValues(uniqueValues);
+//	oc.setObjectDataModel(odm);
+//	return oc;
+	
+	return new ObjectContext<T>(odm,data,indexedValues,uniqueValues);
     }
 
-    protected <T> ObjectContext<T> getObjectContext(T target, ObjectDataModel<T> odm, Filter filter, String rawOldData)
+    /**
+     * {@link ObjectContext} builder for update 
+     * @param target
+     * @param odm
+     * @param filter
+     * @param rawOldData
+     * @return
+     * @throws MdbException
+     */
+    protected <T> ObjectContext<T> getObjectContext(T target, ObjectDataModel<T> odm, Filter filter, String rawOldData, String rowId)
 	    throws MdbException {
 	if (rawOldData == null) {
 	    return null;
@@ -799,14 +827,18 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	}
 
 	/* build object context */
-	ObjectContext<T> oc = new ObjectContext<T>();
-	oc.setData(data);
-	oc.setIndexedValues(indexedValues);
-	oc.setUniqueValues(uniqueValues);
-	oc.setObjectDataModel(odm);
-	oc.setOldIndexedValues(outdatedIndexValues);
-	oc.setOldUniqueValues(outdatedUniqueValues);
-	return oc;
+	
+	//TODO: remove this 
+//	ObjectContext<T> oc = new ObjectContext<T>();
+//	oc.setData(data);
+//	oc.setIndexedValues(indexedValues);
+//	oc.setUniqueValues(uniqueValues);
+//	oc.setObjectDataModel(odm);
+//	oc.setOldIndexedValues(outdatedIndexValues);
+//	oc.setOldUniqueValues(outdatedUniqueValues);
+//	return oc;
+	
+	return new ObjectContext<T>(odm,data,indexedValues,uniqueValues,outdatedIndexValues,outdatedUniqueValues,rowId);
 
     }
 
@@ -854,11 +886,12 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	    }
 	}
 
-	ObjectContext<T> oc = new ObjectContext<T>();
-	oc.setOldIndexedValues(indexedValues);
-	oc.setOldUniqueValues(uniqueValues);
-
-	return oc;
+//	ObjectContext<T> oc = new ObjectContext<T>();
+//	oc.setOldIndexedValues(indexedValues);
+//	oc.setOldUniqueValues(uniqueValues);
+//	return oc;
+	
+	return new ObjectContext<T>(indexedValues,uniqueValues);
     }
 
     private void addUniqueIndex(String indexName, String value, Map<String, UniqueIndexValue> indexesValues) {
@@ -887,7 +920,6 @@ public class PersistentObjectDataManager extends PersistentDataManager {
     }
 
     protected <T> Long updateAll(final T source, final ObjectDataModel<T> odm, final Filter filter) throws MdbException {
-	final Collection<String> targetFields = filter.getTargetFields();
 	final String typeName = odm.getTypeName();
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
 	    private ResourceLock rowLock;
@@ -896,9 +928,9 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	    public boolean endFile(String name) {
 		ObjectContext<T> oc = null;
 		try {
-		    oc = getObjectContext(source, odm, filter, data);
+		    oc = getObjectContext(source, odm, filter, data,name);
 		    if (oc != null) {
-			oc.setRowIdProvider(new StaticRowIdProvider(name));
+//			oc.setRowIdProvider(new StaticRowIdProvider(name));
 			oc.setRowLock(rowLock);
 			boolean updated = update(oc, name);
 			if (updated) {
@@ -949,7 +981,6 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 
     protected <T> Long updateAllBut(final T source, final ObjectDataModel<T> odm, final Filter filter,
 	    final Collection<String> restricted) throws MdbException {
-	final Collection<String> targetFields = filter.getTargetFields();
 	final String typeName = odm.getTypeName();
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
 	    private ResourceLock rowLock;
@@ -958,9 +989,9 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	    public boolean endFile(String name) {
 		ObjectContext<T> oc = null;
 		try {
-		    oc = getObjectContext(source, odm, filter, data);
+		    oc = getObjectContext(source, odm, filter, data, name);
 		    if (oc != null) {
-			oc.setRowIdProvider(new StaticRowIdProvider(name));
+//			oc.setRowIdProvider(new StaticRowIdProvider(name));
 			oc.setRowLock(rowLock);
 			boolean updated = update(oc, name);
 			if (updated) {
@@ -1027,9 +1058,9 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	    ObjectContext<T> oc = null;
 	    try {
 		persistenceManager.read(getRowPath(typeName, id), handler);
-		oc = getObjectContext(source, odm, filter, handler.getData());
+		oc = getObjectContext(source, odm, filter, handler.getData(),id);
 		if (oc != null) {
-		    oc.setRowIdProvider(new StaticRowIdProvider(id));
+//		    oc.setRowIdProvider(new StaticRowIdProvider(id));
 		    oc.setRowLock(rowLock);
 		    boolean updated = update(oc, id);
 		    if (updated) {
@@ -1067,7 +1098,7 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 
 	/* get the object context */
 	ObjectContext<T> oc = getObjectContext(target, odm, schemaContext);
-	oc.setRowIdProvider(new SchemaContextRowIdProvider<T>(schemaContext, odm));
+//	oc.setRowIdProvider(new SchemaContextRowIdProvider<T>(schemaContext, odm));
 
 	save(oc);
 
@@ -1092,7 +1123,8 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	/* hold the unique values */
 	synchronized (odm) {
 	    uniqueValuesLocks = lockUniqueValues(typeName, uniqueValues);
-	    rowId = objectContext.getRowIdProvider().provideRowId();
+//	    rowId = objectContext.getRowIdProvider().provideRowId();
+	    rowId=objectContext.getRowInfo().getRowId();
 	}
 
 	// System.out.println("start saving "+rowId);
