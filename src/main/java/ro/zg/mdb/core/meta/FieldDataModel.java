@@ -21,7 +21,7 @@ import ro.zg.util.data.GenericNameValue;
 
 public class FieldDataModel {
     private String name;
-    private Class<?> type;
+    private DataModel<?> dataModel;
     private boolean required;
     private boolean primaryKey;
     private String uniqueIndexId;
@@ -29,10 +29,11 @@ public class FieldDataModel {
     private String sequenceId;
     private int position=-1;
 
-    public FieldDataModel(String name, Class<?> type) {
+    public FieldDataModel(String name, DataModel<?> dataModel) {
 	this.name = name;
-	this.type = type;
+	this.dataModel=dataModel;
     }
+    
 
     /**
      * @return the name
@@ -41,28 +42,23 @@ public class FieldDataModel {
 	return name;
     }
 
+    
+    
+    /**
+     * @return the dataModel
+     */
+    public DataModel<?> getDataModel() {
+        return dataModel;
+    }
+
+
     /**
      * @return the type
      */
     public Class<?> getType() {
-	return type;
+	return dataModel.getType();
     }
 
-    /**
-     * @param name
-     *            the name to set
-     */
-    public void setName(String name) {
-	this.name = name;
-    }
-
-    /**
-     * @param type
-     *            the type to set
-     */
-    public void setType(Class<?> type) {
-	this.type = type;
-    }
 
     /**
      * @return the required
@@ -181,7 +177,7 @@ public class FieldDataModel {
 	result = prime * result + (primaryKey ? 1231 : 1237);
 	result = prime * result + (required ? 1231 : 1237);
 	result = prime * result + ((sequenceId == null) ? 0 : sequenceId.hashCode());
-	result = prime * result + ((type == null) ? 0 : type.hashCode());
+	result = prime * result + ((dataModel == null) ? 0 : dataModel.hashCode());
 	result = prime * result + ((uniqueIndexId == null) ? 0 : uniqueIndexId.hashCode());
 	return result;
     }
@@ -216,10 +212,10 @@ public class FieldDataModel {
 		return false;
 	} else if (!sequenceId.equals(other.sequenceId))
 	    return false;
-	if (type == null) {
-	    if (other.type != null)
+	if (dataModel == null) {
+	    if (other.dataModel != null)
 		return false;
-	} else if (!type.equals(other.type))
+	} else if (!dataModel.equals(other.dataModel))
 	    return false;
 	if (uniqueIndexId == null) {
 	    if (other.uniqueIndexId != null)
@@ -235,7 +231,7 @@ public class FieldDataModel {
     @Override
     public String toString() {
 	return "FieldDataModel [indexed=" + indexed + ", name=" + name + ", position=" + position + ", primaryKey="
-		+ primaryKey + ", required=" + required + ", sequenceId=" + sequenceId + ", type=" + type
+		+ primaryKey + ", required=" + required + ", sequenceId=" + sequenceId + ", dataModel=" + dataModel
 		+ ", uniqueIndexId=" + uniqueIndexId + "]";
     }
 

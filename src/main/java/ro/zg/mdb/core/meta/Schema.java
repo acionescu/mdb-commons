@@ -20,22 +20,19 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.annotations.ForeignKey;
 import ro.zg.mdb.core.annotations.Indexed;
 import ro.zg.mdb.core.annotations.PrimaryKey;
 import ro.zg.mdb.core.annotations.Required;
 import ro.zg.mdb.core.annotations.Unique;
-import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.filter.Filter;
 import ro.zg.mdb.core.schema.AnnotationMappersManager;
 import ro.zg.mdb.core.schema.ObjectDataModelAnnotationMapperContext;
-import ro.zg.util.data.GenericNameValue;
+import ro.zg.util.data.reflection.ReflectionUtility;
 
 public class Schema {
     private String name;
     private SchemaConfig config;
-    private Map<Class<?>, ObjectDataModel> objectsModels = new HashMap<Class<?>, ObjectDataModel>();
+    private Map<Class<?>, DataModel<?>> objectsModels = new HashMap<Class<?>, DataModel<?>>();
     private AnnotationMappersManager<Annotation> annotationMappersManager = new AnnotationMappersManager<Annotation>();
 
     public Schema(String name, SchemaConfig config) {
@@ -43,24 +40,31 @@ public class Schema {
 	this.config = config;
     }
 
-    public void addObjectDataModel(ObjectDataModel odm) {
+    private void addDataModel(DataModel<?> odm) {
 	objectsModels.put(odm.getType(), odm);
     }
-    
-   
-    
-    public <T> T getObjectFromString(String data, Class<T> type, Filter filter) throws MdbException {
-	ObjectDataModel odm = getObjectDataModel(type);
-	return (T)odm.getObjectFromString(data,filter);
-    }
-    
 
-    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type) {
-	ObjectDataModel<T> odm = objectsModels.get(type);
+    //
+    //
+    // public <T> T getObjectFromString(String data, Class<T> type, Filter filter) throws MdbException {
+    // ObjectDataModel<T> odm = getObjectDataModel(type);
+    // return (T)odm.getObjectFromString(data,filter);
+    // }
+    
+    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type){
+	return (ObjectDataModel<T>)getDataModel(type);
+    }
+
+    private <T> DataModel<T> getDataModel(Class<T> type) {
+	DataModel<T> odm = (DataModel<T>) objectsModels.get(type);
 	if (odm == null) {
 	    if (config.isAutomaticObjectModelCreationOn()) {
-		odm = createObjectDataModel(type);
-		addObjectDataModel(odm);
+		if (ReflectionUtility.checkSimpleFieldType(type)) {
+		    odm = new DataModel<T>(type);
+		} else {
+		    odm = createObjectDataModel(type);
+		}
+		addDataModel(odm);
 	    } else {
 		throw new RuntimeException("Object data model does not exist for type " + type.getName());
 	    }
@@ -68,27 +72,29 @@ public class Schema {
 	return odm;
     }
 
-    public ObjectDataModel createObjectDataModel(Class<?> type) {
+    public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) {
 	return createObjectDataModel(type, PrimaryKey.class, Unique.class, ForeignKey.class, Required.class,
 		Indexed.class);
     }
 
-    public ObjectDataModel createObjectDataModel(Class<?> type, Class<? extends Annotation>... annotationTypes) {
-	ObjectDataModel odm = new ObjectDataModel(type);
+    public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type, Class<? extends Annotation>... annotationTypes) {
+	ObjectDataModel<T> odm = new ObjectDataModel<T>(type);
+	Class<?> currentType=type;
 	do {
-	    for (Field field : type.getDeclaredFields()) {
-		FieldDataModel fdm = new FieldDataModel(field.getName(), field.getType());
+	    for (Field field : currentType.getDeclaredFields()) {
+		FieldDataModel fdm = new FieldDataModel(field.getName(), getDataModel(field.getType()));
 		for (Class<? extends Annotation> annotationType : annotationTypes) {
 		    Annotation currentAnnotation = field.getAnnotation(annotationType);
 		    if (currentAnnotation != null) {
-			ObjectDataModelAnnotationMapperContext mc = new ObjectDataModelAnnotationMapperContext(currentAnnotation, odm, fdm, this);
+			ObjectDataModelAnnotationMapperContext mc = new ObjectDataModelAnnotationMapperContext(
+				currentAnnotation, odm, fdm, this);
 			annotationMappersManager.map(mc);
 		    }
 		}
 		odm.addFieldDataModel(fdm);
 	    }
-	    type = type.getSuperclass();
-	} while (type != null);
+	    currentType = currentType.getSuperclass();
+	} while (currentType != null);
 	return odm;
     }
 

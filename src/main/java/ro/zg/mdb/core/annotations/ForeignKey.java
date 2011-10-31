@@ -24,4 +24,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface ForeignKey {
     Class<?> targetType();
+    boolean lazy() default true;
 }

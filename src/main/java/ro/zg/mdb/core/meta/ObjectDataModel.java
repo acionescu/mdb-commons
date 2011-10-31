@@ -31,8 +31,7 @@ import ro.zg.mdb.core.filter.Filter;
 import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
 
-public class ObjectDataModel<T> {
-    private Class<T> type;
+public class ObjectDataModel<T> extends DataModel<T>{
     private String primaryKeyId = Constants.DEFAULT_PRIMARY_KEY_ID;
     private Set<FieldDataModel> requiredFields = new HashSet<FieldDataModel>();
     private Map<String, UniqueIndex> uniqueIndexes = new HashMap<String, UniqueIndex>();
@@ -44,7 +43,7 @@ public class ObjectDataModel<T> {
     private Map<String, Integer> fieldsPositions = new HashMap<String, Integer>();
 
     public ObjectDataModel(Class<T> type) {
-	this.type = type;
+	super(type,true);
     }
 
     public synchronized void addFieldDataModel(FieldDataModel fdm) {
@@ -88,12 +87,6 @@ public class ObjectDataModel<T> {
 	addIndexedField(fdm);
     }
 
-    /**
-     * @return the type
-     */
-    public Class<T> getType() {
-	return type;
-    }
 
     /**
      * @return the requiredFields
@@ -148,9 +141,9 @@ public class ObjectDataModel<T> {
 	}
 	T restored = null;
 	try {
-	    restored = type.newInstance();
+	    restored = getType().newInstance();
 	} catch (Exception e) {
-	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR, new GenericNameValue("type", type));
+	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR, new GenericNameValue("type", getType()));
 	}
 
 	Map<String, Object> valuesMap = new HashMap<String, Object>();
@@ -197,7 +190,7 @@ public class ObjectDataModel<T> {
 	try {
 	    return ReflectionUtility.createObjectByTypeAndValue(fieldType, fieldData);
 	} catch (ContextAwareException e) {
-	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR, new GenericNameValue("type", type
+	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR, new GenericNameValue("type", getType()
 		    .getName()), new GenericNameValue("fieldName", fieldName));
 	}
     }
@@ -209,9 +202,9 @@ public class ObjectDataModel<T> {
     private boolean addValueToObject(Object target, FieldDataModel fdm, Object fieldValue) throws MdbException {
 	String fieldName = fdm.getName();
 	try {
-	    ReflectionUtility.setValueToField(target, type.getDeclaredField(fieldName), fieldValue);
+	    ReflectionUtility.setValueToField(target, getType().getDeclaredField(fieldName), fieldValue);
 	} catch (Exception e) {
-	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR, new GenericNameValue("type", type
+	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR, new GenericNameValue("type", getType()
 		    .getName()), new GenericNameValue("fieldName", fieldName));
 	}
 	return true;
@@ -311,9 +304,6 @@ public class ObjectDataModel<T> {
 	return hit;
     }
 
-    public String getTypeName() {
-	return type.getName();
-    }
 
     /**
      * @return the fieldsPositions
@@ -337,7 +327,7 @@ public class ObjectDataModel<T> {
      */
     @Override
     public String toString() {
-	return super.toString()+"[type=" + type + ", fields=" + fields + ", requiredFields=" + requiredFields
+	return super.toString()+"[fields=" + fields + ", requiredFields=" + requiredFields
 		+ ", uniqueIndexes=" + uniqueIndexes + ", indexedFields=" + indexedFields + "]";
     }
 

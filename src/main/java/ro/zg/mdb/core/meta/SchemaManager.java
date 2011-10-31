@@ -56,7 +56,7 @@ public class SchemaManager extends PersistentDataManager {
 	synchronized (type) {
 	    ObjectDataManager<T> odm = (ObjectDataManager<T>) objectDataManagers.get(type);
 	    if (odm == null) {
-		ObjectDataModel<T> odModel = schema.getObjectDataModel(type);
+		ObjectDataModel<T> odModel = (ObjectDataModel<T>)schema.getObjectDataModel(type);
 		odm = new ObjectDataManager<T>(getPersistenceManager(type.getName()), odModel, schemaContext);
 		objectDataManagers.put(type, odm);
 	    }
