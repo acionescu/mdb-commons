@@ -33,15 +33,19 @@ public class FieldConstraint<T> implements Constraint<T>, ObjectConstraint {
 	this.constraint = constraint;
     }
 
-    public boolean process(ObjectConstraintContext objectContext) throws MdbException {
-	ObjectDataModel odm = objectContext.getObjectDataModel();
-	FieldDataModel fdm = odm.getField(fieldName);
+    public boolean process(ObjectConstraintContext<?> objectContext) throws MdbException {
+//	ObjectDataModel odm = objectContext.getObjectDataModel();
+	ObjectConstraintContext<?> currentObjectContext = objectContext.getObjectContraintContextForField(fieldName);
+	FieldDataModel<?> fdm = currentObjectContext.getObjectDataModel().getField(fieldName);
 	if (!fdm.isIndexed()) {
 	    return false;
 	}
-	FieldConstraintContext fieldContext = new FieldConstraintContext(fdm,constraint);
+	FieldConstraintContext<?> fieldContext = new FieldConstraintContext(fdm,constraint);
 	process(fieldContext);
-	objectContext.addFieldConstraintContext(fieldContext);
+	/* add the field constraint on the current object constraint context 
+	 * this can be a nested context of the objectContext passed as a parameter
+	 */
+	currentObjectContext.addFieldConstraintContext(fieldContext);
 	return true;
     }
 

@@ -19,9 +19,9 @@ import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.util.data.GenericNameValue;
 
-public class FieldDataModel {
+public class FieldDataModel<T> {
     private String name;
-    private DataModel<?> dataModel;
+    private DataModel<T> dataModel;
     private boolean required;
     private boolean primaryKey;
     private String uniqueIndexId;
@@ -29,7 +29,7 @@ public class FieldDataModel {
     private String sequenceId;
     private int position=-1;
 
-    public FieldDataModel(String name, DataModel<?> dataModel) {
+    public FieldDataModel(String name, DataModel<T> dataModel) {
 	this.name = name;
 	this.dataModel=dataModel;
     }
@@ -47,7 +47,7 @@ public class FieldDataModel {
     /**
      * @return the dataModel
      */
-    public DataModel<?> getDataModel() {
+    public DataModel<T> getDataModel() {
         return dataModel;
     }
 

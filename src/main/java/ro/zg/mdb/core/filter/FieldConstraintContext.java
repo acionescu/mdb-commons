@@ -22,13 +22,13 @@ import ro.zg.mdb.core.filter.constraints.Range;
 import ro.zg.mdb.core.meta.FieldDataModel;
 
 public class FieldConstraintContext<T extends Comparable<T>> {
-    private FieldDataModel fieldDataModel;
+    private FieldDataModel<T> fieldDataModel;
     private Set<String> values = new HashSet<String>();
     private Range<T> range;
     private boolean restricted;
     private Constraint<T> constraint;
 
-    public FieldConstraintContext(FieldDataModel fdm, Constraint<T> constraint) {
+    public FieldConstraintContext(FieldDataModel<T> fdm, Constraint<T> constraint) {
 	fieldDataModel = fdm;
 	this.constraint=constraint;
     }

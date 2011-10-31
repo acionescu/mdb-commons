@@ -31,19 +31,19 @@ import ro.zg.mdb.core.filter.Filter;
 import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
 
-public class ObjectDataModel<T> extends DataModel<T>{
+public class ObjectDataModel<T> extends DataModel<T> {
     private String primaryKeyId = Constants.DEFAULT_PRIMARY_KEY_ID;
-    private Set<FieldDataModel> requiredFields = new HashSet<FieldDataModel>();
+    private Set<FieldDataModel<?>> requiredFields = new HashSet<FieldDataModel<?>>();
     private Map<String, UniqueIndex> uniqueIndexes = new HashMap<String, UniqueIndex>();
-    private Set<FieldDataModel> indexedFields = new LinkedHashSet<FieldDataModel>();
+    private Set<FieldDataModel<?>> indexedFields = new LinkedHashSet<FieldDataModel<?>>();
     /**
      * the fields with the position as a key
      */
-    private Map<String, FieldDataModel> fields = new LinkedHashMap<String, FieldDataModel>();
+    private Map<String, FieldDataModel<?>> fields = new LinkedHashMap<String, FieldDataModel<?>>();
     private Map<String, Integer> fieldsPositions = new HashMap<String, Integer>();
 
     public ObjectDataModel(Class<T> type) {
-	super(type,true);
+	super(type, true);
     }
 
     public synchronized void addFieldDataModel(FieldDataModel fdm) {
@@ -87,29 +87,45 @@ public class ObjectDataModel<T> extends DataModel<T>{
 	addIndexedField(fdm);
     }
 
+    /**
+     * Returns the complex {@link ObjectDataModel} of a field or null if the field is simple or undefined
+     * @param fieldName
+     * @return
+     */
+    public ObjectDataModel<?> getObjectDataModelForField(String fieldName) {
+	FieldDataModel<?> fdm = getField(fieldName);
+	if (fdm == null) {
+	    return null;
+	}
+	DataModel<?> dm = fdm.getDataModel();
+	if (dm.isComplexType()) {
+	    return (ObjectDataModel<?>) dm;
+	}
+	return null;
+    }
 
     /**
      * @return the requiredFields
      */
-    public Set<FieldDataModel> getRequiredFields() {
+    public Set<FieldDataModel<?>> getRequiredFields() {
 	return requiredFields;
     }
 
     /**
      * @return the indexedFields
      */
-    public Set<FieldDataModel> getIndexedFields() {
+    public Set<FieldDataModel<?>> getIndexedFields() {
 	return indexedFields;
     }
 
     /**
      * @return the fields
      */
-    public Map<String, FieldDataModel> getFields() {
+    public Map<String, FieldDataModel<?>> getFields() {
 	return fields;
     }
 
-    public FieldDataModel getField(String name) {
+    public FieldDataModel<?> getField(String name) {
 	return fields.get(name);
     }
 
@@ -143,7 +159,8 @@ public class ObjectDataModel<T> extends DataModel<T>{
 	try {
 	    restored = getType().newInstance();
 	} catch (Exception e) {
-	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR, new GenericNameValue("type", getType()));
+	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR,
+		    new GenericNameValue("type", getType()));
 	}
 
 	Map<String, Object> valuesMap = new HashMap<String, Object>();
@@ -304,7 +321,6 @@ public class ObjectDataModel<T> extends DataModel<T>{
 	return hit;
     }
 
-
     /**
      * @return the fieldsPositions
      */
@@ -327,8 +343,8 @@ public class ObjectDataModel<T> extends DataModel<T>{
      */
     @Override
     public String toString() {
-	return super.toString()+"[fields=" + fields + ", requiredFields=" + requiredFields
-		+ ", uniqueIndexes=" + uniqueIndexes + ", indexedFields=" + indexedFields + "]";
+	return super.toString() + "[fields=" + fields + ", requiredFields=" + requiredFields + ", uniqueIndexes="
+		+ uniqueIndexes + ", indexedFields=" + indexedFields + "]";
     }
 
 }

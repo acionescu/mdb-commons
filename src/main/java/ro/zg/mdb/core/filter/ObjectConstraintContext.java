@@ -19,9 +19,9 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
+import ro.zg.mdb.constants.Constants;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.meta.FieldDataModel;
 import ro.zg.mdb.core.meta.ObjectDataModel;
@@ -30,19 +30,41 @@ import ro.zg.mdb.core.meta.PersistentObjectDataManager;
 public class ObjectConstraintContext<T> {
     private ObjectDataModel<T> objectDataModel;
     private String typeName;
-    private Map<String, FieldConstraintContext> fieldsConstraintContexts = new HashMap<String, FieldConstraintContext>();
+//    private Map<String, FieldConstraintContext> fieldsConstraintContexts = new HashMap<String, FieldConstraintContext>();
     private PersistentObjectDataManager indexManager;
     private Deque<Set<String>> allowedRowsIds = new ArrayDeque<Set<String>>();
     private Deque<Set<String>> restrictedRowsIds = new ArrayDeque<Set<String>>();
     private Set<String> usedIndexes = new HashSet<String>();
     private boolean intersection = false;
     private boolean simple = true;
+    private HashMap<String, ObjectConstraintContext<?>> nestedObjectContexts=new HashMap<String, ObjectConstraintContext<?>>();
 
     public ObjectConstraintContext(ObjectDataModel<T> objectDataModel, PersistentObjectDataManager indexManager) {
 	super();
 	this.objectDataModel = objectDataModel;
 	this.indexManager = indexManager;
 	this.typeName = objectDataModel.getTypeName();
+    }
+    
+    
+    public ObjectConstraintContext<?> getObjectContraintContextForField(String fieldName){
+	int separatorIndex=fieldName.indexOf(Constants.NESTED_FIELD_SEPARATOR);
+	if(separatorIndex <=0) {
+	    return this;
+	}
+	String currentFieldName=fieldName.substring(0,separatorIndex);
+	String nestedFieldName=fieldName.substring(separatorIndex)+1;
+	return getNestedObjectConstraintContext(currentFieldName).getObjectContraintContextForField(nestedFieldName);
+    }
+    
+    
+    private ObjectConstraintContext<?> getNestedObjectConstraintContext(String fieldName){
+	ObjectConstraintContext<?> occ=nestedObjectContexts.get(fieldName);
+	if(occ == null) {
+	    occ = new ObjectConstraintContext(objectDataModel.getObjectDataModelForField(fieldName), indexManager);
+	    nestedObjectContexts.put(fieldName, occ);
+	}
+	return occ;
     }
 
     /**
@@ -53,19 +75,12 @@ public class ObjectConstraintContext<T> {
     }
 
     public void addFieldConstraintContext(FieldConstraintContext context) throws MdbException {
-	fieldsConstraintContexts.put(context.getFieldName(), context);
+//	fieldsConstraintContexts.put(context.getFieldName(), context);
 	FieldDataModel fdm = context.getFieldDataModel();
 	if (fdm.isIndexed()) {
 	    usedIndexes.add(fdm.getName());
 	    processConstraint(context);
 	}
-    }
-
-    /**
-     * @return the fieldsConstraintContexts
-     */
-    public Map<String, FieldConstraintContext> getFieldsConstraintContexts() {
-	return fieldsConstraintContexts;
     }
 
     public <F extends Comparable<F>> void processConstraint(FieldConstraintContext<F> constraintContext) throws MdbException {
