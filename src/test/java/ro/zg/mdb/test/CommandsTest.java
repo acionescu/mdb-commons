@@ -21,14 +21,15 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import ro.zg.mdb.commands.GetCommand;
-import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.mdb.core.meta.SchemaConfig;
 import ro.zg.mdb.core.meta.SchemaManager;
 
 public class CommandsTest {
-    private SchemaManager sm = new SchemaManager("test", null);
+    
     
     @Test
     public void testCommandBuilder() throws Exception {
+	SchemaManager sm = new SchemaManager(null,new SchemaConfig("test"));
 	GetCommand<Book> getCommand = sm.createCommand(Book.class).get();
 	Assert.assertNotNull(getCommand);
 	getCommand.execute();

@@ -20,4 +20,7 @@ public class SpecialPaths {
     public static final String INDEXES="INDEXES";
     public static final String COMPOSITE_INDEXES="COMPOSITE";
     public static final String INDEX_ROWS=".rows";
+    
+    public static final String META=".meta";
+    public static final String LINKS="LINKS";
 }

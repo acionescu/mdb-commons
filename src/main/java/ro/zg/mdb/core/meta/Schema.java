@@ -20,7 +20,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-import ro.zg.mdb.core.annotations.ForeignKey;
+import ro.zg.mdb.core.annotations.Link;
 import ro.zg.mdb.core.annotations.Indexed;
 import ro.zg.mdb.core.annotations.PrimaryKey;
 import ro.zg.mdb.core.annotations.Required;
@@ -30,13 +30,11 @@ import ro.zg.mdb.core.schema.ObjectDataModelAnnotationMapperContext;
 import ro.zg.util.data.reflection.ReflectionUtility;
 
 public class Schema {
-    private String name;
     private SchemaConfig config;
     private Map<Class<?>, DataModel<?>> objectsModels = new HashMap<Class<?>, DataModel<?>>();
     private AnnotationMappersManager<Annotation> annotationMappersManager = new AnnotationMappersManager<Annotation>();
 
-    public Schema(String name, SchemaConfig config) {
-	this.name = name;
+    public Schema(SchemaConfig config) {
 	this.config = config;
     }
 
@@ -73,7 +71,7 @@ public class Schema {
     }
 
     public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) {
-	return createObjectDataModel(type, PrimaryKey.class, Unique.class, ForeignKey.class, Required.class,
+	return createObjectDataModel(type, PrimaryKey.class, Unique.class, Link.class, Required.class,
 		Indexed.class);
     }
 
@@ -98,12 +96,6 @@ public class Schema {
 	return odm;
     }
 
-    /**
-     * @return the name
-     */
-    public String getName() {
-	return name;
-    }
 
     /**
      * @return the config

@@ -54,7 +54,7 @@ public class MdbInstance {
 	if(schemaManager == null) {
 	    if(config.isAutomaticSchemaCreationOn()) {
 		try {
-		    schemaManager = new SchemaManager(schemaName,persistanceManager.getPersistenceManager(schemaName));
+		    schemaManager = new SchemaManager(persistanceManager.getPersistenceManager(schemaName), new SchemaConfig(schemaName, true));
 		} catch (PersistenceException e) {
 		    throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, e);
 		} 

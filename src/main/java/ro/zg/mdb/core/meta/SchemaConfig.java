@@ -16,7 +16,31 @@
 package ro.zg.mdb.core.meta;
 
 public class SchemaConfig {
+    private String name;
     private boolean automaticObjectModelCreationOn=true;
+    private boolean metadataAllowed=false;
+    
+    
+    public SchemaConfig() {
+	super();
+    }
+
+
+    public SchemaConfig(String name) {
+	super();
+	this.name = name;
+    }
+    
+
+    public SchemaConfig(String name, boolean metadataAllowed) {
+	super();
+	this.name = name;
+	this.metadataAllowed = metadataAllowed;
+    }
+
+
+
+
 
     /**
      * @return the automaticObjectModelCreationOn
@@ -31,5 +55,35 @@ public class SchemaConfig {
     public void setAutomaticObjectModelCreationOn(boolean automaticObjectModelCreationOn) {
         this.automaticObjectModelCreationOn = automaticObjectModelCreationOn;
     }
+
+    /**
+     * @return the metadataAllowed
+     */
+    public boolean isMetadataAllowed() {
+        return metadataAllowed;
+    }
+
+    /**
+     * @param metadataAllowed the metadataAllowed to set
+     */
+    public void setMetadataAllowed(boolean metadataAllowed) {
+        this.metadataAllowed = metadataAllowed;
+    }
+
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
+
+
+    /**
+     * @param name the name to set
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
     
 }

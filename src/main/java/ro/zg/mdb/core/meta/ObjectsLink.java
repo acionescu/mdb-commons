@@ -15,53 +15,33 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
-public class DataModel<T> {
-    private Class<T> type;
-    private boolean complexType;
-    
-    
-    public DataModel(Class<T> type, boolean complexType) {
-	super();
-	this.type = type;
-	this.complexType = complexType;
-    }
-
-
-    public DataModel(Class<T> type) {
-	super();
-	this.type = type;
-    }
-
-
+public class ObjectsLink {
+    private String firstRowId;
+    private String secondRowId;
     /**
-     * @return the type
+     * @return the firstRowId
      */
-    public Class<T> getType() {
-        return type;
+    public String getFirstRowId() {
+        return firstRowId;
     }
-
-
     /**
-     * @return the complexType
+     * @return the secondRowId
      */
-    public boolean isComplexType() {
-        return complexType;
+    public String getSecondRowId() {
+        return secondRowId;
     }
-    
-    public String getTypeName() {
-	return type.getName();
-    }
-
-
-    /* (non-Javadoc)
-     * @see java.lang.Object#toString()
+    /**
+     * @param firstRowId the firstRowId to set
      */
-    @Override
-    public String toString() {
-	return "DataModel [type=" + type + ", complexType=" + complexType + "]";
+    public void setFirstRowId(String firstRowId) {
+        this.firstRowId = firstRowId;
     }
-
-
+    /**
+     * @param secondRowId the secondRowId to set
+     */
+    public void setSecondRowId(String secondRowId) {
+        this.secondRowId = secondRowId;
+    }
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
@@ -69,12 +49,10 @@ public class DataModel<T> {
     public int hashCode() {
 	final int prime = 31;
 	int result = 1;
-	result = prime * result + (complexType ? 1231 : 1237);
-	result = prime * result + ((type == null) ? 0 : type.hashCode());
+	result = prime * result + ((firstRowId == null) ? 0 : firstRowId.hashCode());
+	result = prime * result + ((secondRowId == null) ? 0 : secondRowId.hashCode());
 	return result;
     }
-
-
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
@@ -86,17 +64,19 @@ public class DataModel<T> {
 	    return false;
 	if (getClass() != obj.getClass())
 	    return false;
-	DataModel other = (DataModel) obj;
-	if (complexType != other.complexType)
-	    return false;
-	if (type == null) {
-	    if (other.type != null)
+	ObjectsLink other = (ObjectsLink) obj;
+	if (firstRowId == null) {
+	    if (other.firstRowId != null)
 		return false;
-	} else if (!type.equals(other.type))
+	} else if (!firstRowId.equals(other.firstRowId))
+	    return false;
+	if (secondRowId == null) {
+	    if (other.secondRowId != null)
+		return false;
+	} else if (!secondRowId.equals(other.secondRowId))
 	    return false;
 	return true;
     }
-    
     
     
 }

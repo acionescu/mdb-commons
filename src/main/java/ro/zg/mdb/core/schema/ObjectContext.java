@@ -15,16 +15,15 @@
  ******************************************************************************/
 package ro.zg.mdb.core.schema;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import ro.zg.mdb.core.concurrency.ResourceLock;
 import ro.zg.mdb.core.meta.ObjectDataModel;
 import ro.zg.mdb.core.meta.Row;
 import ro.zg.mdb.core.meta.UniqueIndexValue;
-import ro.zg.mdb.util.RowIdProvider;
 
 public class ObjectContext<T> {
-//    private RowIdProvider rowIdProvider;
     private ResourceLock rowLock;
     private ObjectDataModel<T> objectDataModel;
     private Map<String, String> indexedValues;
@@ -33,6 +32,18 @@ public class ObjectContext<T> {
     private Map<String, UniqueIndexValue> oldUniqueValues;
     private String data;
     private Row rowInfo;
+    private boolean alreadyCreated;
+    /**
+     * The name under which this object will be stored
+     * Usually it's the object's class name, but other name can also be specified
+     */
+    private String objectName;
+    
+    
+    /**
+     * used to handle links
+     */
+    private Map<String,ObjectContext<?>> nestedObjectContexts=new HashMap<String, ObjectContext<?>>();
     
     public ObjectContext(ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
 	    Map<String, UniqueIndexValue> uniqueValues, Map<String, String> oldIndexedValues,
@@ -45,6 +56,8 @@ public class ObjectContext<T> {
 	this.oldIndexedValues = oldIndexedValues;
 	this.oldUniqueValues = oldUniqueValues;
 	this.rowInfo=new Row(rowId);
+	this.alreadyCreated=true;
+	this.objectName=objectDataModel.getTypeName();
     }
 
 
@@ -56,13 +69,32 @@ public class ObjectContext<T> {
 	this.indexedValues = indexedValues;
 	this.uniqueValues = uniqueValues;
 	this.rowInfo=Row.buildFromData(data);
+	this.objectName=objectDataModel.getTypeName();
     }
 
 
-    public ObjectContext(Map<String, String> oldIndexedValues, Map<String, UniqueIndexValue> oldUniqueValues) {
+    public ObjectContext(ObjectDataModel<T> objectDataModel, Map<String, String> oldIndexedValues, Map<String, UniqueIndexValue> oldUniqueValues) {
 	super();
 	this.oldIndexedValues = oldIndexedValues;
 	this.oldUniqueValues = oldUniqueValues;
+	this.alreadyCreated=true;
+	this.objectDataModel=objectDataModel;
+	this.objectName=objectDataModel.getTypeName();
+    }
+    
+    public ObjectContext(ObjectDataModel<T> objectDataModel, String rowId) {
+	this.rowInfo=new Row(rowId);
+	this.alreadyCreated=true;
+	this.objectDataModel=objectDataModel;
+	this.objectName=objectDataModel.getTypeName();
+    }
+    
+    public void addNestedObjectContext(String fieldName, ObjectContext<?> oc) {
+	nestedObjectContexts.put(fieldName, oc);
+    }
+    
+    public UniqueIndexValue getPkValue() {
+	return uniqueValues.get(objectDataModel.getPrimaryKeyId());
     }
 
     /**
@@ -139,24 +171,14 @@ public class ObjectContext<T> {
     public void setOldUniqueValues(Map<String, UniqueIndexValue> oldUniqueValues) {
         this.oldUniqueValues = oldUniqueValues;
     }
-//    /**
-//     * @return the rowIdProvider
-//     */
-//    public RowIdProvider getRowIdProvider() {
-//        return rowIdProvider;
-//    }
+
     /**
      * @return the rowLock
      */
     public ResourceLock getRowLock() {
         return rowLock;
     }
-//    /**
-//     * @param rowIdProvider the rowIdProvider to set
-//     */
-//    public void setRowIdProvider(RowIdProvider rowIdProvider) {
-//        this.rowIdProvider = rowIdProvider;
-//    }
+
     /**
      * @param rowLock the rowLock to set
      */
@@ -170,6 +192,38 @@ public class ObjectContext<T> {
      */
     public Row getRowInfo() {
         return rowInfo;
+    }
+
+
+    /**
+     * @return the alreadyCreated
+     */
+    public boolean isAlreadyCreated() {
+        return alreadyCreated;
+    }
+
+
+    /**
+     * @return the nestedObjectContexts
+     */
+    public Map<String, ObjectContext<?>> getNestedObjectContexts() {
+        return nestedObjectContexts;
+    }
+
+
+    /**
+     * @return the objectName
+     */
+    public String getObjectName() {
+        return objectName;
+    }
+
+
+    /**
+     * @param objectName the objectName to set
+     */
+    public void setObjectName(String objectName) {
+        this.objectName = objectName;
     }
     
 }

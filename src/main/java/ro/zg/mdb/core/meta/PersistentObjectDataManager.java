@@ -15,6 +15,7 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -38,8 +39,6 @@ import ro.zg.mdb.persistence.PersistenceException;
 import ro.zg.mdb.persistence.PersistenceManager;
 import ro.zg.mdb.util.MdbObjectHandler;
 import ro.zg.mdb.util.MdbObjectSetHandler;
-import ro.zg.mdb.util.SchemaContextRowIdProvider;
-import ro.zg.mdb.util.StaticRowIdProvider;
 import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.ObjectsUtil;
 import ro.zg.util.io.file.LineHandler;
@@ -242,14 +241,14 @@ public class PersistentObjectDataManager extends PersistentDataManager {
     protected <T> void deleteUnusedIndexes(String typeName, ObjectContext<T> oc, String rowId) {
 	Map<String, String> oldIndexedValues = oc.getOldIndexedValues();
 	if (oldIndexedValues.size() > 0) {
-//	    System.out.println(rowId + ": deleting unique indexes " + oc.getOldUniqueValues());
+	    // System.out.println(rowId + ": deleting unique indexes " + oc.getOldUniqueValues());
 	    for (UniqueIndexValue uiv : oc.getOldUniqueValues().values()) {
 		deleteUniqueIndex(typeName, uiv, rowId);
 		if (!uiv.isComposite()) {
 		    oldIndexedValues.remove(uiv.getName());
 		}
 	    }
-//	    System.out.println("deleting indexes " + oldIndexedValues);
+	    // System.out.println("deleting indexes " + oldIndexedValues);
 	    for (Map.Entry<String, String> e : oldIndexedValues.entrySet()) {
 		deleteIndex(typeName, e.getKey(), e.getValue(), rowId);
 	    }
@@ -423,7 +422,7 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	    Collection<String> data) throws MdbException {
 	String indexPath = getIndexPath(typeName, fcc.getFieldName());
 	Range<F> range = fcc.getRange();
-	int currentLen = 1;
+	
 	Map<String, String> elligiblePaths = new HashMap<String, String>();
 	elligiblePaths.put(indexPath, "");
 	F minValue = range.getMinValue();
@@ -470,7 +469,7 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 		}
 		elligiblePaths = nextPaths;
 	    }
-	    currentLen++;
+	   
 	}
 	return data;
     }
@@ -519,6 +518,19 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	}
 	return data;
     }
+    
+    private <T> String getRowIdForUniqueIndex(String typeName, UniqueIndexValue uiv) throws MdbException {
+	String indexPath = getIndexValuePath(typeName, uiv);
+	Collection<String> rowsIds=getRowsForValue(typeName, indexPath, uiv.getValue());
+	int count=rowsIds.size();
+	if(count < 1) {
+	    return null;
+	}
+	if(count==1) {
+	    return new ArrayList<String>(rowsIds).get(0);
+	}
+	throw new MdbException(MdbErrorType.DUPLICATE_UNIQUE_VALUE, new GenericNameValue("typeName",typeName),new GenericNameValue("index",uiv.getName()),new GenericNameValue("value",uiv.getValue()));
+    }
 
     protected Collection<String> getRowsForValue(String typeName, String indexName, String value) throws MdbException {
 	String path = getPathForIndex(typeName, indexName, value);
@@ -532,7 +544,7 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	}
 	return getIndexRowsPath(path);
     }
-    
+
     protected String getIndexRowsPath(String indexValuePath) {
 	return getPath(indexValuePath, SpecialPaths.INDEX_ROWS);
     }
@@ -560,14 +572,14 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	String indexRowPath = getPath(indexPath, rowId);
 
 	try {
-//	    if (persistenceManager.exists(indexPath)) {
-//		System.out.println("tried to create unique index but already existed: " + indexPath);
-//	    }
+	    // if (persistenceManager.exists(indexPath)) {
+	    // System.out.println("tried to create unique index but already existed: " + indexPath);
+	    // }
 	    // System.out.println("add unique index " + indexRowPath);
 	    boolean created = persistenceManager.create(indexRowPath);
-//	    if (!persistenceManager.exists(indexPath)) {
-//		System.out.println("created index " + indexPath + " but it's not there");
-//	    }
+	    // if (!persistenceManager.exists(indexPath)) {
+	    // System.out.println("created index " + indexPath + " but it's not there");
+	    // }
 	    return created;
 	} catch (PersistenceException e) {
 	    throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, e);
@@ -601,15 +613,15 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 
 	ResourceLock indexLock = locksManager.getIndexLock(indexValuePath);
 	indexLock.acquireWriteLock();
-//	try {
-//	    Collection<String> rows = readIndexRows(indexValuePath, null);
-//	    if (!rows.contains(rowId) || rows.size() > 1) {
-//		System.out.println("tried to delete unique index " + indexValuePath + " for row " + rowId
-//			+ " but found " + rows);
-//	    }
-//	} catch (MdbException e) {
-//	    e.printStackTrace();
-//	}
+	// try {
+	// Collection<String> rows = readIndexRows(indexValuePath, null);
+	// if (!rows.contains(rowId) || rows.size() > 1) {
+	// System.out.println("tried to delete unique index " + indexValuePath + " for row " + rowId
+	// + " but found " + rows);
+	// }
+	// } catch (MdbException e) {
+	// e.printStackTrace();
+	// }
 	// System.out.println("delete unique " + indexValuePath);
 	boolean deleted = persistenceManager.delete(indexValuePath);
 
@@ -624,14 +636,20 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	Map<String, Object> valuesMap = odm.getFieldValuesMap(target);
 	Map<String, String> indexedValues = new HashMap<String, String>();
 	Map<String, UniqueIndexValue> uniqueValues = new HashMap<String, UniqueIndexValue>();
+	Map<String, ObjectContext<?>> nestedObjectContexts=new HashMap<String, ObjectContext<?>>();
 	String data = "";
 	boolean addSeparator = false;
 
-	for (FieldDataModel fdm : odm.getFields().values()) {
+	for (FieldDataModel<?> fdm : odm.getFields().values()) {
 	    String fieldName = fdm.getName();
 	    Object fieldValue = valuesMap.get(fieldName);
 	    /* convert value to string */
 	    String fieldData = null;
+
+	    /* see if this is a link */
+	    LinkModel linkModel = fdm.getLinkModel();
+	    boolean isLink = linkModel != null;
+
 	    if (fieldValue == null) {
 		if (schemaContext != null) {
 		    String sequenceId = fdm.getSequenceId();
@@ -641,6 +659,16 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 		    }
 		}
 	    } else {
+		if (isLink) {
+		    /*
+		     * if the linked object already exists, get the rowId, otherwise create an ObjectContext for it
+		     */
+		    if(fieldValue != null) {
+			nestedObjectContexts.put(fieldName, getNestedObjectContext(fieldValue, (ObjectDataModel<Object>)fdm.getDataModel(), schemaContext));
+		    }
+		    
+		    continue;
+		}
 		fieldData = fieldValue.toString();
 	    }
 
@@ -681,20 +709,21 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 
 	}
 	/* build object context */
-	
-	//TODO: remove this
-//	ObjectContext<T> oc = new ObjectContext<T>();
-//	oc.setData(data);
-//	oc.setIndexedValues(indexedValues);
-//	oc.setUniqueValues(uniqueValues);
-//	oc.setObjectDataModel(odm);
-//	return oc;
-	
-	return new ObjectContext<T>(odm,data,indexedValues,uniqueValues);
+
+	// TODO: remove this
+	// ObjectContext<T> oc = new ObjectContext<T>();
+	// oc.setData(data);
+	// oc.setIndexedValues(indexedValues);
+	// oc.setUniqueValues(uniqueValues);
+	// oc.setObjectDataModel(odm);
+	// return oc;
+
+	return new ObjectContext<T>(odm, data, indexedValues, uniqueValues);
     }
 
     /**
-     * {@link ObjectContext} builder for update 
+     * {@link ObjectContext} builder for update
+     * 
      * @param target
      * @param odm
      * @param filter
@@ -702,8 +731,8 @@ public class PersistentObjectDataManager extends PersistentDataManager {
      * @return
      * @throws MdbException
      */
-    protected <T> ObjectContext<T> getObjectContext(T target, ObjectDataModel<T> odm, Filter filter, String rawOldData, String rowId)
-	    throws MdbException {
+    protected <T> ObjectContext<T> getObjectContext(T target, ObjectDataModel<T> odm, Filter filter, String rawOldData,
+	    String rowId) throws MdbException {
 	if (rawOldData == null) {
 	    return null;
 	}
@@ -827,18 +856,19 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	}
 
 	/* build object context */
-	
-	//TODO: remove this 
-//	ObjectContext<T> oc = new ObjectContext<T>();
-//	oc.setData(data);
-//	oc.setIndexedValues(indexedValues);
-//	oc.setUniqueValues(uniqueValues);
-//	oc.setObjectDataModel(odm);
-//	oc.setOldIndexedValues(outdatedIndexValues);
-//	oc.setOldUniqueValues(outdatedUniqueValues);
-//	return oc;
-	
-	return new ObjectContext<T>(odm,data,indexedValues,uniqueValues,outdatedIndexValues,outdatedUniqueValues,rowId);
+
+	// TODO: remove this
+	// ObjectContext<T> oc = new ObjectContext<T>();
+	// oc.setData(data);
+	// oc.setIndexedValues(indexedValues);
+	// oc.setUniqueValues(uniqueValues);
+	// oc.setObjectDataModel(odm);
+	// oc.setOldIndexedValues(outdatedIndexValues);
+	// oc.setOldUniqueValues(outdatedUniqueValues);
+	// return oc;
+
+	return new ObjectContext<T>(odm, data, indexedValues, uniqueValues, outdatedIndexValues, outdatedUniqueValues,
+		rowId);
 
     }
 
@@ -864,7 +894,7 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	Map<String, String> indexedValues = new HashMap<String, String>();
 	Map<String, UniqueIndexValue> uniqueValues = new HashMap<String, UniqueIndexValue>();
 
-	for (FieldDataModel fdm : odm.getIndexedFields()) {
+	for (FieldDataModel<?> fdm : odm.getIndexedFields()) {
 	    String fieldName = fdm.getName();
 	    int position = fdm.getPosition();
 	    String fieldData = columns[position];
@@ -886,12 +916,25 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	    }
 	}
 
-//	ObjectContext<T> oc = new ObjectContext<T>();
-//	oc.setOldIndexedValues(indexedValues);
-//	oc.setOldUniqueValues(uniqueValues);
-//	return oc;
+	// ObjectContext<T> oc = new ObjectContext<T>();
+	// oc.setOldIndexedValues(indexedValues);
+	// oc.setOldUniqueValues(uniqueValues);
+	// return oc;
+
+	return new ObjectContext<T>(odm, indexedValues, uniqueValues);
+    }
+    
+    private <N> ObjectContext<N> getNestedObjectContext(N target, ObjectDataModel<N> odm, SchemaContext schemaContext) throws MdbException{
 	
-	return new ObjectContext<T>(indexedValues,uniqueValues);
+	/* check if an object with the specified pk already exists */
+	UniqueIndexValue pkValue = odm.getUniqueIndexValue(target, odm.getPrimaryKeyId());
+	String rowId=getRowIdForUniqueIndex(odm.getTypeName(), pkValue);
+	if(rowId != null) {
+	    return new ObjectContext<N>(odm, rowId);
+	}
+	
+	return getObjectContext(target, odm, schemaContext);
+	
     }
 
     private void addUniqueIndex(String indexName, String value, Map<String, UniqueIndexValue> indexesValues) {
@@ -928,9 +971,9 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	    public boolean endFile(String name) {
 		ObjectContext<T> oc = null;
 		try {
-		    oc = getObjectContext(source, odm, filter, data,name);
+		    oc = getObjectContext(source, odm, filter, data, name);
 		    if (oc != null) {
-//			oc.setRowIdProvider(new StaticRowIdProvider(name));
+			// oc.setRowIdProvider(new StaticRowIdProvider(name));
 			oc.setRowLock(rowLock);
 			boolean updated = update(oc, name);
 			if (updated) {
@@ -991,7 +1034,7 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 		try {
 		    oc = getObjectContext(source, odm, filter, data, name);
 		    if (oc != null) {
-//			oc.setRowIdProvider(new StaticRowIdProvider(name));
+			// oc.setRowIdProvider(new StaticRowIdProvider(name));
 			oc.setRowLock(rowLock);
 			boolean updated = update(oc, name);
 			if (updated) {
@@ -1058,9 +1101,9 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	    ObjectContext<T> oc = null;
 	    try {
 		persistenceManager.read(getRowPath(typeName, id), handler);
-		oc = getObjectContext(source, odm, filter, handler.getData(),id);
+		oc = getObjectContext(source, odm, filter, handler.getData(), id);
 		if (oc != null) {
-//		    oc.setRowIdProvider(new StaticRowIdProvider(id));
+		    // oc.setRowIdProvider(new StaticRowIdProvider(id));
 		    oc.setRowLock(rowLock);
 		    boolean updated = update(oc, id);
 		    if (updated) {
@@ -1072,8 +1115,8 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 		throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, e);
 	    } catch (MdbException e) {
 		throw new MdbException(e, MdbErrorType.UPDATE_ERROR, new GenericNameValue("rowId", id),
-			new GenericNameValue("oldData", handler.getData()), new GenericNameValue("newData", oc
-				.getData()), new GenericNameValue("src", source));
+			new GenericNameValue("oldData", handler.getData()), new GenericNameValue("newData",
+				oc.getData()), new GenericNameValue("src", source));
 	    } finally {
 		if (oc == null) {
 		    rowLock.releaseWriteLock();
@@ -1098,8 +1141,6 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 
 	/* get the object context */
 	ObjectContext<T> oc = getObjectContext(target, odm, schemaContext);
-//	oc.setRowIdProvider(new SchemaContextRowIdProvider<T>(schemaContext, odm));
-
 	save(oc);
 
 	return target;
@@ -1113,7 +1154,7 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 
     protected <T> void save(ObjectContext<T> objectContext) throws MdbException {
 	ObjectDataModel<T> odm = objectContext.getObjectDataModel();
-	String typeName = odm.getTypeName();
+	String objectName = objectContext.getObjectName();
 
 	/* assure there is no duplication for unique indexes */
 	Collection<UniqueIndexValue> uniqueValues = objectContext.getUniqueValues().values();
@@ -1122,15 +1163,15 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	String rowId = null;
 	/* hold the unique values */
 	synchronized (odm) {
-	    uniqueValuesLocks = lockUniqueValues(typeName, uniqueValues);
-//	    rowId = objectContext.getRowIdProvider().provideRowId();
-	    rowId=objectContext.getRowInfo().getRowId();
+	    uniqueValuesLocks = lockUniqueValues(objectName, uniqueValues);
+	    // rowId = objectContext.getRowIdProvider().provideRowId();
+	    rowId = objectContext.getRowInfo().getRowId();
 	}
 
 	// System.out.println("start saving "+rowId);
 	try {
-	    testUniqueIndexes(typeName, uniqueValues);
-//	    System.out.println(Thread.currentThread().getId() + " passed testing for " + uniqueValues);
+	    testUniqueIndexes(objectName, uniqueValues);
+	    // System.out.println(Thread.currentThread().getId() + " passed testing for " + uniqueValues);
 	} catch (MdbException e) {
 	    /* in case the test fails release the locks */
 	    releaseUniqueValuesLocks(uniqueValuesLocks);
@@ -1148,7 +1189,7 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 
 	    try {
 		// System.out.println("saving "+objectContext.getData()+" for "+ typeName+" at row "+rowId);
-		saveData(typeName, objectContext.getData(), rowId);
+		saveData(objectName, objectContext.getData(), rowId);
 	    } catch (PersistenceException e) {
 		throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, e);
 	    } finally {
@@ -1159,15 +1200,16 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	    /* create unique indexes */
 	    for (UniqueIndexValue uiv : objectContext.getUniqueValues().values()) {
 		if (uiv.isComposite()) {
-		    addCompositeIndex(typeName, uiv.getName(), uiv.getValue(), rowId);
+		    addCompositeIndex(objectName, uiv.getName(), uiv.getValue(), rowId);
 		} else {
-		    addUniqueIndex(typeName, uiv.getName(), uiv.getValue(), rowId);
+		    addUniqueIndex(objectName, uiv.getName(), uiv.getValue(), rowId);
 		}
 	    }
-//	    System.out.println(Thread.currentThread().getId() + " created " + objectContext.getUniqueValues().values());
+	    // System.out.println(Thread.currentThread().getId() + " created " +
+	    // objectContext.getUniqueValues().values());
 	    /* create indexes */
 	    for (Map.Entry<String, String> e : objectContext.getIndexedValues().entrySet()) {
-		addIndex(typeName, e.getKey(), e.getValue(), rowId);
+		addIndex(objectName, e.getKey(), e.getValue(), rowId);
 	    }
 	} finally {
 	    releaseUniqueValuesLocks(uniqueValuesLocks);
@@ -1198,6 +1240,7 @@ public class PersistentObjectDataManager extends PersistentDataManager {
 	// System.out.println(Thread.currentThread().getId() + " locked index " + indexValuePath);
 	return indexLock;
     }
+    
 
     protected void saveData(String typeName, String data, String rowId) throws PersistenceException {
 	persistenceManager.write(getRowPath(typeName, rowId), data);

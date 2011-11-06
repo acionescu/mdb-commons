@@ -24,16 +24,16 @@ public class FieldDataModel<T> {
     private DataModel<T> dataModel;
     private boolean required;
     private boolean primaryKey;
-    private String uniqueIndexId;
     private boolean indexed;
+    private LinkModel linkModel;
+    private String uniqueIndexId;
     private String sequenceId;
-    private int position=-1;
+    private int position = -1;
 
     public FieldDataModel(String name, DataModel<T> dataModel) {
 	this.name = name;
-	this.dataModel=dataModel;
+	this.dataModel = dataModel;
     }
-    
 
     /**
      * @return the name
@@ -42,15 +42,12 @@ public class FieldDataModel<T> {
 	return name;
     }
 
-    
-    
     /**
      * @return the dataModel
      */
     public DataModel<T> getDataModel() {
-        return dataModel;
+	return dataModel;
     }
-
 
     /**
      * @return the type
@@ -58,7 +55,6 @@ public class FieldDataModel<T> {
     public Class<?> getType() {
 	return dataModel.getType();
     }
-
 
     /**
      * @return the required
@@ -97,7 +93,7 @@ public class FieldDataModel<T> {
 	this.primaryKey = primaryKey;
 	if (primaryKey == true) {
 	    this.required = true;
-	    this.indexed=true;
+	    this.indexed = true;
 	}
     }
 
@@ -115,7 +111,7 @@ public class FieldDataModel<T> {
     public void setUniqueIndexId(String uniqueIndexId) {
 	this.uniqueIndexId = uniqueIndexId;
 	this.required = true;
-	this.indexed=true;
+	this.indexed = true;
     }
 
     /**
@@ -140,23 +136,21 @@ public class FieldDataModel<T> {
     public void setSequenceId(String sequenceId) {
 	this.sequenceId = sequenceId;
     }
-    
-    
-    
+
     /**
      * @return the position
      */
     public int getPosition() {
-        return position;
+	return position;
     }
 
     /**
-     * @param position the position to set
+     * @param position
+     *            the position to set
      */
     public void setPosition(int position) {
-        this.position = position;
+	this.position = position;
     }
-    
 
     public void testValue(Object value) throws MdbException {
 	if (required && value == null) {
@@ -164,25 +158,45 @@ public class FieldDataModel<T> {
 	}
     }
 
-    /* (non-Javadoc)
+    /**
+     * @return the linkModel
+     */
+    public LinkModel getLinkModel() {
+	return linkModel;
+    }
+
+    /**
+     * @param linkModel
+     *            the linkModel to set
+     */
+    public void setLinkModel(LinkModel linkModel) {
+	this.linkModel = linkModel;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
     public int hashCode() {
 	final int prime = 31;
 	int result = 1;
+	result = prime * result + ((dataModel == null) ? 0 : dataModel.hashCode());
 	result = prime * result + (indexed ? 1231 : 1237);
+	result = prime * result + ((linkModel == null) ? 0 : linkModel.hashCode());
 	result = prime * result + ((name == null) ? 0 : name.hashCode());
 	result = prime * result + position;
 	result = prime * result + (primaryKey ? 1231 : 1237);
 	result = prime * result + (required ? 1231 : 1237);
 	result = prime * result + ((sequenceId == null) ? 0 : sequenceId.hashCode());
-	result = prime * result + ((dataModel == null) ? 0 : dataModel.hashCode());
 	result = prime * result + ((uniqueIndexId == null) ? 0 : uniqueIndexId.hashCode());
 	return result;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -194,7 +208,17 @@ public class FieldDataModel<T> {
 	if (getClass() != obj.getClass())
 	    return false;
 	FieldDataModel other = (FieldDataModel) obj;
+	if (dataModel == null) {
+	    if (other.dataModel != null)
+		return false;
+	} else if (!dataModel.equals(other.dataModel))
+	    return false;
 	if (indexed != other.indexed)
+	    return false;
+	if (linkModel == null) {
+	    if (other.linkModel != null)
+		return false;
+	} else if (!linkModel.equals(other.linkModel))
 	    return false;
 	if (name == null) {
 	    if (other.name != null)
@@ -212,11 +236,6 @@ public class FieldDataModel<T> {
 		return false;
 	} else if (!sequenceId.equals(other.sequenceId))
 	    return false;
-	if (dataModel == null) {
-	    if (other.dataModel != null)
-		return false;
-	} else if (!dataModel.equals(other.dataModel))
-	    return false;
 	if (uniqueIndexId == null) {
 	    if (other.uniqueIndexId != null)
 		return false;
@@ -225,14 +244,16 @@ public class FieldDataModel<T> {
 	return true;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#toString()
      */
     @Override
     public String toString() {
-	return "FieldDataModel [indexed=" + indexed + ", name=" + name + ", position=" + position + ", primaryKey="
-		+ primaryKey + ", required=" + required + ", sequenceId=" + sequenceId + ", dataModel=" + dataModel
-		+ ", uniqueIndexId=" + uniqueIndexId + "]";
+	return "FieldDataModel [name=" + name + ", dataModel=" + dataModel + ", required=" + required + ", primaryKey="
+		+ primaryKey + ", indexed=" + indexed + ", linkModel=" + linkModel + ", uniqueIndexId=" + uniqueIndexId
+		+ ", sequenceId=" + sequenceId + ", position=" + position + "]";
     }
 
 }

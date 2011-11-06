@@ -15,28 +15,14 @@
  ******************************************************************************/
 package ro.zg.mdb.test;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import junit.framework.Assert;
-
 import org.junit.Test;
 
-import ro.zg.mdb.constants.Constants;
-import ro.zg.mdb.constants.MdbErrorType;
-import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.filter.Filter;
-import ro.zg.mdb.core.meta.ObjectDataManager;
-import ro.zg.mdb.core.meta.ObjectDataModel;
 import ro.zg.mdb.core.meta.Schema;
 import ro.zg.mdb.core.meta.SchemaConfig;
-import ro.zg.mdb.core.meta.SchemaContext;
-import ro.zg.mdb.core.meta.SequencesManager;
-import ro.zg.mdb.core.schema.ObjectContext;
 import ro.zg.mdb.test.model.Book;
 
 public class SchemaTest {
-    private Schema schema = new Schema("Test", new SchemaConfig());
+    private Schema schema = new Schema(new SchemaConfig("test"));
 
     @Test
     public void testGetObjectDataModel() {

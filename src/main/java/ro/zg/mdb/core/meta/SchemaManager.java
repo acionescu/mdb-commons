@@ -19,7 +19,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ro.zg.mdb.commands.builders.SchemaCommandBuilder;
+import ro.zg.mdb.constants.MdbErrorType;
+import ro.zg.mdb.constants.SpecialPaths;
 import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.mdb.persistence.PersistenceException;
 import ro.zg.mdb.persistence.PersistenceManager;
 
 public class SchemaManager extends PersistentDataManager {
@@ -27,16 +30,22 @@ public class SchemaManager extends PersistentDataManager {
     private SchemaContext schemaContext;
     private SequencesManager sequencesManager;
     private Map<Class<?>, ObjectDataManager<?>> objectDataManagers = new HashMap<Class<?>, ObjectDataManager<?>>();
+    private SchemaMetadataManager metadataManager;
 
-    public SchemaManager(String name, PersistenceManager persistanceManager) {
-	this(name, persistanceManager, new SchemaConfig());
-    }
-
-    public SchemaManager(String name, PersistenceManager persistenceManager, SchemaConfig config) {
+    public SchemaManager(PersistenceManager persistenceManager, SchemaConfig config) throws MdbException {
 	super(persistenceManager);
-	schema = new Schema(name, config);
+	schema = new Schema(config);
 	sequencesManager = new SequencesManager();
+
+	if (config.isMetadataAllowed()) {
+	    try {
+		metadataManager = new SchemaMetadataManager(persistenceManager.getPersistenceManager(SpecialPaths.META));
+	    } catch (PersistenceException e) {
+		throw new MdbException(e, MdbErrorType.PERSISTENCE_ERROR);
+	    }
+	}
 	schemaContext = new SchemaContext(sequencesManager);
+
     }
 
     private void init() {
@@ -48,16 +57,20 @@ public class SchemaManager extends PersistentDataManager {
     }
 
     public <T> SchemaCommandBuilder<T> createCommand(Class<T> type) throws MdbException {
-	return new SchemaCommandBuilder<T>(getObjectDataManager(type));
+	return new SchemaCommandBuilder<T>(getObjectDataManager(type, type.getName()));
+    }
+
+    public <T> SchemaCommandBuilder<T> createCommand(Class<T> type, String objectName) throws MdbException {
+	return new SchemaCommandBuilder<T>(getObjectDataManager(type, objectName));
     }
 
     @SuppressWarnings("unchecked")
-    private <T> ObjectDataManager<T> getObjectDataManager(Class<T> type) throws MdbException {
+    private <T> ObjectDataManager<T> getObjectDataManager(Class<T> type, String objectName) throws MdbException {
 	synchronized (type) {
 	    ObjectDataManager<T> odm = (ObjectDataManager<T>) objectDataManagers.get(type);
 	    if (odm == null) {
-		ObjectDataModel<T> odModel = (ObjectDataModel<T>)schema.getObjectDataModel(type);
-		odm = new ObjectDataManager<T>(getPersistenceManager(type.getName()), odModel, schemaContext);
+		ObjectDataModel<T> odModel = (ObjectDataModel<T>) schema.getObjectDataModel(type);
+		odm = new ObjectDataManager<T>(getPersistenceManager(objectName), odModel, schemaContext);
 		objectDataManagers.put(type, odm);
 	    }
 	    return odm;

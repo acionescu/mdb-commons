@@ -18,6 +18,8 @@ package ro.zg.mdb.test.robo;
 import java.util.HashSet;
 import java.util.Set;
 
+import ro.zg.mdb.core.meta.MdbConfig;
+import ro.zg.mdb.core.meta.MdbInstance;
 import ro.zg.mdb.core.meta.SchemaManager;
 import ro.zg.mdb.persistence.MemoryPersistenceManager;
 import ro.zg.util.statistics.Monitor;
@@ -134,7 +136,7 @@ public class RoboSimulation {
     }
 
     public static void main(String[] args) throws Exception {
-	SchemaManager sm = new SchemaManager("RoboSim", mpm);
+	SchemaManager sm = new MdbInstance("TestInstance",mpm,new MdbConfig()).getSchema("RoboSim");
 	RoboSimulation sim = new RoboSimulation(sm);
 	sim.test1();
 //	sim.test2();

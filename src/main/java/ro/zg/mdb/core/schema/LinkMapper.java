@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.core.annotations;
+package ro.zg.mdb.core.schema;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import ro.zg.mdb.core.annotations.Link;
+import ro.zg.mdb.core.meta.LinkModel;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
-public @interface ForeignKey {
-    Class<?> targetType();
-    boolean lazy() default true;
+public class LinkMapper extends ObjectDataModelAnnotationMapper<Link>{
+
+    @Override
+    public void map(ObjectDataModelAnnotationMapperContext<Link> amc) {
+	Link al = amc.getAnnotation();
+	LinkModel lm = new LinkModel(al.name(), al.first(), al.lazy());
+	amc.getFieldDataModel().setLinkModel(lm);
+    }
+
 }

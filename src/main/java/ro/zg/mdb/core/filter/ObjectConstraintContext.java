@@ -161,7 +161,9 @@ public class ObjectConstraintContext<T> {
 	simple = false;
 	Set<String> allowed = getUnion(allowedRowsIds);
 	Set<String> restricted = getIntersection(restrictedRowsIds);
-
+	allowedRowsIds.push(allowed);
+	restrictedRowsIds.push(restricted);
+	
 	if (!restricted.isEmpty()) {
 	    restricted.removeAll(allowed);
 	}

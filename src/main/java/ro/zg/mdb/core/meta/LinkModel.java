@@ -15,52 +15,38 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
-public class DataModel<T> {
-    private Class<T> type;
-    private boolean complexType;
+public class LinkModel {
+    private String name;
+    private boolean first;
+    private boolean lazy;
     
-    
-    public DataModel(Class<T> type, boolean complexType) {
+    public LinkModel(String name, boolean first, boolean lazy) {
 	super();
-	this.type = type;
-	this.complexType = complexType;
+	this.name = name;
+	this.first = first;
+	this.lazy = lazy;
     }
-
-
-    public DataModel(Class<T> type) {
-	super();
-	this.type = type;
-    }
-
 
     /**
-     * @return the type
+     * @return the name
      */
-    public Class<T> getType() {
-        return type;
+    public String getName() {
+        return name;
     }
-
 
     /**
-     * @return the complexType
+     * @return the first
      */
-    public boolean isComplexType() {
-        return complexType;
-    }
-    
-    public String getTypeName() {
-	return type.getName();
+    public boolean isFirst() {
+        return first;
     }
 
-
-    /* (non-Javadoc)
-     * @see java.lang.Object#toString()
+    /**
+     * @return the lazy
      */
-    @Override
-    public String toString() {
-	return "DataModel [type=" + type + ", complexType=" + complexType + "]";
+    public boolean isLazy() {
+        return lazy;
     }
-
 
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
@@ -69,11 +55,11 @@ public class DataModel<T> {
     public int hashCode() {
 	final int prime = 31;
 	int result = 1;
-	result = prime * result + (complexType ? 1231 : 1237);
-	result = prime * result + ((type == null) ? 0 : type.hashCode());
+	result = prime * result + (first ? 1231 : 1237);
+	result = prime * result + (lazy ? 1231 : 1237);
+	result = prime * result + ((name == null) ? 0 : name.hashCode());
 	return result;
     }
-
 
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
@@ -86,17 +72,18 @@ public class DataModel<T> {
 	    return false;
 	if (getClass() != obj.getClass())
 	    return false;
-	DataModel other = (DataModel) obj;
-	if (complexType != other.complexType)
+	LinkModel other = (LinkModel) obj;
+	if (first != other.first)
 	    return false;
-	if (type == null) {
-	    if (other.type != null)
+	if (lazy != other.lazy)
+	    return false;
+	if (name == null) {
+	    if (other.name != null)
 		return false;
-	} else if (!type.equals(other.type))
+	} else if (!name.equals(other.name))
 	    return false;
 	return true;
     }
-    
     
     
 }

@@ -22,6 +22,8 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.mdb.core.meta.MdbConfig;
+import ro.zg.mdb.core.meta.MdbInstance;
 import ro.zg.mdb.core.meta.SchemaManager;
 import ro.zg.mdb.persistence.MemoryPersistenceManager;
 import ro.zg.mdb.test.model.Book;
@@ -31,7 +33,8 @@ public class SchemaManagerTest {
     @Test
     public void testSchemaManager() throws MdbException {
 	MemoryPersistenceManager mpm = new MemoryPersistenceManager();
-	SchemaManager sm = new SchemaManager("Test", mpm);
+	SchemaManager sm = new MdbInstance("TestInstance", mpm, new MdbConfig()).getSchema("TestSchema");
+	
 
 	Book book = new Book();
 	book.setId(1L);

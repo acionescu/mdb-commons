@@ -197,8 +197,24 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	}
 	return restored;
     }
+    
+    public UniqueIndexValue getUniqueIndexValue(T target, String indexId) throws MdbException {
+	UniqueIndex ui = getUniqueIndex(indexId);
+	if(ui== null) {
+	    return null;
+	}
+	UniqueIndexValue uiv=new UniqueIndexValue(indexId);
+	for(FieldDataModel<?> fdm : ui.getFields()) {
+	    Object fieldValue=getValueForField(target, fdm.getName());
+	    if(fieldValue==null) {
+		return null;
+	    }
+	    uiv.addValue(fieldValue.toString());
+	}
+	return uiv;
+    }
 
-    private Object getValueForField(FieldDataModel fdm, String[] columns) throws MdbException {
+    private Object getValueForField(FieldDataModel<?> fdm, String[] columns) throws MdbException {
 	String fieldName = fdm.getName();
 	String fieldType = fdm.getType().getSimpleName();
 	int colIndex = fieldsPositions.get(fieldName);
@@ -209,6 +225,14 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	} catch (ContextAwareException e) {
 	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR, new GenericNameValue("type", getType()
 		    .getName()), new GenericNameValue("fieldName", fieldName));
+	}
+    }
+    
+    public Object getValueForField(T target, String fieldName) throws MdbException {
+	try {
+	    return ReflectionUtility.getValueForField(target, fieldName);
+	} catch (Exception e) {
+	    throw new MdbException(e, MdbErrorType.GET_FIELD_ERROR, new GenericNameValue("field", fieldName), new GenericNameValue("target",target));
 	}
     }
 
@@ -294,15 +318,14 @@ public class ObjectDataModel<T> extends DataModel<T> {
     // uniqueIndexesValues.put(indexId, newValue);
     // }
 
-    public Map<String, Object> getFieldValuesMap(Object target) throws MdbException {
+    public Map<String, Object> getFieldValuesMap(T target) throws MdbException {
 	Map<String, Object> valuesMap = new HashMap<String, Object>();
-	Class<?> type = target.getClass();
-	for (FieldDataModel fdm : fields.values()) {
+	for (FieldDataModel<?> fdm : fields.values()) {
 	    String fieldName = fdm.getName();
 	    try {
-		valuesMap.put(fieldName, ReflectionUtility.getValueForField(target, fieldName));
+		valuesMap.put(fieldName, getValueForField(target, fieldName));
 	    } catch (Exception e) {
-		throw new MdbException(e, MdbErrorType.GET_FIELD_ERROR, new GenericNameValue(type.getName(), fieldName));
+		
 	    }
 	}
 	return valuesMap;

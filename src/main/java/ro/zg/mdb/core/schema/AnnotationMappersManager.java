@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ro.zg.mdb.core.annotations.Indexed;
+import ro.zg.mdb.core.annotations.Link;
 import ro.zg.mdb.core.annotations.PrimaryKey;
 import ro.zg.mdb.core.annotations.Required;
 import ro.zg.mdb.core.annotations.Unique;
@@ -32,6 +33,7 @@ public class AnnotationMappersManager<A extends Annotation>{
 	mappers.put(PrimaryKey.class, new PrimaryKeyMapper());
 	mappers.put(Unique.class, new UniqueMapper());
 	mappers.put(Indexed.class, new IndexMapper());
+	mappers.put(Link.class, new LinkMapper());
     }
     
     public void map(ObjectDataModelAnnotationMapperContext<A> amc) {
