@@ -16,7 +16,7 @@
 package ro.zg.mdb.core.schema;
 
 import ro.zg.mdb.core.annotations.Unique;
-import ro.zg.mdb.core.meta.FieldDataModel;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
 
 public class UniqueMapper extends ObjectDataModelAnnotationMapper<Unique>{
 

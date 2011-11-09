@@ -17,6 +17,7 @@ package ro.zg.mdb.core.meta;
 
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.mdb.core.meta.data.MdbConfig;
 import ro.zg.mdb.persistence.FilePersistenceManager;
 import ro.zg.mdb.persistence.PersistenceException;
 import ro.zg.mdb.persistence.PersistenceManager;

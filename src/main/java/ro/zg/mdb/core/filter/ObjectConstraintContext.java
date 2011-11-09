@@ -23,45 +23,58 @@ import java.util.Set;
 
 import ro.zg.mdb.constants.Constants;
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.FieldDataModel;
-import ro.zg.mdb.core.meta.ObjectDataModel;
 import ro.zg.mdb.core.meta.PersistentObjectDataManager;
+import ro.zg.mdb.core.meta.TransactionManager;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.data.ObjectDataModel;
 
 public class ObjectConstraintContext<T> {
     private ObjectDataModel<T> objectDataModel;
-    private String typeName;
-//    private Map<String, FieldConstraintContext> fieldsConstraintContexts = new HashMap<String, FieldConstraintContext>();
-    private PersistentObjectDataManager indexManager;
+    private String objectName;
+    private Class<T> type;
+    private ObjectConstraintContext<?> parentContext;
+   
+//    private PersistentObjectDataManager indexManager;
+    TransactionManager transactionManager;
     private Deque<Set<String>> allowedRowsIds = new ArrayDeque<Set<String>>();
     private Deque<Set<String>> restrictedRowsIds = new ArrayDeque<Set<String>>();
     private Set<String> usedIndexes = new HashSet<String>();
     private boolean intersection = false;
     private boolean simple = true;
-    private HashMap<String, ObjectConstraintContext<?>> nestedObjectContexts=new HashMap<String, ObjectConstraintContext<?>>();
+    private HashMap<String, ObjectConstraintContext<?>> nestedObjectContexts = new HashMap<String, ObjectConstraintContext<?>>();
 
-    public ObjectConstraintContext(ObjectDataModel<T> objectDataModel, PersistentObjectDataManager indexManager) {
+    private Deque<ObjectConstraintContext<?>> pendingObjectContexts = new ArrayDeque<ObjectConstraintContext<?>>();
+
+    public ObjectConstraintContext(String objectName, Class<T> type, TransactionManager transactionManager) {
 	super();
-	this.objectDataModel = objectDataModel;
-	this.indexManager = indexManager;
-	this.typeName = objectDataModel.getTypeName();
+	
+	this.transactionManager = transactionManager;
+	this.objectName=objectName;
+	this.type=type;
+	this.objectDataModel = transactionManager.getObjectDataModel(type);
+    }
+
+    private ObjectConstraintContext(ObjectDataModel<T> objectDataModel, TransactionManager transactionManager, ObjectConstraintContext<?> parentContext) {
+	this.objectDataModel=objectDataModel;
+	this.objectName=objectDataModel.getTypeName();
+	this.type=objectDataModel.getType();
+	this.parentContext=parentContext;
     }
     
-    
-    public ObjectConstraintContext<?> getObjectContraintContextForField(String fieldName){
-	int separatorIndex=fieldName.indexOf(Constants.NESTED_FIELD_SEPARATOR);
-	if(separatorIndex <=0) {
+    public ObjectConstraintContext<?> getObjectContraintContextForField(String fieldName) {
+	int separatorIndex = fieldName.indexOf(Constants.NESTED_FIELD_SEPARATOR);
+	if (separatorIndex <= 0) {
 	    return this;
 	}
-	String currentFieldName=fieldName.substring(0,separatorIndex);
-	String nestedFieldName=fieldName.substring(separatorIndex)+1;
+	String currentFieldName = fieldName.substring(0, separatorIndex);
+	String nestedFieldName = fieldName.substring(separatorIndex) + 1;
 	return getNestedObjectConstraintContext(currentFieldName).getObjectContraintContextForField(nestedFieldName);
     }
-    
-    
-    private ObjectConstraintContext<?> getNestedObjectConstraintContext(String fieldName){
-	ObjectConstraintContext<?> occ=nestedObjectContexts.get(fieldName);
-	if(occ == null) {
-	    occ = new ObjectConstraintContext(objectDataModel.getObjectDataModelForField(fieldName), indexManager);
+
+    private ObjectConstraintContext<?> getNestedObjectConstraintContext(String fieldName) {
+	ObjectConstraintContext<?> occ = nestedObjectContexts.get(fieldName);
+	if (occ == null) {
+	    occ = new ObjectConstraintContext(objectDataModel.getObjectDataModelForField(fieldName), transactionManager,this);
 	    nestedObjectContexts.put(fieldName, occ);
 	}
 	return occ;
@@ -74,31 +87,40 @@ public class ObjectConstraintContext<T> {
 	return objectDataModel;
     }
 
-    public void addFieldConstraintContext(FieldConstraintContext context) throws MdbException {
-//	fieldsConstraintContexts.put(context.getFieldName(), context);
-	FieldDataModel fdm = context.getFieldDataModel();
+    private void addFieldConstraintContext(FieldConstraintContext<?> context) throws MdbException {
+	// fieldsConstraintContexts.put(context.getFieldName(), context);
+	FieldDataModel<?> fdm = context.getFieldDataModel();
 	if (fdm.isIndexed()) {
 	    usedIndexes.add(fdm.getName());
 	    processConstraint(context);
 	}
     }
 
-    public <F extends Comparable<F>> void processConstraint(FieldConstraintContext<F> constraintContext) throws MdbException {
+    public void addFieldConstraintContext(FieldConstraintContext<?> context, String fieldName) throws MdbException {
+	ObjectConstraintContext<?> currentOcc = getObjectContraintContextForField(fieldName);
+	currentOcc.addFieldConstraintContext(context);
+
+	pendingObjectContexts.push(currentOcc);
+    }
+
+    public <F extends Comparable<F>> void processConstraint(FieldConstraintContext<F> constraintContext)
+	    throws MdbException {
 	Set<String> allowedRows = new HashSet<String>();
 	Set<String> restrictedRows = new HashSet<String>();
 	if (constraintContext.hasRanges()) {
-	    indexManager.getRowsForRange(typeName, constraintContext, allowedRows);
+	    transactionManager.getRowsForRange(objectName,type, constraintContext, allowedRows);
 	    allowedRowsIds.push(allowedRows);
 	}
 	if (constraintContext.hasValues()) {
 	    if (constraintContext.isRestricted()) {
-		indexManager.getRowsForValues(typeName, constraintContext, restrictedRows);
+		transactionManager.getRowsForValues(objectName,type, constraintContext, restrictedRows);
 		restrictedRowsIds.push(restrictedRows);
 	    } else {
-		indexManager.getRowsForValues(typeName, constraintContext, allowedRows);
+		transactionManager.getRowsForValues(objectName,type, constraintContext, allowedRows);
 		allowedRowsIds.push(allowedRows);
 	    }
 	}
+
     }
 
     public Set<String> getIntersection(Deque<Set<String>> stack) {
@@ -140,6 +162,20 @@ public class ObjectConstraintContext<T> {
     }
 
     public boolean applyAnd() {
+	if (pendingObjectContexts.size() > 1) {
+	    ObjectConstraintContext<?> firstOcc = pendingObjectContexts.pop();
+	    ObjectConstraintContext<?> secondOcc = pendingObjectContexts.pop();
+
+	    if (firstOcc == secondOcc) {
+		if (firstOcc != this) {
+		    return firstOcc.applyAnd();
+		}
+	    }
+	    else {
+		
+	    }
+	}
+
 	intersection = true;
 	simple = false;
 	Set<String> allowed = getIntersection(allowedRowsIds);
@@ -163,13 +199,22 @@ public class ObjectConstraintContext<T> {
 	Set<String> restricted = getIntersection(restrictedRowsIds);
 	allowedRowsIds.push(allowed);
 	restrictedRowsIds.push(restricted);
-	
+
 	if (!restricted.isEmpty()) {
 	    restricted.removeAll(allowed);
 	}
 
 	return true;
     }
+    
+    private void reconciliateAnd(ObjectConstraintContext<?> firstOcc, ObjectConstraintContext<?> secondOcc) {
+	
+    }
+    
+    private void reconciliateAndWithNested() {
+	
+    }
+    
 
     public Set<String> getAllowed() {
 	if (allowedRowsIds.isEmpty()) {

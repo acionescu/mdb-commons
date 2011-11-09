@@ -20,7 +20,7 @@ import java.util.Set;
 
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.constraints.All;
-import ro.zg.mdb.core.meta.ObjectDataModel;
+import ro.zg.mdb.core.meta.data.ObjectDataModel;
 
 public class Filter implements ObjectConstraint{
     private ObjectConstraint constraint=new All<Object>();
@@ -82,4 +82,7 @@ public class Filter implements ObjectConstraint{
         this.targetFields = targetFields;
     }
     
+    public boolean isTargetFieldPresent(String fieldName) {
+	return targetFields.contains(fieldName);
+    }
 }

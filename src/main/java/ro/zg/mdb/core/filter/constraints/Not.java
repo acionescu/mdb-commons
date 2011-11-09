@@ -18,7 +18,7 @@ package ro.zg.mdb.core.filter.constraints;
 import ro.zg.mdb.core.filter.ComplexConstraint;
 import ro.zg.mdb.core.filter.Constraint;
 import ro.zg.mdb.core.filter.FieldConstraintContext;
-import ro.zg.mdb.core.meta.FieldDataModel;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
 
 public class Not<T> extends ComplexConstraint<T> {
     private Constraint<T> negated;

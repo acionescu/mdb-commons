@@ -22,8 +22,8 @@ import ro.zg.mdb.core.filter.Constraint;
 import ro.zg.mdb.core.filter.FieldConstraintContext;
 import ro.zg.mdb.core.filter.ObjectConstraint;
 import ro.zg.mdb.core.filter.ObjectConstraintContext;
-import ro.zg.mdb.core.meta.FieldDataModel;
-import ro.zg.mdb.core.meta.ObjectDataModel;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.data.ObjectDataModel;
 
 public class All<T> implements Constraint<T>, ObjectConstraint{
 

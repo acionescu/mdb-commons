@@ -15,9 +15,15 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
+import java.util.Collection;
+
+import ro.zg.mdb.commands.GetCommand;
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.constants.SpecialPaths;
 import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.mdb.core.meta.data.LinkModel;
+import ro.zg.mdb.core.meta.data.ObjectsLink;
+import ro.zg.mdb.core.meta.data.SchemaConfig;
 import ro.zg.mdb.persistence.PersistenceException;
 import ro.zg.mdb.persistence.PersistenceManager;
 
@@ -41,4 +47,17 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	return linksSchema.createCommand(ObjectsLink.class, linkName).insert(link).execute();
     }
 
+    public Collection<ObjectsLink> getObjectLinks(LinkModel linkModel, String rowId) throws MdbException{
+	GetCommand<ObjectsLink> getCommand = linksSchema.createCommand(ObjectsLink.class, linkModel.getName()).get();
+	String queryField=null;
+	if(linkModel.isFirst()) {
+	    queryField="firstRowId";
+	}
+	else {
+	    queryField="secondRowId";
+	}
+	
+	return getCommand.where().field(queryField).eq(rowId).execute();
+    }
+    
 }

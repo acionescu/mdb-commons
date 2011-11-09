@@ -15,7 +15,7 @@
  ******************************************************************************/
 package ro.zg.mdb.core.filter;
 
-import ro.zg.mdb.core.meta.FieldDataModel;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
 
 
 public interface Constraint<T> {

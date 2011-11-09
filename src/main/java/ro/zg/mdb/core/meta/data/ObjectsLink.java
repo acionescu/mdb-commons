@@ -13,59 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.core.meta;
+package ro.zg.mdb.core.meta.data;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-public class UniqueIndex {
-
-    private String id;
-    private Map<String,FieldDataModel> fields = new LinkedHashMap<String,FieldDataModel>();
-
-    public UniqueIndex() {
-	super();
-    }
-
+public class ObjectsLink {
+    private String firstRowId;
+    private String secondRowId;
     /**
-     * @return the id
+     * @return the firstRowId
      */
-    public String getId() {
-	return id;
+    public String getFirstRowId() {
+        return firstRowId;
     }
-
     /**
-     * @return the fields
+     * @return the secondRowId
      */
-    public Collection<FieldDataModel> getFields() {
-	return fields.values();
+    public String getSecondRowId() {
+        return secondRowId;
     }
-
     /**
-     * @param id
-     *            the id to set
+     * @param firstRowId the firstRowId to set
      */
-    public void setId(String id) {
-	this.id = id;
+    public void setFirstRowId(String firstRowId) {
+        this.firstRowId = firstRowId;
     }
-
-
-    public void addField(FieldDataModel field) {
-	String fieldName=field.getName();
-	if (!fields.containsKey(fieldName)) {
-	    fields.put(fieldName,field);
-	}
+    /**
+     * @param secondRowId the secondRowId to set
+     */
+    public void setSecondRowId(String secondRowId) {
+        this.secondRowId = secondRowId;
     }
-    
-    public boolean containsField(String fieldName) {
-	return fields.containsKey(fieldName);
-    }
-    
-    public boolean isComposite() {
-	return fields.size() > 1;
-    }
-
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
@@ -73,11 +49,10 @@ public class UniqueIndex {
     public int hashCode() {
 	final int prime = 31;
 	int result = 1;
-	result = prime * result + ((fields == null) ? 0 : fields.hashCode());
-	result = prime * result + ((id == null) ? 0 : id.hashCode());
+	result = prime * result + ((firstRowId == null) ? 0 : firstRowId.hashCode());
+	result = prime * result + ((secondRowId == null) ? 0 : secondRowId.hashCode());
 	return result;
     }
-
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
@@ -89,18 +64,19 @@ public class UniqueIndex {
 	    return false;
 	if (getClass() != obj.getClass())
 	    return false;
-	UniqueIndex other = (UniqueIndex) obj;
-	if (fields == null) {
-	    if (other.fields != null)
+	ObjectsLink other = (ObjectsLink) obj;
+	if (firstRowId == null) {
+	    if (other.firstRowId != null)
 		return false;
-	} else if (!fields.equals(other.fields))
+	} else if (!firstRowId.equals(other.firstRowId))
 	    return false;
-	if (id == null) {
-	    if (other.id != null)
+	if (secondRowId == null) {
+	    if (other.secondRowId != null)
 		return false;
-	} else if (!id.equals(other.id))
+	} else if (!secondRowId.equals(other.secondRowId))
 	    return false;
 	return true;
     }
-
+    
+    
 }

@@ -30,7 +30,7 @@ public class InsertCommand<T> extends AbstractCommand<T,T>{
     @Override
     public T execute() throws MdbException {
 	T source = commandContext.getSource();
-	return commandContext.getObjectDataManager().save(source);
+	return commandContext.getObjectDataManager().create(source);
     }
 
     

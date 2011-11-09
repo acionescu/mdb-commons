@@ -15,16 +15,16 @@
  ******************************************************************************/
 package ro.zg.mdb.core.schema;
 
-import ro.zg.mdb.core.annotations.Link;
-import ro.zg.mdb.core.meta.data.LinkModel;
+import ro.zg.mdb.core.annotations.Implementation;
+import ro.zg.mdb.core.meta.data.DataModel;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
 
-public class LinkMapper extends ObjectDataModelAnnotationMapper<Link>{
+public class ImplementationMapper extends ObjectDataModelAnnotationMapper<Implementation>{
 
     @Override
-    public void map(ObjectDataModelAnnotationMapperContext<Link> amc) {
-	Link al = amc.getAnnotation();
-	LinkModel lm = new LinkModel(al.name(), al.first(), al.lazy(), al.key());
-	amc.getFieldDataModel().setLinkModel(lm);
+    public void map(ObjectDataModelAnnotationMapperContext<Implementation> amc) {
+	FieldDataModel<?> fdm = amc.getFieldDataModel();
+	fdm.setImplementation(new DataModel(amc.getAnnotation().type()));
     }
 
 }

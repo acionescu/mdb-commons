@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.core.meta;
+package ro.zg.mdb.core.meta.data;
 
 public class LinkModel {
     private String name;
     private boolean first;
     private boolean lazy;
+    /* in case of map */
+    private String keyName;
     
     public LinkModel(String name, boolean first, boolean lazy) {
 	super();
@@ -26,6 +28,18 @@ public class LinkModel {
 	this.first = first;
 	this.lazy = lazy;
     }
+
+    
+    
+    public LinkModel(String name, boolean first, boolean lazy, String keyName) {
+	super();
+	this.name = name;
+	this.first = first;
+	this.lazy = lazy;
+	this.keyName = keyName;
+    }
+
+
 
     /**
      * @return the name
@@ -46,6 +60,15 @@ public class LinkModel {
      */
     public boolean isLazy() {
         return lazy;
+    }
+    
+    
+
+    /**
+     * @return the keyName
+     */
+    public String getKeyName() {
+        return keyName;
     }
 
     /* (non-Javadoc)

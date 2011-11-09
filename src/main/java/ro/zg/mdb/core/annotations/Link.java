@@ -26,4 +26,5 @@ public @interface Link {
     String name();
     boolean first() default true;
     boolean lazy() default true;
+    String key() default "id";
 }

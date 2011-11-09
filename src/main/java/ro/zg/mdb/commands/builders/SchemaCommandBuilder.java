@@ -20,13 +20,12 @@ import ro.zg.mdb.commands.GetCommand;
 import ro.zg.mdb.commands.InsertCommand;
 import ro.zg.mdb.commands.UpdateCommand;
 import ro.zg.mdb.core.meta.ObjectDataManager;
-import ro.zg.mdb.core.meta.SchemaManager;
 
 
 public class SchemaCommandBuilder<T> {
     private ObjectDataManager<T> objectDataManager;
-    
    
+    
 
     public SchemaCommandBuilder(ObjectDataManager<T> objectDataManager) {
 	super();

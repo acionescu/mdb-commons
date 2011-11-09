@@ -21,13 +21,11 @@ public class CommandBuilderContext<T> {
     private ObjectDataManager<T> objectDataManager;
     private String[] fields;
     private T source;
-    
-    
+
     public CommandBuilderContext(ObjectDataManager<T> objectDataManager) {
 	super();
 	this.objectDataManager = objectDataManager;
     }
-
 
     public CommandBuilderContext(ObjectDataManager<T> objectDataManager, T source) {
 	super();
@@ -35,13 +33,11 @@ public class CommandBuilderContext<T> {
 	this.source = source;
     }
 
-
     public CommandBuilderContext(ObjectDataManager<T> objectDataManager, String[] fields) {
 	super();
 	this.objectDataManager = objectDataManager;
 	this.fields = fields;
     }
-
 
     public CommandBuilderContext(ObjectDataManager<T> objectDataManager, T source, String[] fields) {
 	super();
@@ -50,29 +46,25 @@ public class CommandBuilderContext<T> {
 	this.fields = fields;
     }
 
-
     /**
      * @return the source
      */
     public T getSource() {
-        return source;
+	return source;
     }
-
 
     /**
      * @return the fields
      */
     public String[] getFields() {
-        return fields;
+	return fields;
     }
-
 
     /**
      * @return the objectDataManager
      */
     public ObjectDataManager<T> getObjectDataManager() {
-        return objectDataManager;
+	return objectDataManager;
     }
-    
-    
+
 }

@@ -13,18 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.core.schema;
+package ro.zg.mdb.util;
 
-import ro.zg.mdb.core.annotations.Link;
-import ro.zg.mdb.core.meta.data.LinkModel;
+import java.util.ArrayList;
+import java.util.Collection;
 
-public class LinkMapper extends ObjectDataModelAnnotationMapper<Link>{
+import ro.zg.mdb.core.meta.data.ObjectsLink;
 
-    @Override
-    public void map(ObjectDataModelAnnotationMapperContext<Link> amc) {
-	Link al = amc.getAnnotation();
-	LinkModel lm = new LinkModel(al.name(), al.first(), al.lazy(), al.key());
-	amc.getFieldDataModel().setLinkModel(lm);
+public class ObjectsLinkUtil {
+    public static Collection<String> getRows(Collection<ObjectsLink> links, boolean first){
+	Collection<String> result=new ArrayList<String>();
+	if(links == null) {
+	    return result;
+	}
+	for(ObjectsLink ol : links) {
+	    if(first) {
+		result.add(ol.getFirstRowId());
+	    }
+	    else {
+		result.add(ol.getSecondRowId());
+	    }
+	}
+	return result;
     }
-
 }

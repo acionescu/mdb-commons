@@ -19,18 +19,16 @@ import java.util.Collection;
 import java.util.Set;
 
 import ro.zg.mdb.commands.CommandContext;
-import ro.zg.mdb.core.concurrency.PersistableObjectLockManager;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
 import ro.zg.mdb.core.filter.ObjectConstraintContext;
-import ro.zg.mdb.core.meta.ObjectDataModel;
-import ro.zg.mdb.persistence.PersistenceManager;
+import ro.zg.mdb.core.meta.data.ObjectDataModel;
 
-public abstract class FilteredCommandProcessor<T,R> extends AbstractCommandProcessor<T,R>{
+public abstract class FilteredCommandProcessor<T,R> implements CommandProcessor<T,R>{
 
-    public FilteredCommandProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
-	super(persistenceManager, locksManager);
-    }
+//    public FilteredCommandProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
+//	super(persistenceManager, locksManager);
+//    }
 
     @Override
     public R process(CommandContext<T> context) throws MdbException {
@@ -38,7 +36,7 @@ public abstract class FilteredCommandProcessor<T,R> extends AbstractCommandProce
 	ObjectDataModel<T> odm=context.getObjectDataModel();
 	
 	if (filter.isPossible(odm)) {
-	    ObjectConstraintContext<T> occ = new ObjectConstraintContext<T>(odm, this);
+	    ObjectConstraintContext<T> occ = new ObjectConstraintContext<T>(context.getObjectName(),context.getType(), context.getTransactionManager());
 
 	    if (filter.process(occ)) {
 		/* some indexes were hit */

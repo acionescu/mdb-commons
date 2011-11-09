@@ -16,8 +16,8 @@
 package ro.zg.mdb.util;
 
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.ObjectDataModel;
 import ro.zg.mdb.core.meta.SchemaContext;
+import ro.zg.mdb.core.meta.data.ObjectDataModel;
 
 public class SchemaContextRowIdProvider<T> implements RowIdProvider {
     private SchemaContext schemaContext;

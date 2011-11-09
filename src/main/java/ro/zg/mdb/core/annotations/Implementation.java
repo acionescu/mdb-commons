@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.commands.processors;
+package ro.zg.mdb.core.annotations;
 
-import ro.zg.mdb.core.concurrency.PersistableObjectLockManager;
-import ro.zg.mdb.core.meta.PersistentObjectDataManager;
-import ro.zg.mdb.persistence.PersistenceManager;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-
-public abstract class AbstractCommandProcessor<T,R> extends PersistentObjectDataManager implements CommandProcessor<T,R>{
-
-    public AbstractCommandProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
-	super(persistenceManager, locksManager);
-    }
-
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface Implementation {
+    Class<?> type();
 }

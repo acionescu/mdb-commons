@@ -17,7 +17,7 @@ package ro.zg.mdb.core.filter.constraints;
 
 import ro.zg.mdb.core.filter.Constraint;
 import ro.zg.mdb.core.filter.FieldConstraintContext;
-import ro.zg.mdb.core.meta.FieldDataModel;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
 
 public class Lt<T extends Comparable<T>> implements Constraint<T>{
     

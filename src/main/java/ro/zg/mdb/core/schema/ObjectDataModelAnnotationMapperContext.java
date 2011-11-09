@@ -17,9 +17,9 @@ package ro.zg.mdb.core.schema;
 
 import java.lang.annotation.Annotation;
 
-import ro.zg.mdb.core.meta.FieldDataModel;
-import ro.zg.mdb.core.meta.ObjectDataModel;
-import ro.zg.mdb.core.meta.Schema;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.data.Schema;
 
 public class ObjectDataModelAnnotationMapperContext<A extends Annotation> extends AnnotationMapperContext<A> {
     private ObjectDataModel objectDataModel;

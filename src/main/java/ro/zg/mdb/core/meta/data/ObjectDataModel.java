@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.core.meta;
+package ro.zg.mdb.core.meta.data;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -41,20 +41,24 @@ public class ObjectDataModel<T> extends DataModel<T> {
      */
     private Map<String, FieldDataModel<?>> fields = new LinkedHashMap<String, FieldDataModel<?>>();
     private Map<String, Integer> fieldsPositions = new HashMap<String, Integer>();
+    private Set<FieldDataModel<?>> linkedFields = new LinkedHashSet<FieldDataModel<?>>();
 
     public ObjectDataModel(Class<T> type) {
 	super(type, true);
     }
 
-    public synchronized void addFieldDataModel(FieldDataModel fdm) {
+    public synchronized void addFieldDataModel(FieldDataModel<?> fdm) {
 	String fieldName = fdm.getName();
 	fields.put(fieldName, fdm);
 	int pos = fields.size() - 1;
 	fieldsPositions.put(fieldName, pos);
 	fdm.setPosition(pos);
+	if (fdm.getLinkModel() != null) {
+	    linkedFields.add(fdm);
+	}
     }
 
-    public void addRequiredField(FieldDataModel fdm) {
+    public void addRequiredField(FieldDataModel<?> fdm) {
 	requiredFields.add(fdm);
     }
 
@@ -89,6 +93,7 @@ public class ObjectDataModel<T> extends DataModel<T> {
 
     /**
      * Returns the complex {@link ObjectDataModel} of a field or null if the field is simple or undefined
+     * 
      * @param fieldName
      * @return
      */
@@ -126,7 +131,17 @@ public class ObjectDataModel<T> extends DataModel<T> {
     }
 
     public FieldDataModel<?> getField(String name) {
-	return fields.get(name);
+
+	int nestedIndex = name.indexOf(Constants.NESTED_FIELD_SEPARATOR);
+	if (nestedIndex <= 0 || nestedIndex == (name.length()-1)) {
+	    return fields.get(name);
+	}
+	String mainField=name.substring(0,nestedIndex);
+	FieldDataModel<?> currentField = fields.get(mainField);
+	if(currentField != null) {
+	    return ((ObjectDataModel<?>)currentField.getDataModel()).getField(name.substring(nestedIndex+1));
+	}
+	return null;
     }
 
     public UniqueIndex getPrimaryKey() {
@@ -197,16 +212,26 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	}
 	return restored;
     }
-    
+
+    public void populateComplexFields(T target, String fieldName, Collection<?> values) throws MdbException {
+	Object value = getField(fieldName).createFromValue(values);
+	try {
+	    ReflectionUtility.setValueToField(target, fieldName, value);
+	} catch (Exception e) {
+	    throw new MdbException(e, MdbErrorType.GET_FIELD_ERROR, new GenericNameValue("name", fieldName),
+		    new GenericNameValue("value", value));
+	}
+    }
+
     public UniqueIndexValue getUniqueIndexValue(T target, String indexId) throws MdbException {
 	UniqueIndex ui = getUniqueIndex(indexId);
-	if(ui== null) {
+	if (ui == null) {
 	    return null;
 	}
-	UniqueIndexValue uiv=new UniqueIndexValue(indexId);
-	for(FieldDataModel<?> fdm : ui.getFields()) {
-	    Object fieldValue=getValueForField(target, fdm.getName());
-	    if(fieldValue==null) {
+	UniqueIndexValue uiv = new UniqueIndexValue(indexId);
+	for (FieldDataModel<?> fdm : ui.getFields()) {
+	    Object fieldValue = getValueForField(target, fdm.getName());
+	    if (fieldValue == null) {
 		return null;
 	    }
 	    uiv.addValue(fieldValue.toString());
@@ -227,12 +252,13 @@ public class ObjectDataModel<T> extends DataModel<T> {
 		    .getName()), new GenericNameValue("fieldName", fieldName));
 	}
     }
-    
+
     public Object getValueForField(T target, String fieldName) throws MdbException {
 	try {
 	    return ReflectionUtility.getValueForField(target, fieldName);
 	} catch (Exception e) {
-	    throw new MdbException(e, MdbErrorType.GET_FIELD_ERROR, new GenericNameValue("field", fieldName), new GenericNameValue("target",target));
+	    throw new MdbException(e, MdbErrorType.GET_FIELD_ERROR, new GenericNameValue("field", fieldName),
+		    new GenericNameValue("target", target));
 	}
     }
 
@@ -325,7 +351,7 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	    try {
 		valuesMap.put(fieldName, getValueForField(target, fieldName));
 	    } catch (Exception e) {
-		
+
 	    }
 	}
 	return valuesMap;
@@ -357,6 +383,13 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	} catch (Exception e) {
 	    throw new MdbException(e, MdbErrorType.SET_FIELD_ERROR, new GenericNameValue(fieldName, fieldValue));
 	}
+    }
+
+    /**
+     * @return the linkedFields
+     */
+    public Set<FieldDataModel<?>> getLinkedFields() {
+	return linkedFields;
     }
 
     /*

@@ -24,23 +24,23 @@ import ro.zg.mdb.persistence.PersistenceManager;
 
 public class UpdateProcessor<T> extends FilteredCommandProcessor<T, Long>{
 
-    public UpdateProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
-	super(persistenceManager, locksManager);
-    }
+//    public UpdateProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
+//	super(persistenceManager, locksManager);
+//    }
 
     @Override
     protected Long processAll(CommandContext<T> context) throws MdbException {
-	return updateAll(context.getSource(), context.getObjectDataModel(), context.getFilter());
+	return updateAll(context.getSource(), context.getObjectDataModel(), context.getFilter(),context.getTransactionManager());
     }
 
     @Override
     protected Long processAllowed(CommandContext<T> context, Collection<String> allowed) throws MdbException {
-	return updateObjects(allowed,context.getSource(), context.getObjectDataModel(), context.getFilter());
+	return updateObjects(allowed,context.getSource(), context.getObjectDataModel(), context.getFilter(),context.getTransactionManager());
     }
 
     @Override
     protected Long processRestricted(CommandContext<T> context, Collection<String> restricted) throws MdbException {
-	return updateAllBut(context.getSource(), context.getObjectDataModel(), context.getFilter(),restricted);
+	return updateAllBut(context.getSource(), context.getObjectDataModel(), context.getFilter(),restricted,context.getTransactionManager());
     }
 
     @Override

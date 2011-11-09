@@ -16,16 +16,77 @@
 package ro.zg.mdb.core.meta;
 
 import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.data.Schema;
 
 public class SchemaContext {
     private SequencesManager sequencesManager;
+    private ObjectDataManagersRepository objectsManagersRepository;
+    private TransactionManagerFactory transactionManagerFactory;
+    private SchemaMetadataManager metadataManager;
+    private Schema schema;
 
-    public SchemaContext(SequencesManager sequencesManager) {
+    public SchemaContext(Schema schema, SequencesManager sequencesManager, ObjectDataManagersRepository objectsManagersRepository,
+	    TransactionManagerFactory transactionManagerFactory, SchemaMetadataManager metadataManager) {
 	super();
+	this.schema=schema;
 	this.sequencesManager = sequencesManager;
+	this.objectsManagersRepository = objectsManagersRepository;
+	this.transactionManagerFactory = transactionManagerFactory;
+	this.metadataManager = metadataManager;
     }
-    
+
+
     public long getNextValForSequence(String seqId) throws MdbException{
 	return sequencesManager.getNextValForSequence(seqId);
     }
+    
+    public <T> PersistentObjectDataManager<T> getObjectDataManager(Class<T> type, String objectName) throws MdbException{
+	return objectsManagersRepository.getObjectDataManager(type, objectName);
+    }
+    
+    public <T> PersistentObjectDataManager<T> getObjectDataManager(Class<T> type) throws MdbException{
+	return objectsManagersRepository.getObjectDataManager(type, type.getName());
+    }
+
+    public TransactionManager createTransactionManager() {
+	return transactionManagerFactory.getTransactionManager();
+    }
+    
+    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type){
+	return schema.getObjectDataModel(type);
+    }
+    
+    /**
+     * @return the sequencesManager
+     */
+    public SequencesManager getSequencesManager() {
+        return sequencesManager;
+    }
+
+
+    /**
+     * @return the objectsManagersRepository
+     */
+    public ObjectDataManagersRepository getObjectsManagersRepository() {
+        return objectsManagersRepository;
+    }
+
+
+    /**
+     * @return the transactionManagerFactory
+     */
+    public TransactionManagerFactory getTransactionManagerFactory() {
+        return transactionManagerFactory;
+    }
+
+
+    /**
+     * @return the metadataManager
+     */
+    public SchemaMetadataManager getMetadataManager() {
+        return metadataManager;
+    }
+    
+    
 }

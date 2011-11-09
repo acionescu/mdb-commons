@@ -20,6 +20,7 @@ import java.util.Map;
 
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.mdb.core.meta.data.Sequence;
 import ro.zg.util.data.GenericNameValue;
 
 public class SequencesManager {

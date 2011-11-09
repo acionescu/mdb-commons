@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.core.meta;
+package ro.zg.mdb.core.meta.data;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -80,7 +80,7 @@ public class Schema {
 	Class<?> currentType=type;
 	do {
 	    for (Field field : currentType.getDeclaredFields()) {
-		FieldDataModel fdm = new FieldDataModel(field.getName(), getDataModel(field.getType()));
+		FieldDataModel<?> fdm = new FieldDataModel(field.getName(), getDataModel(field.getType()));
 		for (Class<? extends Annotation> annotationType : annotationTypes) {
 		    Annotation currentAnnotation = field.getAnnotation(annotationType);
 		    if (currentAnnotation != null) {

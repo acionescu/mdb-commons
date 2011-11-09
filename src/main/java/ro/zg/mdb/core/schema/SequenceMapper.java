@@ -16,9 +16,9 @@
 package ro.zg.mdb.core.schema;
 
 import ro.zg.mdb.core.annotations.Sequenced;
-import ro.zg.mdb.core.meta.FieldDataModel;
-import ro.zg.mdb.core.meta.Schema;
-import ro.zg.mdb.core.meta.Sequence;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.data.Schema;
+import ro.zg.mdb.core.meta.data.Sequence;
 
 public class SequenceMapper extends ObjectDataModelAnnotationMapper<Sequenced>{
 

@@ -19,7 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import ro.zg.mdb.core.filter.constraints.Range;
-import ro.zg.mdb.core.meta.FieldDataModel;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
 
 public class FieldConstraintContext<T extends Comparable<T>> {
     private FieldDataModel<T> fieldDataModel;

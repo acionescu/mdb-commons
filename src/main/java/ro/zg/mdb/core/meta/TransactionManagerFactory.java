@@ -13,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.core.schema;
+package ro.zg.mdb.core.meta;
 
-import ro.zg.mdb.core.annotations.Link;
-import ro.zg.mdb.core.meta.data.LinkModel;
+public interface TransactionManagerFactory {
 
-public class LinkMapper extends ObjectDataModelAnnotationMapper<Link>{
-
-    @Override
-    public void map(ObjectDataModelAnnotationMapperContext<Link> amc) {
-	Link al = amc.getAnnotation();
-	LinkModel lm = new LinkModel(al.name(), al.first(), al.lazy(), al.key());
-	amc.getFieldDataModel().setLinkModel(lm);
-    }
+    public abstract TransactionManager getTransactionManager();
 
 }

@@ -16,60 +16,76 @@
 package ro.zg.mdb.commands;
 
 import ro.zg.mdb.core.filter.Filter;
-import ro.zg.mdb.core.meta.ObjectDataManager;
-import ro.zg.mdb.core.meta.ObjectDataModel;
-import ro.zg.mdb.core.meta.SchemaContext;
+import ro.zg.mdb.core.meta.TransactionManager;
+import ro.zg.mdb.core.meta.data.ObjectDataModel;
 
 public class CommandContext<T> {
-   private ObjectDataManager<T> objectDataManager;
+    private String objectName;
+    private Class<T> type;
+    private TransactionManager transactionManager;
     private Filter filter;
     private T source;
-    
-    public CommandContext(ObjectDataManager<T> objectDataManager, Filter filter) {
+
+    public CommandContext(String objectName, Class<T> type, TransactionManager transactionManager, Filter filter) {
 	super();
-	this.objectDataManager = objectDataManager;
+	this.objectName = objectName;
+	this.type = type;
 	this.filter = filter;
+	this.transactionManager = transactionManager;
     }
-    
-    
-    public CommandContext(ObjectDataManager<T> objectDataManager, T source) {
+
+    public CommandContext(String objectName, Class<T> type, TransactionManager transactionManager, T source) {
 	super();
-	this.objectDataManager = objectDataManager;
+	this.objectName = objectName;
+	this.type = type;
 	this.source = source;
+	this.transactionManager = transactionManager;
     }
 
-
-    public CommandContext(ObjectDataManager<T> objectDataManager, T source, Filter filter) {
+    public CommandContext(String objectName, Class<T> type, TransactionManager transactionManager, T source,
+	    Filter filter) {
 	super();
-	this.objectDataManager = objectDataManager;
+	this.objectName = objectName;
+	this.type = type;
 	this.source = source;
 	this.filter = filter;
+	this.transactionManager = transactionManager;
     }
 
-    /**
-     * @return the objectDataModel
-     */
     public ObjectDataModel<T> getObjectDataModel() {
-        return objectDataManager.getObjectDataModel();
+	return transactionManager.getObjectDataModel(type);
     }
-    
-    public SchemaContext getSchemaContext() {
-	return objectDataManager.getSchemaContext();
+
+    public TransactionManager getTransactionManager() {
+	return transactionManager;
     }
-    
+
     /**
      * @return the filter
      */
     public Filter getFilter() {
-        return filter;
+	return filter;
     }
 
     /**
      * @return the source
      */
     public T getSource() {
-        return source;
+	return source;
     }
-    
-    
+
+    /**
+     * @return the objectName
+     */
+    public String getObjectName() {
+	return objectName;
+    }
+
+    /**
+     * @return the type
+     */
+    public Class<T> getType() {
+	return type;
+    }
+
 }

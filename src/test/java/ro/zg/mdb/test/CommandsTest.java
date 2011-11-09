@@ -21,8 +21,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import ro.zg.mdb.commands.GetCommand;
-import ro.zg.mdb.core.meta.SchemaConfig;
 import ro.zg.mdb.core.meta.SchemaManager;
+import ro.zg.mdb.core.meta.data.SchemaConfig;
 
 public class CommandsTest {
     

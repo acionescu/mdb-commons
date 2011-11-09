@@ -21,6 +21,8 @@ import java.util.Map;
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.annotations.Persistable;
 import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.mdb.core.meta.data.MdbConfig;
+import ro.zg.mdb.core.meta.data.SchemaConfig;
 import ro.zg.mdb.persistence.PersistenceException;
 import ro.zg.mdb.persistence.PersistenceManager;
 

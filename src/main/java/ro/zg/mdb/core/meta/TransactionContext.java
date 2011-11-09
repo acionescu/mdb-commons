@@ -15,23 +15,19 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
-public class MdbConfig {
+import ro.zg.util.data.ListMap;
+
+public class TransactionContext {
+    private ListMap<String, String> pendingRows=new ListMap<String, String>();
     
     
-    private boolean automaticSchemaCreationOn=true;
-
-    /**
-     * @return the automaticSchemaCreationOn
-     */
-    public boolean isAutomaticSchemaCreationOn() {
-        return automaticSchemaCreationOn;
+    public void addPendingRow(String objectName, String rowId) {
+	pendingRows.add(objectName, rowId);
     }
-
-    /**
-     * @param automaticSchemaCreationOn the automaticSchemaCreationOn to set
-     */
-    public void setAutomaticSchemaCreationOn(boolean automaticSchemaCreationOn) {
-        this.automaticSchemaCreationOn = automaticSchemaCreationOn;
+    
+    public boolean isRowPending(String objectName, String rowId) {
+	return pendingRows.containsValueForKey(objectName, rowId);
     }
+    
     
 }

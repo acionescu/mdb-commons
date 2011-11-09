@@ -13,15 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.core.meta;
+package ro.zg.mdb.core.meta.data;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.util.data.GenericNameValue;
+import ro.zg.util.data.reflection.ReflectionUtility;
 
 public class FieldDataModel<T> {
+    public static Class<?> DEFAULT_SET_IMPLEMENTATION=HashSet.class;
+    public static Class<?> DEFAULT_LIST_IMPLEMENTATION=ArrayList.class;
+    public static Class<?> DEFAULT_MAP_IMPLEMENTATION=HashMap.class;
+    
     private String name;
     private DataModel<T> dataModel;
+    private DataModel<T> implementation;
     private boolean required;
     private boolean primaryKey;
     private boolean indexed;
@@ -34,6 +46,46 @@ public class FieldDataModel<T> {
 	this.name = name;
 	this.dataModel = dataModel;
     }
+    
+    
+    public Object createFromValue(Collection<?> values) throws MdbException {
+	
+	if(dataModel.isMultivalued()) {
+	    Class<?> impl = null;
+	    if(implementation != null) {
+		impl=implementation.getType();
+	    }
+	    try {
+	    if(dataModel.isList()) {
+		if(impl == null) {
+		    impl=DEFAULT_LIST_IMPLEMENTATION;
+		}
+		return ReflectionUtility.createCollection(impl, values);
+	    }
+	    else if(dataModel.isSet()) {
+		if(impl==null) {
+		    impl=DEFAULT_SET_IMPLEMENTATION;
+		}
+		return ReflectionUtility.createCollection(impl, values);
+	    }
+	    else if(dataModel.isMap()) {
+		if(impl == null) {
+		    impl=DEFAULT_MAP_IMPLEMENTATION;
+		}
+		return ReflectionUtility.createMap(impl, values, linkModel.getKeyName());
+	    }
+	    }
+	    catch(Exception e) {
+		throw new MdbException(e,MdbErrorType.GET_FIELD_ERROR, new GenericNameValue("name",name),new GenericNameValue("value",values));
+	    }
+	}
+	
+	if(values.size() > 0) {
+	    return new ArrayList(values).get(0);
+	}
+	return null;
+    }
+    
 
     /**
      * @return the name
@@ -173,9 +225,24 @@ public class FieldDataModel<T> {
 	this.linkModel = linkModel;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
+    
+    
+    
+    /**
+     * @return the implementation
+     */
+    public DataModel<T> getImplementation() {
+        return implementation;
+    }
+
+    /**
+     * @param implementation the implementation to set
+     */
+    public void setImplementation(DataModel<T> implementation) {
+        this.implementation = implementation;
+    }
+
+    /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -183,6 +250,7 @@ public class FieldDataModel<T> {
 	final int prime = 31;
 	int result = 1;
 	result = prime * result + ((dataModel == null) ? 0 : dataModel.hashCode());
+	result = prime * result + ((implementation == null) ? 0 : implementation.hashCode());
 	result = prime * result + (indexed ? 1231 : 1237);
 	result = prime * result + ((linkModel == null) ? 0 : linkModel.hashCode());
 	result = prime * result + ((name == null) ? 0 : name.hashCode());
@@ -194,9 +262,7 @@ public class FieldDataModel<T> {
 	return result;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
+    /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -212,6 +278,11 @@ public class FieldDataModel<T> {
 	    if (other.dataModel != null)
 		return false;
 	} else if (!dataModel.equals(other.dataModel))
+	    return false;
+	if (implementation == null) {
+	    if (other.implementation != null)
+		return false;
+	} else if (!implementation.equals(other.implementation))
 	    return false;
 	if (indexed != other.indexed)
 	    return false;
@@ -244,16 +315,15 @@ public class FieldDataModel<T> {
 	return true;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
+    /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
     @Override
     public String toString() {
-	return "FieldDataModel [name=" + name + ", dataModel=" + dataModel + ", required=" + required + ", primaryKey="
-		+ primaryKey + ", indexed=" + indexed + ", linkModel=" + linkModel + ", uniqueIndexId=" + uniqueIndexId
-		+ ", sequenceId=" + sequenceId + ", position=" + position + "]";
+	return "FieldDataModel [name=" + name + ", dataModel=" + dataModel + ", implementation=" + implementation
+		+ ", required=" + required + ", primaryKey=" + primaryKey + ", indexed=" + indexed + ", linkModel="
+		+ linkModel + ", uniqueIndexId=" + uniqueIndexId + ", sequenceId=" + sequenceId + ", position="
+		+ position + "]";
     }
 
 }

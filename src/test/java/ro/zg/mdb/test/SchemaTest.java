@@ -17,8 +17,8 @@ package ro.zg.mdb.test;
 
 import org.junit.Test;
 
-import ro.zg.mdb.core.meta.Schema;
-import ro.zg.mdb.core.meta.SchemaConfig;
+import ro.zg.mdb.core.meta.data.Schema;
+import ro.zg.mdb.core.meta.data.SchemaConfig;
 import ro.zg.mdb.test.model.Book;
 
 public class SchemaTest {

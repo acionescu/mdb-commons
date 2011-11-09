@@ -24,9 +24,9 @@ import ro.zg.mdb.persistence.PersistenceManager;
 
 public class DeleteProcessor<T> extends FilteredCommandProcessor<T,Long>{
 
-    public DeleteProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
-	super(persistenceManager, locksManager);
-    }
+//    public DeleteProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
+//	super(persistenceManager, locksManager);
+//    }
 
     @Override
     protected Long processAll(CommandContext<T> context) throws MdbException {

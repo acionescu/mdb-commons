@@ -19,9 +19,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ro.zg.mdb.core.concurrency.ResourceLock;
-import ro.zg.mdb.core.meta.ObjectDataModel;
-import ro.zg.mdb.core.meta.Row;
-import ro.zg.mdb.core.meta.UniqueIndexValue;
+import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.data.Row;
+import ro.zg.mdb.core.meta.data.UniqueIndexValue;
 
 public class ObjectContext<T> {
     private ResourceLock rowLock;
@@ -224,6 +224,10 @@ public class ObjectContext<T> {
      */
     public void setObjectName(String objectName) {
         this.objectName = objectName;
+    }
+    
+    public String getRowId() {
+	return rowInfo.getRowId();
     }
     
 }

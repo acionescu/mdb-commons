@@ -18,9 +18,9 @@ package ro.zg.mdb.commands.builders;
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
-import ro.zg.mdb.core.meta.FieldDataModel;
-import ro.zg.mdb.core.meta.ObjectDataModel;
-import ro.zg.mdb.core.meta.UniqueIndex;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.data.UniqueIndex;
 import ro.zg.util.data.GenericNameValue;
 
 public class FilterBuilderUtil {

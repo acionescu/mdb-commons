@@ -17,7 +17,7 @@ package ro.zg.mdb.core.filter.constraints;
 
 import ro.zg.mdb.core.filter.Constraint;
 import ro.zg.mdb.core.filter.FieldConstraintContext;
-import ro.zg.mdb.core.meta.FieldDataModel;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
 
 public class IsNull<T> implements Constraint<T>{
 

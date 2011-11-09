@@ -20,8 +20,8 @@ import java.util.Map;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.constraints.And;
 import ro.zg.mdb.core.filter.constraints.Or;
-import ro.zg.mdb.core.meta.FieldDataModel;
-import ro.zg.mdb.core.meta.ObjectDataModel;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.data.ObjectDataModel;
 
 public class FieldConstraint<T> implements Constraint<T>, ObjectConstraint {
     private String fieldName;
@@ -34,18 +34,15 @@ public class FieldConstraint<T> implements Constraint<T>, ObjectConstraint {
     }
 
     public boolean process(ObjectConstraintContext<?> objectContext) throws MdbException {
-//	ObjectDataModel odm = objectContext.getObjectDataModel();
-	ObjectConstraintContext<?> currentObjectContext = objectContext.getObjectContraintContextForField(fieldName);
-	FieldDataModel<?> fdm = currentObjectContext.getObjectDataModel().getField(fieldName);
+	ObjectDataModel<?> odm = objectContext.getObjectDataModel();
+	FieldDataModel<?> fdm = odm.getField(fieldName);
 	if (!fdm.isIndexed()) {
 	    return false;
 	}
 	FieldConstraintContext<?> fieldContext = new FieldConstraintContext(fdm,constraint);
 	process(fieldContext);
-	/* add the field constraint on the current object constraint context 
-	 * this can be a nested context of the objectContext passed as a parameter
-	 */
-	currentObjectContext.addFieldConstraintContext(fieldContext);
+	
+	objectContext.addFieldConstraintContext(fieldContext,fieldName);
 	return true;
     }
 
