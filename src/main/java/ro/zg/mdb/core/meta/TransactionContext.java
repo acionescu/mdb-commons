@@ -15,11 +15,15 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import ro.zg.util.data.ListMap;
 
 public class TransactionContext {
     private ListMap<String, String> pendingRows=new ListMap<String, String>();
-    
+    private Map<String,Object> pendingObjects=new HashMap<String, Object>();
+    private Map<String,String> pendingFields=new HashMap<String, String>();
     
     public void addPendingRow(String objectName, String rowId) {
 	pendingRows.add(objectName, rowId);
@@ -29,5 +33,25 @@ public class TransactionContext {
 	return pendingRows.containsValueForKey(objectName, rowId);
     }
     
+    public void removePendingRow(String objectName, String rowId) {
+	pendingRows.remove(objectName,rowId);
+    }
+    
+    
+    public void addPendingObject(String rowId, Object object) {
+	pendingObjects.put(rowId, object);
+    }
+    
+    public Object getPendingObject(String rowId) {
+	return pendingObjects.get(rowId);
+    }
+    
+    public void addPendingField(String fullFieldName, String rowId) {
+	pendingFields.put(fullFieldName, rowId);
+    }
+    
+    public String getRowIdForPendingField(String fullFieldName) {
+	return pendingFields.get(fullFieldName);
+    }
     
 }

@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -52,10 +51,12 @@ import ro.zg.util.io.file.LineHandler;
 public class PersistentObjectDataManager<T> extends PersistentDataManager {
     private PersistableObjectLockManager locksManager = new PersistableObjectLockManager();
     private ObjectDataModel<T> objectDataModel;
-
-    public PersistentObjectDataManager(PersistenceManager persistenceManager, ObjectDataModel<T> objectDataModel) {
+    private String objectName;
+    
+    public PersistentObjectDataManager(PersistenceManager persistenceManager, ObjectDataModel<T> objectDataModel, String objectName) {
 	super(persistenceManager);
 	this.objectDataModel = objectDataModel;
+	this.objectName=objectName;
     }
 
     protected String getPath(String p1, String p2) {
@@ -98,12 +99,36 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return data;
     }
 
-    protected Collection<String> read(String id) throws MdbException {
-	final Set<String> data = new LinkedHashSet<String>();
-	return read(id, data);
+    public String readData(String id) throws MdbException {
+	MdbObjectHandler handler = new MdbObjectHandler() {
+
+	    @Override
+	    public boolean handle(String line) {
+		data = line;
+		/* read only one line */
+		return false;
+	    }
+	};
+
+	ResourceLock rowLock = locksManager.getRowLock(id);
+	rowLock.acquireReadLock();
+	try {
+
+	    persistenceManager.read(getRowPath(id), handler);
+
+	} catch (PersistenceException e) {
+	    throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, e);
+	} catch (Exception e) {
+	    throw new RuntimeException("Read error: " + rowLock, e);
+	} finally {
+	    rowLock.releaseReadLock();
+	    locksManager.releaseRowLock(rowLock);
+	}
+	
+	return handler.getData();
     }
 
-    protected Collection<T> readAllObjects(final Filter filter, final TransactionManager transactionManager,
+    public Collection<T> readAllObjects(final Filter filter, final TransactionManager transactionManager,
 	    final Collection<T> dataHolder) throws MdbException {
 
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
@@ -129,7 +154,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		T object;
 		try {
 		    // object = odm.getObjectFromString(data, filter);
-		    object = transactionManager.buildObject(objectDataModel, data, filter, name);
+		    object = transactionManager.buildObject(objectName, objectDataModel, data, filter, name);
 		} catch (MdbException e) {
 		    error = e;
 		    return false;
@@ -153,7 +178,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return dataHolder;
     }
 
-    protected Collection<T> readAllObjectsBut(final Filter filter, final TransactionManager transactionManager,
+    public Collection<T> readAllObjectsBut(final Filter filter, final TransactionManager transactionManager,
 	    final Collection<T> dataHolder, final Collection<String> restricted) throws MdbException {
 
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
@@ -182,7 +207,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		T object;
 		try {
 		    // object = odm.getObjectFromString(data, filter);
-		    object = transactionManager.buildObject(objectDataModel, data, filter, name);
+		    object = transactionManager.buildObject(objectName, objectDataModel, data, filter, name);
 		} catch (MdbException e) {
 		    error = e;
 		    return false;
@@ -207,7 +232,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return dataHolder;
     }
 
-    protected Collection<T> readObjects(Collection<String> ids, final Filter filter,
+    public Collection<T> readObjects(Collection<String> ids, final Filter filter,
 	    final TransactionManager transactionManager, final Collection<T> dataHolder) throws MdbException {
 
 	MdbObjectHandler handler = new MdbObjectHandler() {
@@ -228,7 +253,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		persistenceManager.read(getRowPath(id), handler);
 
 		// T object = odm.getObjectFromString(handler.getData(), filter);
-		T object = transactionManager.buildObject(objectDataModel, handler.getData(), filter, id);
+		T object = transactionManager.buildObject(objectName, objectDataModel, handler.getData(), filter, id);
 		if (object != null) {
 		    dataHolder.add(object);
 		}
@@ -272,7 +297,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return persistenceManager.delete(getRowPath(rowId));
     }
 
-    protected long deleteAll(final Filter filter) throws MdbException {
+    public long deleteAll(final Filter filter) throws MdbException {
 	// final String typeName = objectDataModel.getTypeName();
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
 	    private ResourceLock rowLock;
@@ -295,7 +320,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		ObjectContext<T> oc = null;
 		boolean deleted = false;
 		try {
-		    oc = getObjectContextFromString( data, filter);
+		    oc = getObjectContextFromString(data, filter);
 		    if (oc != null) {
 			deleted = delete(oc, name);
 		    }
@@ -327,7 +352,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return handler.getRowCount();
     }
 
-    protected long deleteAllBut(final Filter filter, final Collection<String> restricted) throws MdbException {
+    public long deleteAllBut(final Filter filter, final Collection<String> restricted) throws MdbException {
 	// final String typeName = objectDataModel.getTypeName();
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
 	    private ResourceLock rowLock;
@@ -384,7 +409,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return handler.getRowCount();
     }
 
-    protected long deleteObjects(Collection<String> ids, final Filter filter) throws MdbException {
+    public long deleteObjects(Collection<String> ids, final Filter filter) throws MdbException {
 	// final String typeName = objectDataModel.getTypeName();
 
 	MdbObjectHandler handler = new MdbObjectHandler() {
@@ -922,19 +947,19 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return new ObjectContext<T>(objectDataModel, indexedValues, uniqueValues);
     }
 
-//    private <N> ObjectContext<N> getNestedObjectContext(N target, ObjectDataModel<N> odm,
-//	    TransactionManager transactionManager) throws MdbException {
-//
-//	/* check if an object with the specified pk already exists */
-//	UniqueIndexValue pkValue = odm.getUniqueIndexValue(target, odm.getPrimaryKeyId());
-//	String rowId = getRowIdForUniqueIndex(pkValue);
-//	if (rowId != null) {
-//	    return new ObjectContext<N>(odm, rowId);
-//	}
-//
-//	return getObjectContext(target, , transactionManager);
-//
-//    }
+    // private <N> ObjectContext<N> getNestedObjectContext(N target, ObjectDataModel<N> odm,
+    // TransactionManager transactionManager) throws MdbException {
+    //
+    // /* check if an object with the specified pk already exists */
+    // UniqueIndexValue pkValue = odm.getUniqueIndexValue(target, odm.getPrimaryKeyId());
+    // String rowId = getRowIdForUniqueIndex(pkValue);
+    // if (rowId != null) {
+    // return new ObjectContext<N>(odm, rowId);
+    // }
+    //
+    // return getObjectContext(target, , transactionManager);
+    //
+    // }
 
     public ObjectContext<T> getObjectContext(T target, boolean create, TransactionManager transactionManager)
 	    throws MdbException {
@@ -958,15 +983,14 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	uiv.addValue(value);
     }
 
-    protected void testUniqueIndexes(Collection<UniqueIndexValue> uniqueIndexesValues)
-	    throws MdbException {
+    protected void testUniqueIndexes(Collection<UniqueIndexValue> uniqueIndexesValues) throws MdbException {
 
 	for (UniqueIndexValue uiv : uniqueIndexesValues) {
 	    boolean exists = false;
 	    if (uiv.isComposite()) {
-		exists = compositeIndexValueExists( uiv.getName(), uiv.getValue());
+		exists = compositeIndexValueExists(uiv.getName(), uiv.getValue());
 	    } else {
-		exists = indexValueExists( uiv.getName(), uiv.getValue());
+		exists = indexValueExists(uiv.getName(), uiv.getValue());
 	    }
 	    if (exists) {
 		throw new MdbException(MdbErrorType.UNIQUENESS_VIOLATED, new GenericNameValue(uiv.getName(), uiv));
@@ -974,7 +998,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	}
     }
 
-    protected Long updateAll(final T source, final Filter filter, final TransactionManager transactionManager)
+    public Long updateAll(final T source, final Filter filter, final TransactionManager transactionManager)
 	    throws MdbException {
 	// final String typeName = odm.getTypeName();
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
@@ -1035,9 +1059,9 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return handler.getRowCount();
     }
 
-    protected Long updateAllBut(final T source, final Filter filter,
-	    final Collection<String> restricted, final TransactionManager transactionManager) throws MdbException {
-//	final String typeName = odm.getTypeName();
+    public Long updateAllBut(final T source, final Filter filter, final Collection<String> restricted,
+	    final TransactionManager transactionManager) throws MdbException {
+	// final String typeName = odm.getTypeName();
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
 	    private ResourceLock rowLock;
 
@@ -1096,9 +1120,9 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return handler.getRowCount();
     }
 
-    protected Long updateObjects(Collection<String> ids, T source, Filter filter,
-	    TransactionManager transactionManager) throws MdbException {
-//	final String typeName = odm.getTypeName();
+    public Long updateObjects(Collection<String> ids, T source, Filter filter, TransactionManager transactionManager)
+	    throws MdbException {
+	// final String typeName = odm.getTypeName();
 	MdbObjectHandler handler = new MdbObjectHandler() {
 
 	    @Override
@@ -1113,7 +1137,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    rowLock.acquireWriteLock();
 	    ObjectContext<T> oc = null;
 	    try {
-		persistenceManager.read(getRowPath( id), handler);
+		persistenceManager.read(getRowPath(id), handler);
 		oc = getObjectContext(source, filter, handler.getData(), id);
 		if (oc != null) {
 		    // oc.setRowIdProvider(new StaticRowIdProvider(id));
@@ -1144,7 +1168,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return rowCount;
     }
 
-    protected T create(T target, TransactionManager transactionManager) throws MdbException {
+    public T create(T target, TransactionManager transactionManager) throws MdbException {
 	Class<?> type = target.getClass();
 	Persistable persistenceInfo = type.getAnnotation(Persistable.class);
 	if (persistenceInfo == null) {
@@ -1167,7 +1191,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
     public void save(ObjectContext<T> objectContext, TransactionManager transactionManager) throws MdbException {
 	ObjectDataModel<T> odm = objectContext.getObjectDataModel();
-//	String objectName = objectContext.getObjectName();
+	// String objectName = objectContext.getObjectName();
 
 	/* assure there is no duplication for unique indexes */
 	Collection<UniqueIndexValue> uniqueValues = objectContext.getUniqueValues().values();
@@ -1176,7 +1200,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	String rowId = null;
 	/* hold the unique values */
 	synchronized (odm) {
-	    uniqueValuesLocks = lockUniqueValues( uniqueValues);
+	    uniqueValuesLocks = lockUniqueValues(uniqueValues);
 	    // rowId = objectContext.getRowIdProvider().provideRowId();
 	    rowId = objectContext.getRowId();
 	}
@@ -1236,16 +1260,16 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    /* create unique indexes */
 	    for (UniqueIndexValue uiv : objectContext.getUniqueValues().values()) {
 		if (uiv.isComposite()) {
-		    addCompositeIndex( uiv.getName(), uiv.getValue(), rowId);
+		    addCompositeIndex(uiv.getName(), uiv.getValue(), rowId);
 		} else {
-		    addUniqueIndex( uiv.getName(), uiv.getValue(), rowId);
+		    addUniqueIndex(uiv.getName(), uiv.getValue(), rowId);
 		}
 	    }
 	    // System.out.println(Thread.currentThread().getId() + " created " +
 	    // objectContext.getUniqueValues().values());
 	    /* create indexes */
 	    for (Map.Entry<String, String> e : objectContext.getIndexedValues().entrySet()) {
-		addIndex( e.getKey(), e.getValue(), rowId);
+		addIndex(e.getKey(), e.getValue(), rowId);
 	    }
 	} finally {
 	    releaseUniqueValuesLocks(uniqueValuesLocks);
@@ -1253,10 +1277,10 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
     }
 
-    protected Collection<ResourceLock> lockUniqueValues( Collection<UniqueIndexValue> uniqueValues) {
+    protected Collection<ResourceLock> lockUniqueValues(Collection<UniqueIndexValue> uniqueValues) {
 	Collection<ResourceLock> locks = new HashSet<ResourceLock>();
 	for (UniqueIndexValue uiv : uniqueValues) {
-	    locks.add(lockUniqueValue( uiv));
+	    locks.add(lockUniqueValue(uiv));
 	}
 	return locks;
     }
@@ -1269,25 +1293,25 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	}
     }
 
-    protected ResourceLock lockUniqueValue( UniqueIndexValue uiv) {
-	String indexValuePath = getIndexValuePath( uiv);
+    protected ResourceLock lockUniqueValue(UniqueIndexValue uiv) {
+	String indexValuePath = getIndexValuePath(uiv);
 	ResourceLock indexLock = locksManager.getIndexLock(indexValuePath);
 	indexLock.acquireWriteLock();
 	// System.out.println(Thread.currentThread().getId() + " locked index " + indexValuePath);
 	return indexLock;
     }
 
-    protected void saveData( String data, String rowId) throws PersistenceException {
-	persistenceManager.write(getRowPath( rowId), data);
+    protected void saveData(String data, String rowId) throws PersistenceException {
+	persistenceManager.write(getRowPath(rowId), data);
     }
 
-    protected String getIndexValuePath( UniqueIndexValue uiv) {
+    protected String getIndexValuePath(UniqueIndexValue uiv) {
 	String indexValuePath = null;
 	if (uiv.isComposite()) {
-	    String indexPath = getCompositeIndexPath( uiv.getName());
+	    String indexPath = getCompositeIndexPath(uiv.getName());
 	    indexValuePath = getPath(indexPath, uiv.getValue());
 	} else {
-	    indexValuePath = getPathForIndex( uiv.getName(), uiv.getValue());
+	    indexValuePath = getPathForIndex(uiv.getName(), uiv.getValue());
 	}
 	return indexValuePath;
     }

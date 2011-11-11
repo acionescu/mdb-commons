@@ -41,7 +41,7 @@ public class ObjectDataManagersRepository extends PersistentDataManager{
 	    PersistentObjectDataManager<T> odm = (PersistentObjectDataManager<T>) objectDataManagers.get(type);
 	    if (odm == null) {
 		ObjectDataModel<T> odModel = (ObjectDataModel<T>) schema.getObjectDataModel(type);
-		odm = new PersistentObjectDataManager<T>(getPersistenceManager(objectName), odModel);
+		odm = new PersistentObjectDataManager<T>(getPersistenceManager(objectName), odModel,objectName);
 		objectDataManagers.put(type, odm);
 	    }
 	    return odm;

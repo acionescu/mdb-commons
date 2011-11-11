@@ -47,17 +47,21 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	return linksSchema.createCommand(ObjectsLink.class, linkName).insert(link).execute();
     }
 
-    public Collection<ObjectsLink> getObjectLinks(LinkModel linkModel, String rowId) throws MdbException{
+    public Collection<ObjectsLink> getObjectLinks(LinkModel linkModel, String rowId, boolean reversed)
+	    throws MdbException {
 	GetCommand<ObjectsLink> getCommand = linksSchema.createCommand(ObjectsLink.class, linkModel.getName()).get();
-	String queryField=null;
-	if(linkModel.isFirst()) {
-	    queryField="firstRowId";
+	String queryField = null;
+	boolean first = linkModel.isFirst();
+	if (reversed) {
+	    first = !first;
 	}
-	else {
-	    queryField="secondRowId";
+	if (first) {
+	    queryField = "firstRowId";
+	} else {
+	    queryField = "secondRowId";
 	}
-	
+
 	return getCommand.where().field(queryField).eq(rowId).execute();
     }
-    
+
 }

@@ -17,7 +17,6 @@ package ro.zg.mdb.core.meta.data;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -27,10 +26,10 @@ import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
 
 public class FieldDataModel<T> {
-    public static Class<?> DEFAULT_SET_IMPLEMENTATION=HashSet.class;
-    public static Class<?> DEFAULT_LIST_IMPLEMENTATION=ArrayList.class;
-    public static Class<?> DEFAULT_MAP_IMPLEMENTATION=HashMap.class;
-    
+    public static Class<?> DEFAULT_SET_IMPLEMENTATION = HashSet.class;
+    public static Class<?> DEFAULT_LIST_IMPLEMENTATION = ArrayList.class;
+    public static Class<?> DEFAULT_MAP_IMPLEMENTATION = HashMap.class;
+
     private String name;
     private DataModel<T> dataModel;
     private DataModel<T> implementation;
@@ -46,46 +45,42 @@ public class FieldDataModel<T> {
 	this.name = name;
 	this.dataModel = dataModel;
     }
-    
-    
+
     public Object createFromValue(Collection<?> values) throws MdbException {
-	
-	if(dataModel.isMultivalued()) {
+
+	if (dataModel.isMultivalued()) {
 	    Class<?> impl = null;
-	    if(implementation != null) {
-		impl=implementation.getType();
+	    if (implementation != null) {
+		impl = implementation.getType();
 	    }
 	    try {
-	    if(dataModel.isList()) {
-		if(impl == null) {
-		    impl=DEFAULT_LIST_IMPLEMENTATION;
+		if (dataModel.isList()) {
+		    if (impl == null) {
+			impl = DEFAULT_LIST_IMPLEMENTATION;
+		    }
+		    return ReflectionUtility.createCollection(impl, values);
+		} else if (dataModel.isSet()) {
+		    if (impl == null) {
+			impl = DEFAULT_SET_IMPLEMENTATION;
+		    }
+		    return ReflectionUtility.createCollection(impl, values);
+		} else if (dataModel.isMap()) {
+		    if (impl == null) {
+			impl = DEFAULT_MAP_IMPLEMENTATION;
+		    }
+		    return ReflectionUtility.createMap(impl, values, linkModel.getKeyName());
 		}
-		return ReflectionUtility.createCollection(impl, values);
-	    }
-	    else if(dataModel.isSet()) {
-		if(impl==null) {
-		    impl=DEFAULT_SET_IMPLEMENTATION;
-		}
-		return ReflectionUtility.createCollection(impl, values);
-	    }
-	    else if(dataModel.isMap()) {
-		if(impl == null) {
-		    impl=DEFAULT_MAP_IMPLEMENTATION;
-		}
-		return ReflectionUtility.createMap(impl, values, linkModel.getKeyName());
-	    }
-	    }
-	    catch(Exception e) {
-		throw new MdbException(e,MdbErrorType.GET_FIELD_ERROR, new GenericNameValue("name",name),new GenericNameValue("value",values));
+	    } catch (Exception e) {
+		throw new MdbException(e, MdbErrorType.GET_FIELD_ERROR, new GenericNameValue("name", name),
+			new GenericNameValue("value", values));
 	    }
 	}
-	
-	if(values.size() > 0) {
+
+	if (values.size() > 0) {
 	    return new ArrayList(values).get(0);
 	}
 	return null;
     }
-    
 
     /**
      * @return the name
@@ -225,24 +220,24 @@ public class FieldDataModel<T> {
 	this.linkModel = linkModel;
     }
 
-    
-    
-    
     /**
      * @return the implementation
      */
     public DataModel<T> getImplementation() {
-        return implementation;
+	return implementation;
     }
 
     /**
-     * @param implementation the implementation to set
+     * @param implementation
+     *            the implementation to set
      */
     public void setImplementation(DataModel<T> implementation) {
-        this.implementation = implementation;
+	this.implementation = implementation;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -262,7 +257,9 @@ public class FieldDataModel<T> {
 	return result;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -315,7 +312,9 @@ public class FieldDataModel<T> {
 	return true;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#toString()
      */
     @Override

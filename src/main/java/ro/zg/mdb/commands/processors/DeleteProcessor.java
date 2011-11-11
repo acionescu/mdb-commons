@@ -30,17 +30,17 @@ public class DeleteProcessor<T> extends FilteredCommandProcessor<T,Long>{
 
     @Override
     protected Long processAll(CommandContext<T> context) throws MdbException {
-	return deleteAll(context.getObjectDataModel(), context.getFilter());
+	return context.getTransactionManager().deleteAll(context.getObjectName(),context.getType(), context.getFilter());
     }
 
     @Override
     protected Long processAllowed(CommandContext<T> context, Collection<String> allowed) throws MdbException {
-	return deleteObjects(allowed, context.getObjectDataModel(), context.getFilter());
+	return context.getTransactionManager().deleteObjects(context.getObjectName(),context.getType(),allowed, context.getFilter());
     }
 
     @Override
     protected Long processRestricted(CommandContext<T> context, Collection<String> restricted) throws MdbException {
-	return deleteAllBut(context.getObjectDataModel(), context.getFilter(),restricted);
+	return context.getTransactionManager().deleteAllBut(context.getObjectName(),context.getType(), context.getFilter(),restricted);
     }
 
     @Override

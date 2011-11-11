@@ -13,20 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.commands.processors;
+package ro.zg.mdb.core.filter;
 
-import ro.zg.mdb.commands.CommandContext;
-import ro.zg.mdb.core.exceptions.MdbException;
-
-public class InsertProcessor<T> implements CommandProcessor<T,T>{
-
-//    public InsertProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
-//	super(persistenceManager, locksManager);
-//    }
-
-    @Override
-    public T process(CommandContext<T> context) throws MdbException {
-	return context.getTransactionManager().create(context.getObjectName(),context.getType(), context.getSource());
-    }
+public class ObjectConstraintProcessor {
 
 }

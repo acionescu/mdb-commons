@@ -16,6 +16,7 @@
 package ro.zg.mdb.core.filter;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,19 +24,20 @@ import java.util.Set;
 
 import ro.zg.mdb.constants.Constants;
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.PersistentObjectDataManager;
 import ro.zg.mdb.core.meta.TransactionManager;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.data.LinkModel;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.data.ObjectsLink;
 
 public class ObjectConstraintContext<T> {
     private ObjectDataModel<T> objectDataModel;
     private String objectName;
     private Class<T> type;
     private ObjectConstraintContext<?> parentContext;
-   
-//    private PersistentObjectDataManager indexManager;
-    TransactionManager transactionManager;
+    private int depth=0;
+    private String fieldName;
+    private TransactionManager transactionManager;
     private Deque<Set<String>> allowedRowsIds = new ArrayDeque<Set<String>>();
     private Deque<Set<String>> restrictedRowsIds = new ArrayDeque<Set<String>>();
     private Set<String> usedIndexes = new HashSet<String>();
@@ -47,20 +49,23 @@ public class ObjectConstraintContext<T> {
 
     public ObjectConstraintContext(String objectName, Class<T> type, TransactionManager transactionManager) {
 	super();
-	
+
 	this.transactionManager = transactionManager;
-	this.objectName=objectName;
-	this.type=type;
+	this.objectName = objectName;
+	this.type = type;
 	this.objectDataModel = transactionManager.getObjectDataModel(type);
     }
 
-    private ObjectConstraintContext(ObjectDataModel<T> objectDataModel, TransactionManager transactionManager, ObjectConstraintContext<?> parentContext) {
-	this.objectDataModel=objectDataModel;
-	this.objectName=objectDataModel.getTypeName();
-	this.type=objectDataModel.getType();
-	this.parentContext=parentContext;
+    private ObjectConstraintContext(String fieldName, ObjectDataModel<T> objectDataModel,
+	    TransactionManager transactionManager, ObjectConstraintContext<?> parentContext) {
+	this.objectDataModel = objectDataModel;
+	this.objectName = objectDataModel.getTypeName();
+	this.type = objectDataModel.getType();
+	this.parentContext = parentContext;
+	this.fieldName = fieldName;
+	this.depth=parentContext.depth+1;
     }
-    
+
     public ObjectConstraintContext<?> getObjectContraintContextForField(String fieldName) {
 	int separatorIndex = fieldName.indexOf(Constants.NESTED_FIELD_SEPARATOR);
 	if (separatorIndex <= 0) {
@@ -74,7 +79,8 @@ public class ObjectConstraintContext<T> {
     private ObjectConstraintContext<?> getNestedObjectConstraintContext(String fieldName) {
 	ObjectConstraintContext<?> occ = nestedObjectContexts.get(fieldName);
 	if (occ == null) {
-	    occ = new ObjectConstraintContext(objectDataModel.getObjectDataModelForField(fieldName), transactionManager,this);
+	    occ = new ObjectConstraintContext(fieldName, objectDataModel.getObjectDataModelForField(fieldName),
+		    transactionManager, this);
 	    nestedObjectContexts.put(fieldName, occ);
 	}
 	return occ;
@@ -108,15 +114,15 @@ public class ObjectConstraintContext<T> {
 	Set<String> allowedRows = new HashSet<String>();
 	Set<String> restrictedRows = new HashSet<String>();
 	if (constraintContext.hasRanges()) {
-	    transactionManager.getRowsForRange(objectName,type, constraintContext, allowedRows);
+	    transactionManager.getRowsForRange(objectName, type, constraintContext, allowedRows);
 	    allowedRowsIds.push(allowedRows);
 	}
 	if (constraintContext.hasValues()) {
 	    if (constraintContext.isRestricted()) {
-		transactionManager.getRowsForValues(objectName,type, constraintContext, restrictedRows);
+		transactionManager.getRowsForValues(objectName, type, constraintContext, restrictedRows);
 		restrictedRowsIds.push(restrictedRows);
 	    } else {
-		transactionManager.getRowsForValues(objectName,type, constraintContext, allowedRows);
+		transactionManager.getRowsForValues(objectName, type, constraintContext, allowedRows);
 		allowedRowsIds.push(allowedRows);
 	    }
 	}
@@ -170,9 +176,8 @@ public class ObjectConstraintContext<T> {
 		if (firstOcc != this) {
 		    return firstOcc.applyAnd();
 		}
-	    }
-	    else {
-		
+	    } else {
+
 	    }
 	}
 
@@ -206,15 +211,62 @@ public class ObjectConstraintContext<T> {
 
 	return true;
     }
-    
-    private void reconciliateAnd(ObjectConstraintContext<?> firstOcc, ObjectConstraintContext<?> secondOcc) {
+
+    private void reconciliateAnd(ObjectConstraintContext<?> firstOcc, ObjectConstraintContext<?> secondOcc) throws MdbException {
 	
-    }
-    
-    private void reconciliateAndWithNested() {
 	
+	
+	if(firstOcc.depth==secondOcc.depth) {
+	    
+	}
     }
-    
+
+    private void reconciliateAndWithNested(ObjectConstraintContext<?> nestedContext) throws MdbException {
+	boolean rowsExtracted = extractRowsFromNested(nestedContext);
+	applyAnd();
+    }
+
+    private boolean extractRowsFromNested(ObjectConstraintContext<?> nestedContext) throws MdbException {
+	LinkModel lm = getLinkModel(nestedContext.fieldName);
+	
+	Set<String> allowed = getReverseLinkedRows(lm, nestedContext.getAllowed());
+	if (allowed != null) {
+	    allowedRowsIds.push(allowed);
+	    return true;
+	} else {
+	    Set<String> restricted = getReverseLinkedRows(lm, nestedContext.getRestricted());
+	    if (restricted != null) {
+		restrictedRowsIds.push(restricted);
+		return true;
+	    }
+	}
+	return false;
+    }
+
+    private Set<String> getReverseLinkedRows(LinkModel lm, Collection<String> rows) throws MdbException {
+	if (rows == null) {
+	    return null;
+	}
+	Set<String> parentRows = new HashSet<String>();
+
+	for (String rowId : rows) {
+	    Collection<ObjectsLink> links = transactionManager.getObjectLinks(lm, rowId, true);
+	    for (ObjectsLink link : links) {
+		if (lm.isFirst()) {
+		    parentRows.add(link.getFirstRowId());
+		} else {
+		    parentRows.add(link.getSecondRowId());
+		}
+	    }
+	}
+	return parentRows;
+    }
+
+    private LinkModel getLinkModel(String nestedFieldName) {
+	FieldDataModel<?> fdm = objectDataModel.getField(nestedFieldName);
+	LinkModel lm = fdm.getLinkModel();
+	return lm;
+    }
 
     public Set<String> getAllowed() {
 	if (allowedRowsIds.isEmpty()) {

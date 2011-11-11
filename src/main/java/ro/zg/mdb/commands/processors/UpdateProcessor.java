@@ -30,17 +30,17 @@ public class UpdateProcessor<T> extends FilteredCommandProcessor<T, Long>{
 
     @Override
     protected Long processAll(CommandContext<T> context) throws MdbException {
-	return updateAll(context.getSource(), context.getObjectDataModel(), context.getFilter(),context.getTransactionManager());
+	return context.getTransactionManager().updateAll(context.getObjectName(), context.getType(), context.getSource(), context.getFilter());
     }
 
     @Override
     protected Long processAllowed(CommandContext<T> context, Collection<String> allowed) throws MdbException {
-	return updateObjects(allowed,context.getSource(), context.getObjectDataModel(), context.getFilter(),context.getTransactionManager());
+	return context.getTransactionManager().updateObjects(context.getObjectName(), context.getType(),allowed,context.getSource(), context.getFilter());
     }
 
     @Override
     protected Long processRestricted(CommandContext<T> context, Collection<String> restricted) throws MdbException {
-	return updateAllBut(context.getSource(), context.getObjectDataModel(), context.getFilter(),restricted,context.getTransactionManager());
+	return context.getTransactionManager().updateAllBut(context.getObjectName(), context.getType(),context.getSource(), context.getFilter(),restricted);
     }
 
     @Override

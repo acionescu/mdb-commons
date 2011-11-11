@@ -30,6 +30,14 @@ public class ObjectsLink {
     public String getSecondRowId() {
         return secondRowId;
     }
+    
+    public String getRowId(boolean first) {
+	if(first) {
+	    return firstRowId;
+	}
+	return secondRowId;
+    }
+    
     /**
      * @param firstRowId the firstRowId to set
      */
