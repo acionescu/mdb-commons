@@ -1,21 +1,21 @@
 /*******************************************************************************
- * Copyright 2011 Adrian Cristian Ionescu
+ * Copyright (c) 2011 Adrian Cristian Ionescu.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser Public License v2.1
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Contributors:
+ *     Adrian Cristian Ionescu - initial API and implementation
  ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.mdb.core.filter.ConstraintType;
+import ro.zg.mdb.core.filter.ObjectConstraintProcessor;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 import ro.zg.mdb.core.meta.data.Schema;
 
@@ -25,7 +25,9 @@ public class SchemaContext {
     private TransactionManagerFactory transactionManagerFactory;
     private SchemaMetadataManager metadataManager;
     private Schema schema;
-
+    private Map<ConstraintType,ObjectConstraintProcessor> constraintProcessors=new HashMap<ConstraintType, ObjectConstraintProcessor>();
+    
+    
     public SchemaContext(Schema schema, SequencesManager sequencesManager, ObjectDataManagersRepository objectsManagersRepository,
 	    TransactionManagerFactory transactionManagerFactory, SchemaMetadataManager metadataManager) {
 	super();
@@ -86,6 +88,23 @@ public class SchemaContext {
      */
     public SchemaMetadataManager getMetadataManager() {
         return metadataManager;
+    }
+
+
+    /**
+     * @return the schema
+     */
+    public Schema getSchema() {
+        return schema;
+    }
+
+
+    public void addConstraintProcessor(ConstraintType constraintType, ObjectConstraintProcessor processor) {
+	constraintProcessors.put(constraintType, processor);
+    }
+    
+    public ObjectConstraintProcessor getConstraintProcessor(ConstraintType constraintType) {
+	return constraintProcessors.get(constraintType);
     }
     
     

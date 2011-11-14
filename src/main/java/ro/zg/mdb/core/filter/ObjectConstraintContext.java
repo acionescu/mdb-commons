@@ -1,17 +1,12 @@
 /*******************************************************************************
- * Copyright 2011 Adrian Cristian Ionescu
+ * Copyright (c) 2011 Adrian Cristian Ionescu.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser Public License v2.1
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Contributors:
+ *     Adrian Cristian Ionescu - initial API and implementation
  ******************************************************************************/
 package ro.zg.mdb.core.filter;
 
@@ -47,6 +42,8 @@ public class ObjectConstraintContext<T> {
 
     private Deque<ObjectConstraintContext<?>> pendingObjectContexts = new ArrayDeque<ObjectConstraintContext<?>>();
 
+    
+    
     public ObjectConstraintContext(String objectName, Class<T> type, TransactionManager transactionManager) {
 	super();
 
@@ -129,104 +126,17 @@ public class ObjectConstraintContext<T> {
 
     }
 
-    public Set<String> getIntersection(Deque<Set<String>> stack) {
-	Set<String> s1 = null;
-	Set<String> s2 = null;
-
-	if (stack.size() > 0) {
-	    s1 = stack.pop();
-	} else {
-	    return new HashSet<String>();
-	}
-	if (stack.size() > 0) {
-	    s2 = stack.pop();
-	} else {
-	    return s1;
-	}
-
-	s1.retainAll(s2);
-	return s1;
+    public boolean applyAnd() throws MdbException {
+	return transactionManager.processConstraint(ConstraintType.AND, this);
     }
 
-    public Set<String> getUnion(Deque<Set<String>> stack) {
-	Set<String> s1 = null;
-	Set<String> s2 = null;
-
-	if (stack.size() > 0) {
-	    s1 = stack.pop();
-	} else {
-	    return new HashSet<String>();
-	}
-	if (stack.size() > 0) {
-	    s2 = stack.pop();
-	} else {
-	    return s1;
-	}
-
-	s1.addAll(s2);
-	return s1;
+    public boolean applyOr() throws MdbException {
+	return transactionManager.processConstraint(ConstraintType.OR, this);
     }
 
-    public boolean applyAnd() {
-	if (pendingObjectContexts.size() > 1) {
-	    ObjectConstraintContext<?> firstOcc = pendingObjectContexts.pop();
-	    ObjectConstraintContext<?> secondOcc = pendingObjectContexts.pop();
+    
 
-	    if (firstOcc == secondOcc) {
-		if (firstOcc != this) {
-		    return firstOcc.applyAnd();
-		}
-	    } else {
-
-	    }
-	}
-
-	intersection = true;
-	simple = false;
-	Set<String> allowed = getIntersection(allowedRowsIds);
-	Set<String> restricted = getUnion(restrictedRowsIds);
-	allowedRowsIds.push(allowed);
-	restrictedRowsIds.push(restricted);
-
-	if (!restricted.isEmpty()) {
-	    if (!allowed.isEmpty()) {
-		allowed.removeAll(restricted);
-	    }
-	    return true;
-	}
-	return !allowed.isEmpty();
-    }
-
-    public boolean applyOr() {
-	intersection = false;
-	simple = false;
-	Set<String> allowed = getUnion(allowedRowsIds);
-	Set<String> restricted = getIntersection(restrictedRowsIds);
-	allowedRowsIds.push(allowed);
-	restrictedRowsIds.push(restricted);
-
-	if (!restricted.isEmpty()) {
-	    restricted.removeAll(allowed);
-	}
-
-	return true;
-    }
-
-    private void reconciliateAnd(ObjectConstraintContext<?> firstOcc, ObjectConstraintContext<?> secondOcc) throws MdbException {
-	
-	
-	
-	if(firstOcc.depth==secondOcc.depth) {
-	    
-	}
-    }
-
-    private void reconciliateAndWithNested(ObjectConstraintContext<?> nestedContext) throws MdbException {
-	boolean rowsExtracted = extractRowsFromNested(nestedContext);
-	applyAnd();
-    }
-
-    private boolean extractRowsFromNested(ObjectConstraintContext<?> nestedContext) throws MdbException {
+    public boolean extractRowsFromNested(ObjectConstraintContext<?> nestedContext) throws MdbException {
 	LinkModel lm = getLinkModel(nestedContext.fieldName);
 	
 	Set<String> allowed = getReverseLinkedRows(lm, nestedContext.getAllowed());
@@ -299,5 +209,72 @@ public class ObjectConstraintContext<T> {
     public boolean isSimple() {
 	return simple;
     }
+    
+    public int getPendingObjectContextsSize() {
+	return pendingObjectContexts.size();
+    }
+    
+    public ObjectConstraintContext<?> popPendingObjectContext(){
+	return pendingObjectContexts.pop();
+    }
 
+    /**
+     * @return the depth
+     */
+    public int getDepth() {
+        return depth;
+    }
+
+    /**
+     * @param intersection the intersection to set
+     */
+    public void setIntersection(boolean intersection) {
+        this.intersection = intersection;
+    }
+
+    /**
+     * @param simple the simple to set
+     */
+    public void setSimple(boolean simple) {
+        this.simple = simple;
+    }
+    
+    public void pushAllowedRows(Set<String> rows) {
+	allowedRowsIds.push(rows);
+    }
+
+    public void pushRestrictedRows(Set<String> rows) {
+	restrictedRowsIds.push(rows);
+    }
+    
+    public Set<String> popAllowedRows(){
+	return allowedRowsIds.pop();
+    }
+    
+    public Set<String> popRestrictedRows(){
+	return restrictedRowsIds.pop();
+    }
+
+    /**
+     * @return the allowedRowsIds
+     */
+    public Deque<Set<String>> getAllowedRowsIds() {
+        return allowedRowsIds;
+    }
+
+    /**
+     * @return the restrictedRowsIds
+     */
+    public Deque<Set<String>> getRestrictedRowsIds() {
+        return restrictedRowsIds;
+    }
+
+    /**
+     * @return the parentContext
+     */
+    public ObjectConstraintContext<?> getParentContext() {
+        return parentContext;
+    }
+    
+    
 }

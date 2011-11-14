@@ -8,18 +8,8 @@
  * Contributors:
  *     Adrian Cristian Ionescu - initial API and implementation
  ******************************************************************************/
-package ro.zg.mdb.core.schema;
+package ro.zg.mdb.core.filter;
 
-import ro.zg.mdb.core.annotations.Link;
-import ro.zg.mdb.core.meta.data.LinkModel;
-
-public class LinkMapper extends ObjectDataModelAnnotationMapper<Link>{
-
-    @Override
-    public void map(ObjectDataModelAnnotationMapperContext<Link> amc) {
-	Link al = amc.getAnnotation();
-	LinkModel lm = new LinkModel(al.name(), al.first(), al.lazy(), al.key());
-	amc.getFieldDataModel().setLinkModel(lm);
-    }
-
+public enum ConstraintType {
+    AND,OR;
 }
