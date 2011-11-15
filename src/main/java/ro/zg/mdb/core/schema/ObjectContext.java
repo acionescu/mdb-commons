@@ -57,7 +57,7 @@ public class ObjectContext<T> {
 
 
     public ObjectContext(ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
-	    Map<String, UniqueIndexValue> uniqueValues) {
+	    Map<String, UniqueIndexValue> uniqueValues, Map<String, ObjectContext<?>> nestedContexts) {
 	super();
 	this.objectDataModel = objectDataModel;
 	this.data = data;
@@ -65,6 +65,7 @@ public class ObjectContext<T> {
 	this.uniqueValues = uniqueValues;
 	this.rowInfo=Row.buildFromData(data);
 	this.objectName=objectDataModel.getTypeName();
+	this.nestedObjectContexts=nestedContexts;
     }
 
 

@@ -324,6 +324,9 @@ public class ObjectDataModel<T> extends DataModel<T> {
 
     public Map<String, Object> getDataMapFromString(String data, Map<String, Object> valuesMap, String path)
 	    throws MdbException {
+	if(data==null) {
+	    return null;
+	}
 	if (valuesMap == null) {
 	    valuesMap = new HashMap<String, Object>();
 	}

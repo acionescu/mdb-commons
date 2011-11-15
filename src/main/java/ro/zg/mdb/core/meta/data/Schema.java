@@ -14,6 +14,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import ro.zg.mdb.core.annotations.Link;
 import ro.zg.mdb.core.annotations.Indexed;
@@ -65,12 +66,13 @@ public class Schema {
 	return odm;
     }
 
-    public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) {
-	return createObjectDataModel(type, PrimaryKey.class, Unique.class, Link.class, Required.class,
-		Indexed.class);
-    }
+//    public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) {
+//	return createObjectDataModel(type, PrimaryKey.class, Unique.class, Link.class, Required.class,
+//		Indexed.class);
+//    }
 
-    public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type, Class<? extends Annotation>... annotationTypes) {
+    public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) {
+	Set<Class<? extends Annotation>> annotationTypes=annotationMappersManager.getKnownAnnotations();
 	ObjectDataModel<T> odm = new ObjectDataModel<T>(type);
 	Class<?> currentType=type;
 	do {

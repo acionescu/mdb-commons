@@ -41,12 +41,15 @@ public class SchemaManager extends PersistentDataManager {
 	}
 	SequencesManager sequencesManager = new SequencesManager();
 	ObjectDataManagersRepository objectsManagersRepository; objectsManagersRepository=new ObjectDataManagersRepository(schema, schemaContext, persistenceManager);
-	TransactionManagerFactory transactionManagerFactory = new DefaultTransactionManagerFactory(schemaContext);
 	
-	schemaContext = new SchemaContext(schema,sequencesManager,objectsManagersRepository,transactionManagerFactory,metadataManager);
+	
+	schemaContext = new SchemaContext(schema,sequencesManager,objectsManagersRepository,metadataManager);
 	
 	schemaContext.addConstraintProcessor(ConstraintType.AND, new AndObjectConstraintProcessor());
 	schemaContext.addConstraintProcessor(ConstraintType.OR, new OrObjectConstraintProcessor());
+	
+	TransactionManagerFactory transactionManagerFactory = new DefaultTransactionManagerFactory(schemaContext);
+	schemaContext.setTransactionManagerFactory(transactionManagerFactory);
 	
     }
 

@@ -22,6 +22,8 @@ import ro.zg.mdb.core.meta.SchemaManager;
 import ro.zg.mdb.core.meta.data.MdbConfig;
 import ro.zg.mdb.persistence.MemoryPersistenceManager;
 import ro.zg.mdb.test.model.Book;
+import ro.zg.mdb.test.model.Entity;
+import ro.zg.mdb.test.model.User;
 
 public class SchemaManagerTest {
 
@@ -134,4 +136,17 @@ public class SchemaManagerTest {
 	mpm.print(System.out);
     }
 
+    @Test
+    public void testNestedFeature() throws MdbException {
+	MemoryPersistenceManager mpm = new MemoryPersistenceManager();
+	SchemaManager sm = new MdbInstance("TestInstance", mpm, new MdbConfig()).getSchema("TestSchema");
+	
+	User user1 = new User("user1","I'm not hiding","simple@mdb.com");
+	Entity post1=new Entity("test 1","let's see if we can save nested objects",user1);
+	
+	post1 = sm.createCommand(Entity.class).insert(post1).execute();
+	
+	mpm.print(System.out);
+    }
+    
 }

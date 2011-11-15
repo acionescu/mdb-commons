@@ -547,6 +547,9 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
     }
 
     private String getRowIdForUniqueIndex(UniqueIndexValue uiv) throws MdbException {
+	if(uiv==null) {
+	    return null;
+	}
 	String indexPath = getIndexValuePath(uiv);
 	Collection<String> rowsIds = getRowsForValue(indexPath, uiv.getValue());
 	int count = rowsIds.size();
@@ -689,7 +692,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		     * if the linked object already exists, get the rowId, otherwise create an ObjectContext for it
 		     */
 		    if (fieldValue != null) {
-			ObjectContext<?> nestedObjectContext = transactionManager.getObjectContext(linkModel.getName(),
+			ObjectContext<?> nestedObjectContext = transactionManager.getObjectContext(fieldValue.getClass().getName(),
 				fieldValue, true);
 			nestedObjectContexts.put(fieldName, nestedObjectContext);
 		    }
@@ -737,7 +740,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	}
 	/* build object context */
 
-	return new ObjectContext<T>(objectDataModel, data, indexedValues, uniqueValues);
+	return new ObjectContext<T>(objectDataModel, data, indexedValues, uniqueValues,nestedObjectContexts);
     }
 
     /**
@@ -958,6 +961,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
     public ObjectContext<T> getObjectContext(T target, boolean create, TransactionManager transactionManager)
 	    throws MdbException {
+	
 	/* check if an object with the specified pk already exists */
 	UniqueIndexValue pkValue = objectDataModel.getUniqueIndexValue(target, objectDataModel.getPrimaryKeyId());
 	String rowId = getRowIdForUniqueIndex(pkValue);

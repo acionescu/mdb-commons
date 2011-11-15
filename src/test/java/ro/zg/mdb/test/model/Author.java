@@ -8,26 +8,19 @@
  * Contributors:
  *     Adrian Cristian Ionescu - initial API and implementation
  ******************************************************************************/
-package ro.zg.mdb.test;
+package ro.zg.mdb.test.model;
 
-import java.awt.print.Book;
+import ro.zg.mdb.core.annotations.Persistable;
 
-import org.junit.Assert;
-import org.junit.Test;
+@Persistable
+public class Author extends Person{
 
-import ro.zg.mdb.commands.GetCommand;
-import ro.zg.mdb.core.meta.SchemaManager;
-import ro.zg.mdb.core.meta.data.SchemaConfig;
-
-public class CommandsTest {
-    
-    
-    @Test
-    public void testCommandBuilder() throws Exception {
-	SchemaManager sm = new SchemaManager(null,new SchemaConfig("test"));
-	GetCommand<Book> getCommand = sm.createCommand(Book.class).get();
-	Assert.assertNotNull(getCommand);
-	getCommand.execute();
-	
+    public Author(String firstName, String lastName) {
+	super(firstName, lastName);
     }
+
+    public Author(String firstName, String middleName, String lastName) {
+	super(firstName, middleName, lastName);
+    }
+
 }

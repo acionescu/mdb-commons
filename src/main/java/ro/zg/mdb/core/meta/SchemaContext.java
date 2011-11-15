@@ -25,87 +25,87 @@ public class SchemaContext {
     private TransactionManagerFactory transactionManagerFactory;
     private SchemaMetadataManager metadataManager;
     private Schema schema;
-    private Map<ConstraintType,ObjectConstraintProcessor> constraintProcessors=new HashMap<ConstraintType, ObjectConstraintProcessor>();
-    
-    
-    public SchemaContext(Schema schema, SequencesManager sequencesManager, ObjectDataManagersRepository objectsManagersRepository,
-	    TransactionManagerFactory transactionManagerFactory, SchemaMetadataManager metadataManager) {
+    private Map<ConstraintType, ObjectConstraintProcessor> constraintProcessors = new HashMap<ConstraintType, ObjectConstraintProcessor>();
+
+    public SchemaContext(Schema schema, SequencesManager sequencesManager,
+	    ObjectDataManagersRepository objectsManagersRepository, SchemaMetadataManager metadataManager) {
 	super();
-	this.schema=schema;
+	this.schema = schema;
 	this.sequencesManager = sequencesManager;
 	this.objectsManagersRepository = objectsManagersRepository;
-	this.transactionManagerFactory = transactionManagerFactory;
 	this.metadataManager = metadataManager;
     }
 
-
-    public long getNextValForSequence(String seqId) throws MdbException{
+    public long getNextValForSequence(String seqId) throws MdbException {
 	return sequencesManager.getNextValForSequence(seqId);
     }
-    
-    public <T> PersistentObjectDataManager<T> getObjectDataManager(Class<T> type, String objectName) throws MdbException{
+
+    public <T> PersistentObjectDataManager<T> getObjectDataManager(Class<T> type, String objectName)
+	    throws MdbException {
 	return objectsManagersRepository.getObjectDataManager(type, objectName);
     }
-    
-    public <T> PersistentObjectDataManager<T> getObjectDataManager(Class<T> type) throws MdbException{
+
+    public <T> PersistentObjectDataManager<T> getObjectDataManager(Class<T> type) throws MdbException {
 	return objectsManagersRepository.getObjectDataManager(type, type.getName());
     }
 
     public TransactionManager createTransactionManager() {
 	return transactionManagerFactory.getTransactionManager();
     }
-    
-    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type){
+
+    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type) {
 	return schema.getObjectDataModel(type);
     }
-    
+
     /**
      * @return the sequencesManager
      */
     public SequencesManager getSequencesManager() {
-        return sequencesManager;
+	return sequencesManager;
     }
-
 
     /**
      * @return the objectsManagersRepository
      */
     public ObjectDataManagersRepository getObjectsManagersRepository() {
-        return objectsManagersRepository;
+	return objectsManagersRepository;
     }
-
 
     /**
      * @return the transactionManagerFactory
      */
     public TransactionManagerFactory getTransactionManagerFactory() {
-        return transactionManagerFactory;
+	return transactionManagerFactory;
     }
-
 
     /**
      * @return the metadataManager
      */
     public SchemaMetadataManager getMetadataManager() {
-        return metadataManager;
+	return metadataManager;
     }
-
 
     /**
      * @return the schema
      */
     public Schema getSchema() {
-        return schema;
+	return schema;
     }
-
 
     public void addConstraintProcessor(ConstraintType constraintType, ObjectConstraintProcessor processor) {
 	constraintProcessors.put(constraintType, processor);
     }
-    
+
     public ObjectConstraintProcessor getConstraintProcessor(ConstraintType constraintType) {
 	return constraintProcessors.get(constraintType);
     }
-    
-    
+
+    /**
+     * @param transactionManagerFactory
+     *            the transactionManagerFactory to set
+     */
+    public void setTransactionManagerFactory(TransactionManagerFactory transactionManagerFactory) {
+	this.transactionManagerFactory = transactionManagerFactory;
+    }
+
 }

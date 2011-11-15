@@ -1,0 +1,5 @@
+#surefire
+#Tue Nov 15 16:01:24 EET 2011
+user.dir=/home/adi/workspace/projects/mdb-commons
+localRepository=/home/adi/.m2/repository
+basedir=/home/adi/workspace/projects/mdb-commons

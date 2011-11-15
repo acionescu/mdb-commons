@@ -67,6 +67,9 @@ public class TransactionManager {
 	
 	/* get the data for the main object */
 	Map<String,Object> valuesMap=odm.getDataMapFromString(data, null,"");
+	if(valuesMap==null) {
+	    return null;
+	}
 	
 	transactionContext.addPendingRow(objectName, rowId);
 	/* get the data for the single nested objects */
