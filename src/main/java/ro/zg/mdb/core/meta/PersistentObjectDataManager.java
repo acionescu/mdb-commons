@@ -551,7 +551,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    return null;
 	}
 	String indexPath = getIndexValuePath(uiv);
-	Collection<String> rowsIds = getRowsForValue(indexPath, uiv.getValue());
+	Collection<String> rowsIds = readIndexRows(indexPath, null);
 	int count = rowsIds.size();
 	if (count < 1) {
 	    return null;
@@ -561,11 +561,6 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	}
 	throw new MdbException(MdbErrorType.DUPLICATE_UNIQUE_VALUE, new GenericNameValue("index", uiv.getName()),
 		new GenericNameValue("value", uiv.getValue()));
-    }
-
-    protected Collection<String> getRowsForValue(String indexName, String value) throws MdbException {
-	String path = getPathForIndex(indexName, value);
-	return readIndexRows(path, null);
     }
 
     private String getPathForIndex(String indexName, String value) {
@@ -797,7 +792,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
 	for (String fieldName : targetFields) {
 	    FieldDataModel<?> fdm = objectDataModel.getField(fieldName);
-	    int position = fdm.getPosition();
+	    int position = objectDataModel.getFieldPosition(fieldName);
 	    String fieldData = "";
 
 	    Object fieldValue = newValuesMap.get(fieldName);
@@ -847,12 +842,13 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	for (UniqueIndex ui : touchedUniqueIndexes) {
 	    for (FieldDataModel<?> fdm : ui.getFields()) {
 		String uniqueIndexName = ui.getId();
-		int position = fdm.getPosition();
+		String fieldName = fdm.getName();
+		int position = objectDataModel.getFieldPosition(fieldName);
 		if (objectDataModel.getUniqueIndex(uniqueIndexName).isComposite()) {
 		    addUniqueIndex(uniqueIndexName, newData[position], uniqueValues);
 		    addUniqueIndex(uniqueIndexName, oldData[position], outdatedUniqueValues);
 		} else {
-		    String fieldName = fdm.getName();
+		    
 		    addUniqueIndex(fieldName, newData[position], uniqueValues);
 		    addUniqueIndex(fieldName, oldData[position], outdatedUniqueValues);
 		    /* remove unique indexes from regular indexes */
@@ -917,7 +913,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
 	for (FieldDataModel<?> fdm : objectDataModel.getIndexedFields()) {
 	    String fieldName = fdm.getName();
-	    int position = fdm.getPosition();
+	    int position = objectDataModel.getFieldPosition(fieldName);
 	    String fieldData = columns[position];
 
 	    indexedValues.put(fieldName, fieldData);

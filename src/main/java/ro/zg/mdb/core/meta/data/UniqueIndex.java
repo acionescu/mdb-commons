@@ -17,7 +17,7 @@ import java.util.Map;
 public class UniqueIndex {
 
     private String id;
-    private Map<String,FieldDataModel> fields = new LinkedHashMap<String,FieldDataModel>();
+    private Map<String,FieldDataModel<?>> fields = new LinkedHashMap<String,FieldDataModel<?>>();
 
     public UniqueIndex() {
 	super();
@@ -33,10 +33,10 @@ public class UniqueIndex {
     /**
      * @return the fields
      */
-    public Collection<FieldDataModel> getFields() {
+    public Collection<FieldDataModel<?>> getFields() {
 	return fields.values();
     }
-
+    
     /**
      * @param id
      *            the id to set
@@ -46,7 +46,7 @@ public class UniqueIndex {
     }
 
 
-    public void addField(FieldDataModel field) {
+    public void addField(FieldDataModel<?> field) {
 	String fieldName=field.getName();
 	if (!fields.containsKey(fieldName)) {
 	    fields.put(fieldName,field);

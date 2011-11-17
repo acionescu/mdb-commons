@@ -35,6 +35,7 @@ public abstract class FilteredCommandProcessor<T,R> implements CommandProcessor<
 
 	    if (filter.process(occ)) {
 		/* some indexes were hit */
+		occ.resolveNestedObjectContexts();
 		Set<String> allowed = occ.getAllowed();
 		Set<String> restricted = occ.getRestricted();
 		boolean isAllowed = false;

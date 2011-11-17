@@ -18,14 +18,11 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javax.lang.model.element.NestingKind;
-
 import ro.zg.commons.exceptions.ContextAwareException;
 import ro.zg.mdb.constants.Constants;
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
-import ro.zg.mdb.core.meta.TransactionContext;
 import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
 
@@ -40,6 +37,7 @@ public class ObjectDataModel<T> extends DataModel<T> {
     private Map<String, FieldDataModel<?>> fields = new LinkedHashMap<String, FieldDataModel<?>>();
     private Map<String, Integer> fieldsPositions = new HashMap<String, Integer>();
     private Set<FieldDataModel<?>> linkedFields = new LinkedHashSet<FieldDataModel<?>>();
+    private Set<FieldDataModel<?>> simpleFields = new LinkedHashSet<FieldDataModel<?>>();
 
     public ObjectDataModel(Class<T> type) {
 	super(type, true);
@@ -48,11 +46,14 @@ public class ObjectDataModel<T> extends DataModel<T> {
     public synchronized void addFieldDataModel(FieldDataModel<?> fdm) {
 	String fieldName = fdm.getName();
 	fields.put(fieldName, fdm);
-	int pos = fields.size() - 1;
-	fieldsPositions.put(fieldName, pos);
-	fdm.setPosition(pos);
+
 	if (fdm.getLinkModel() != null) {
 	    linkedFields.add(fdm);
+	} else {
+	    simpleFields.add(fdm);
+	    int pos = simpleFields.size() - 1;
+	    fieldsPositions.put(fieldName, pos);
+//	    fdm.setPosition(pos);
 	}
     }
 
@@ -69,15 +70,15 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	uniqueIndexes.put(uniqueIndex.getId(), uniqueIndex);
     }
 
-    public void addIndexedField(FieldDataModel fdm) {
+    public void addIndexedField(FieldDataModel<?> fdm) {
 	indexedFields.add(fdm);
     }
 
-    public void addPkField(FieldDataModel fdm) {
+    public void addPkField(FieldDataModel<?> fdm) {
 	addUniqueField(primaryKeyId, fdm);
     }
 
-    public void addUniqueField(String id, FieldDataModel fdm) {
+    public void addUniqueField(String id, FieldDataModel<?> fdm) {
 	UniqueIndex index = uniqueIndexes.get(id);
 	if (index == null) {
 	    index = new UniqueIndex();
@@ -116,26 +117,36 @@ public class ObjectDataModel<T> extends DataModel<T> {
      */
     public Map<String, FieldDataModel<?>> getNestedFieldsForFilter(Filter filter, String path) {
 	Map<String, FieldDataModel<?>> nestedFields = new HashMap<String, FieldDataModel<?>>();
-	Set<String> targetFields = filter.getTargetFields();
-	boolean targetFieldsEmpty = (targetFields == null || targetFields.isEmpty());
+//	Set<String> targetFields = filter.getTargetFields();
+//	boolean targetFieldsEmpty = (targetFields == null || targetFields.isEmpty());
+	boolean isMainField="".equals(path);
 	for (FieldDataModel<?> fdm : linkedFields) {
 	    if (fdm.getDataModel().isMultivalued()) {
 		continue;
 	    }
-	    boolean add = false;
-	    if (targetFieldsEmpty) {
-		if (!fdm.getLinkModel().isLazy()) {
-		    add = true;
-		}
-	    } else {
-		add = targetFields.contains(path + fdm.getName());
+//	    boolean add = false;
+//	    if (targetFieldsEmpty) {
+//		if (!fdm.getLinkModel().isLazy()) {
+//		    add = true;
+//		}
+//	    } else {
+//		add = targetFields.contains(path + fdm.getName());
+//	    }
+//
+//	    if (!add) {
+//		add = filter.getConstraintFields().contains(path + Constants.NESTED_FIELD_SEPARATOR + fdm.getName());
+//	    }
+//
+//	    if (add) {
+//		nestedFields.put(fdm.getName(), fdm);
+//	    }
+	    
+	    String fullFieldName=fdm.getName();
+	    if(!isMainField) {
+		fullFieldName=path+Constants.NESTED_FIELD_SEPARATOR+fullFieldName;
 	    }
-
-	    if (!add) {
-		add = filter.getConstraintFields().contains(path + Constants.NESTED_FIELD_SEPARATOR + fdm.getName());
-	    }
-
-	    if (add) {
+	    
+	    if(filter.isFieldNeeded(fullFieldName)) {
 		nestedFields.put(fdm.getName(), fdm);
 	    }
 	}
@@ -277,63 +288,69 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	return restored;
     }
 
-    public T getObjectFromValuesMap(Map<String, Object> valuesMap, Collection<String> targetFields, String path,
-	    TransactionContext transactionContext, String rowId) throws MdbException {
-	T restored = null;
-	try {
-	    restored = getType().newInstance();
-	} catch (Exception e) {
-	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR,
-		    new GenericNameValue("type", getType()));
-	}
-
-	transactionContext.addPendingObject(rowId, restored);
-
-	boolean targetFieldsExist = targetFields != null && !targetFields.isEmpty();
-	/* populate the object with the target values */
-	for (String fieldName : fields.keySet()) {
-	    String fullFieldName = path + fieldName;
-
-	    if (targetFieldsExist && !targetFields.contains(fullFieldName)) {
-		continue;
-	    }
-	    Object fieldValue = null;
-	    FieldDataModel<?> fdm = fields.get(fieldName);
-	    if (fdm.getDataModel().isMultivalued()) {
-		continue;
-	    }
-
-	    if (fdm.getLinkModel() != null) {
-		String nestedRowId = transactionContext.getRowIdForPendingField(fullFieldName);
-		fieldValue = transactionContext.getPendingObject(nestedRowId);
-		if (fieldValue == null) {
-		    fieldValue = getObjectFromValuesMap(valuesMap, targetFields, fullFieldName
-			    + Constants.NESTED_FIELD_SEPARATOR,transactionContext, nestedRowId);
-		}
-	    } else {
-		fieldValue = valuesMap.get(fullFieldName);
-	    }
-
-	    if (fieldValue != null) {
-		addValueToObject(restored, fdm, fieldValue);
-	    }
-
-	}
-	return restored;
-    }
+//    public T getObjectFromValuesMap(Map<String, Object> valuesMap, Collection<String> targetFields, String path,
+//	    TransactionContext transactionContext, String rowId) throws MdbException {
+//	T restored = null;
+//	try {
+//	    restored = getType().newInstance();
+//	} catch (Exception e) {
+//	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR,
+//		    new GenericNameValue("type", getType()));
+//	}
+//
+//	transactionContext.addPendingObject(rowId, restored);
+//
+//	boolean targetFieldsExist = targetFields != null && !targetFields.isEmpty();
+//	/* populate the object with the target values */
+//	for (String fieldName : fields.keySet()) {
+//	    String fullFieldName = path + fieldName;
+//
+//	    if (targetFieldsExist && !targetFields.contains(fullFieldName)) {
+//		continue;
+//	    }
+//	    Object fieldValue = null;
+//	    FieldDataModel<?> fdm = fields.get(fieldName);
+//	    if (fdm.getDataModel().isMultivalued()) {
+//		continue;
+//	    }
+//
+//	    if (fdm.getLinkModel() != null) {
+//		String nestedRowId = transactionContext.getRowIdForPendingField(fullFieldName);
+//		fieldValue = transactionContext.getPendingObject(nestedRowId);
+//		if (fieldValue == null) {
+//		    fieldValue = getObjectFromValuesMap(valuesMap, targetFields, fullFieldName
+//			    + Constants.NESTED_FIELD_SEPARATOR, transactionContext, nestedRowId);
+//		}
+//	    } else {
+//		fieldValue = valuesMap.get(fullFieldName);
+//	    }
+//
+//	    if (fieldValue != null) {
+//		addValueToObject(restored, fdm, fieldValue);
+//	    }
+//
+//	}
+//	return restored;
+//    }
 
     public Map<String, Object> getDataMapFromString(String data, Map<String, Object> valuesMap, String path)
 	    throws MdbException {
-	if(data==null) {
+	if (data == null) {
 	    return null;
 	}
 	if (valuesMap == null) {
 	    valuesMap = new HashMap<String, Object>();
 	}
 	String[] columns = data.split(Constants.COLUMN_SEPARATOR);
-	for (FieldDataModel<?> fdm : fields.values()) {
-	    String fieldName = fdm.getName();
-	    valuesMap.put(path + fieldName, getValueForField(fdm, columns));
+	for (FieldDataModel<?> fdm : simpleFields) {
+	    
+	    String fullFieldName = path + fdm.getName();
+	    try {
+		valuesMap.put(fullFieldName, getValueForField(fdm, columns));
+	    } catch (Exception e) {
+		throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR, new GenericNameValue(
+			"fullFieldName", fullFieldName));
+	    }
 	}
 	return valuesMap;
     }
@@ -353,12 +370,33 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	if (ui == null) {
 	    return null;
 	}
-	UniqueIndexValue uiv = new UniqueIndexValue(indexId);
+	if(ui.isComposite()) {
+	    return getCompositeUniqueIndexValue(ui, target);
+	}
+	return getSimpleUniqueIndexValue(ui, target);
+    }
+    
+    private UniqueIndexValue getCompositeUniqueIndexValue(UniqueIndex ui, T target) throws MdbException {
+	UniqueIndexValue uiv = new UniqueIndexValue(ui.getId());
 	for (FieldDataModel<?> fdm : ui.getFields()) {
 	    Object fieldValue = getValueForField(target, fdm.getName());
 	    if (fieldValue == null) {
 		return null;
 	    }
+	    uiv.addValue(fieldValue.toString());
+	}
+	return uiv;
+    }
+    
+    private UniqueIndexValue getSimpleUniqueIndexValue(UniqueIndex ui, T target) throws MdbException {
+	UniqueIndexValue uiv=null;
+	for (FieldDataModel<?> fdm : ui.getFields()) {
+	    String fieldName=fdm.getName();
+	    Object fieldValue = getValueForField(target, fieldName);
+	    if (fieldValue == null) {
+		return null;
+	    }
+	    uiv=new UniqueIndexValue(fdm.getName());
 	    uiv.addValue(fieldValue.toString());
 	}
 	return uiv;
@@ -391,7 +429,7 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	return getValueForField(fields.get(fieldName), columns);
     }
 
-    private boolean addValueToObject(Object target, FieldDataModel fdm, Object fieldValue) throws MdbException {
+    public boolean addValueToObject(Object target, FieldDataModel<?> fdm, Object fieldValue) throws MdbException {
 	String fieldName = fdm.getName();
 	try {
 	    ReflectionUtility.setValueToField(target, getType().getDeclaredField(fieldName), fieldValue);
@@ -500,6 +538,10 @@ public class ObjectDataModel<T> extends DataModel<T> {
      */
     public Map<String, Integer> getFieldsPositions() {
 	return fieldsPositions;
+    }
+    
+    public Integer getFieldPosition(String fieldName) {
+	return fieldsPositions.get(fieldName);
     }
 
     public void setFieldValue(Object target, String fieldName, String fieldValue) throws MdbException {

@@ -10,6 +10,7 @@
  ******************************************************************************/
 package ro.zg.mdb.test;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import junit.framework.Assert;
@@ -144,7 +145,45 @@ public class SchemaManagerTest {
 	User user1 = new User("user1","I'm not hiding","simple@mdb.com");
 	Entity post1=new Entity("test 1","let's see if we can save nested objects",user1);
 	
+	/* test create with inexistent nested object */
 	post1 = sm.createCommand(Entity.class).insert(post1).execute();
+	
+	Assert.assertEquals(1L, (long)post1.getId());
+	Assert.assertEquals(1L, (long)post1.getUser().getId());
+	
+	/* test successful search by nested field*/
+	Collection<Entity> afterSave1 = sm.createCommand(Entity.class).get().where().field("user.username").eq("user1").execute();
+	Assert.assertEquals(1, afterSave1.size());
+	Assert.assertEquals(post1, new ArrayList<Entity>(afterSave1).get(0));
+	
+	/* test successful filter out by nested field */
+	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.username").eq("user2").execute();
+	Assert.assertEquals(0, afterSave1.size());
+	
+	/* test successful search by nested object pk */
+	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(1L).execute();
+	Assert.assertEquals(1, afterSave1.size());
+	Assert.assertEquals(post1, new ArrayList<Entity>(afterSave1).get(0));
+	
+	/* test successful filter by nested object pk */
+	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(5L).execute();
+	Assert.assertEquals(0, afterSave1.size());
+	
+	/* test successful search by main object and nested object indexed fields */
+	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(1L).and().field("id").eq(1L).execute();
+	Assert.assertEquals(1, afterSave1.size());
+	Assert.assertEquals(post1, new ArrayList<Entity>(afterSave1).get(0));
+	
+	/* test successful filter by main or nested object indexed field */
+	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(1L).and().field("id").eq(5L).execute();
+	Assert.assertEquals(0, afterSave1.size());
+	
+	/* test create with existent nested object */
+	Entity post2=new Entity("second post", "Will test insert with existent neted object", user1);
+	
+	post2=sm.createCommand(Entity.class).insert(post2).execute();
+	Assert.assertEquals(1L, (long)post2.getUser().getId());
+	
 	
 	mpm.print(System.out);
     }

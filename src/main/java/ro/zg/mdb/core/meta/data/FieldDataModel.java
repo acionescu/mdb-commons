@@ -34,7 +34,6 @@ public class FieldDataModel<T> {
     private LinkModel linkModel;
     private String uniqueIndexId;
     private String sequenceId;
-    private int position = -1;
 
     public FieldDataModel(String name, DataModel<T> dataModel) {
 	this.name = name;
@@ -179,21 +178,6 @@ public class FieldDataModel<T> {
 	this.sequenceId = sequenceId;
     }
 
-    /**
-     * @return the position
-     */
-    public int getPosition() {
-	return position;
-    }
-
-    /**
-     * @param position
-     *            the position to set
-     */
-    public void setPosition(int position) {
-	this.position = position;
-    }
-
     public void testValue(Object value) throws MdbException {
 	if (required && value == null) {
 	    throw new MdbException(MdbErrorType.REQUIRED, new GenericNameValue(name, value));
@@ -230,9 +214,7 @@ public class FieldDataModel<T> {
 	this.implementation = implementation;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
+    /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -244,7 +226,6 @@ public class FieldDataModel<T> {
 	result = prime * result + (indexed ? 1231 : 1237);
 	result = prime * result + ((linkModel == null) ? 0 : linkModel.hashCode());
 	result = prime * result + ((name == null) ? 0 : name.hashCode());
-	result = prime * result + position;
 	result = prime * result + (primaryKey ? 1231 : 1237);
 	result = prime * result + (required ? 1231 : 1237);
 	result = prime * result + ((sequenceId == null) ? 0 : sequenceId.hashCode());
@@ -252,9 +233,7 @@ public class FieldDataModel<T> {
 	return result;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
+    /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -288,8 +267,6 @@ public class FieldDataModel<T> {
 		return false;
 	} else if (!name.equals(other.name))
 	    return false;
-	if (position != other.position)
-	    return false;
 	if (primaryKey != other.primaryKey)
 	    return false;
 	if (required != other.required)
@@ -307,17 +284,14 @@ public class FieldDataModel<T> {
 	return true;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
+    /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
     @Override
     public String toString() {
 	return "FieldDataModel [name=" + name + ", dataModel=" + dataModel + ", implementation=" + implementation
 		+ ", required=" + required + ", primaryKey=" + primaryKey + ", indexed=" + indexed + ", linkModel="
-		+ linkModel + ", uniqueIndexId=" + uniqueIndexId + ", sequenceId=" + sequenceId + ", position="
-		+ position + "]";
+		+ linkModel + ", uniqueIndexId=" + uniqueIndexId + ", sequenceId=" + sequenceId + "]";
     }
 
 }

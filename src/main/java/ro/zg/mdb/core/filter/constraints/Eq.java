@@ -30,7 +30,7 @@ public class Eq<T> implements Constraint<T> {
     }
 
     @Override
-    public boolean isPossible(FieldDataModel fieldDataModel) {
+    public boolean isPossible(FieldDataModel<?> fieldDataModel) {
 	return true;
     }
 
@@ -42,7 +42,7 @@ public class Eq<T> implements Constraint<T> {
     }
 
     @Override
-    public boolean process(FieldConstraintContext context) {
+    public boolean process(FieldConstraintContext<?> context) {
 	context.addValue(expected);
 	return true;
     }

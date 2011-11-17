@@ -56,6 +56,7 @@ public class ObjectConstraintContext<T> {
     private ObjectConstraintContext(String fieldName, ObjectDataModel<T> objectDataModel,
 	    TransactionManager transactionManager, ObjectConstraintContext<?> parentContext) {
 	this.objectDataModel = objectDataModel;
+	this.transactionManager=transactionManager;
 	this.objectName = objectDataModel.getTypeName();
 	this.type = objectDataModel.getType();
 	this.parentContext = parentContext;
@@ -134,6 +135,12 @@ public class ObjectConstraintContext<T> {
 	return transactionManager.processConstraint(ConstraintType.OR, this);
     }
 
+    public void resolveNestedObjectContexts() throws MdbException {
+	for(ObjectConstraintContext<?> nestedContext : nestedObjectContexts.values()) {
+	    nestedContext.resolveNestedObjectContexts();
+	    extractRowsFromNested(nestedContext);
+	}
+    }
     
 
     public boolean extractRowsFromNested(ObjectConstraintContext<?> nestedContext) throws MdbException {

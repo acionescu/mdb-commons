@@ -60,85 +60,84 @@ public class TransactionManager {
 	schemaContext.getMetadataManager().saveLink(linkName, link);
     }
 
-    public <T> T buildObject(String objectName,ObjectDataModel<T> odm, String data, Filter filter, String rowId) throws MdbException {
-//	T object = odm.getObjectFromString(data, filter);
-//	populateLinkFields(object, odm, filter, rowId);
-//	return object;
-	
+    public <T> T buildObject(String objectName, ObjectDataModel<T> odm, String data, Filter filter, String rowId)
+	    throws MdbException {
+	// T object = odm.getObjectFromString(data, filter);
+	// populateLinkFields(object, odm, filter, rowId);
+	// return object;
+
 	/* get the data for the main object */
-	Map<String,Object> valuesMap=odm.getDataMapFromString(data, null,"");
-	if(valuesMap==null) {
+	Map<String, Object> valuesMap = odm.getDataMapFromString(data, null, "");
+	if (valuesMap == null) {
 	    return null;
 	}
-	
+
 	transactionContext.addPendingRow(objectName, rowId);
 	/* get the data for the single nested objects */
 	getNestedObjectsData(odm, filter, rowId, valuesMap, "");
 	/* check if the filter is satisfied */
-	if(!filter.isSatisfied(valuesMap)) {
+	if (!filter.isSatisfied(valuesMap)) {
 	    transactionContext.removePendingRow(objectName, rowId);
 	    return null;
 	}
-	
-	T object = odm.getObjectFromValuesMap(valuesMap, filter.getTargetFields(), "",transactionContext,rowId);
+
+	T object = getObjectFromValuesMap(odm.getType(), valuesMap, filter.getTargetFields(), "", rowId);
 	populateMultivaluedLinkFields(object, odm, filter, rowId, "");
-	
+
 	return object;
     }
 
-    private <T> void getNestedObjectsData(ObjectDataModel<T> odm, Filter filter, String rowId, Map<String,Object> valuesMap, String path) throws MdbException {
-	Map<String, FieldDataModel<?>> nestedFields=odm.getNestedFieldsForFilter(filter, path);
+    private <T> void getNestedObjectsData(ObjectDataModel<T> odm, Filter filter, String rowId,
+	    Map<String, Object> valuesMap, String path) throws MdbException {
+	Map<String, FieldDataModel<?>> nestedFields = odm.getNestedFieldsForFilter(filter, path);
 	/* iterate over the nested fields and get data if a link exists */
-	for(FieldDataModel<?> fdm : nestedFields.values()) {
+	for (FieldDataModel<?> fdm : nestedFields.values()) {
 	    LinkModel lm = fdm.getLinkModel();
 	    /* check for a link */
-	    Collection<ObjectsLink> links=getObjectLinks(lm, rowId, false);
-	    
-	    if(links.size() == 1) {
-		String fullFieldName=path+fdm.getName();
+	    Collection<ObjectsLink> links = getObjectLinks(lm, rowId, false);
+
+	    if (links.size() == 1) {
+		String fullFieldName = path + fdm.getName();
 		/* if link exists get the nested object row id */
 		String nestedRowId = new ArrayList<ObjectsLink>(links).get(0).getRowId(!lm.isFirst());
 		transactionContext.addPendingField(fullFieldName, nestedRowId);
 		/* if this row is already pending skip processing */
-		if(transactionContext.isRowPending(odm.getTypeName(), nestedRowId)) {
+		if (transactionContext.isRowPending(odm.getTypeName(), nestedRowId)) {
 		    continue;
 		}
 		transactionContext.addPendingRow(odm.getTypeName(), nestedRowId);
-		
-		ObjectDataModel<?> fieldDataModel=(ObjectDataModel<?>)fdm.getDataModel();
+
+		ObjectDataModel<?> fieldDataModel = (ObjectDataModel<?>) fdm.getDataModel();
 		/* get the object data for the row id */
-		String nestedData=getDataForRowId(fieldDataModel, nestedRowId);
-		
-		
-		String newPath=fullFieldName+Constants.NESTED_FIELD_SEPARATOR;
+		String nestedData = getDataForRowId(fieldDataModel, nestedRowId);
+
+		String newPath = fullFieldName + Constants.NESTED_FIELD_SEPARATOR;
 		/* add object values to the values map */
-		fieldDataModel.getDataMapFromString(nestedData, valuesMap,newPath);
+		fieldDataModel.getDataMapFromString(nestedData, valuesMap, newPath);
 		/* do the same for any nested fields that this object might have */
 		getNestedObjectsData(fieldDataModel, filter, nestedRowId, valuesMap, newPath);
-		
-	    }
-	    else if(links.size() > 1) {
-		throw new MdbException(MdbErrorType.ONE_TO_ONE_VIOLATED, new GenericNameValue("links",links));
+
+	    } else if (links.size() > 1) {
+		throw new MdbException(MdbErrorType.ONE_TO_ONE_VIOLATED, new GenericNameValue("links", links));
 	    }
 	}
     }
-    
-    
+
     private String getDataForRowId(ObjectDataModel<?> odm, String rowId) throws MdbException {
 	return getObjectDataManager(odm.getTypeName(), odm.getType()).readData(rowId);
     }
-    
+
     public Collection<ObjectsLink> getObjectLinks(LinkModel linkModel, String rowId, boolean reversed)
 	    throws MdbException {
 	return schemaContext.getMetadataManager().getObjectLinks(linkModel, rowId, reversed);
     }
-    
-    private <T> void populateMultivaluedLinkFields( T target, ObjectDataModel<T> odm, Filter filter, String rowId,String path)
-	    throws MdbException {
-//	SchemaMetadataManager smm = schemaContext.getMetadataManager();
 
-	Map<String,FieldDataModel<?>> nestedFields = odm.getMultivaluedNestedFieldsForFilter(filter, path);
-	
+    private <T> void populateMultivaluedLinkFields(T target, ObjectDataModel<T> odm, Filter filter, String rowId,
+	    String path) throws MdbException {
+	// SchemaMetadataManager smm = schemaContext.getMetadataManager();
+
+	Map<String, FieldDataModel<?>> nestedFields = odm.getMultivaluedNestedFieldsForFilter(filter, path);
+
 	/* iterate over link fields and check to see if any links exists */
 	for (FieldDataModel<?> fdm : nestedFields.values()) {
 	    String fieldName = fdm.getName();
@@ -147,22 +146,22 @@ public class TransactionManager {
 	    if (lm.isLazy() && !filter.isTargetFieldPresent(fieldName)) {
 		continue;
 	    }
-	    Collection<ObjectsLink> links = getObjectLinks(lm, rowId,false);
+	    Collection<ObjectsLink> links = getObjectLinks(lm, rowId, false);
 	    Collection<String> linkRowsIds = ObjectsLinkUtil.getRows(links, !lm.isFirst());
 
-//	    Collection<?> linkValues = schemaContext.getObjectDataManager(fdm.getType()).readObjects(linkRowsIds,
-//		    new Filter(), this, new ArrayList());
-//
-//	    odm.populateComplexFields(target, fieldName, linkValues);
-	    
-	    Collection<Object> values=new HashSet<Object>();
-	    
-	    ObjectDataModel<?> fieldDataModel=(ObjectDataModel<?>)fdm.getDataModel();
-	    for(String nesteRowId : linkRowsIds) {
+	    // Collection<?> linkValues = schemaContext.getObjectDataManager(fdm.getType()).readObjects(linkRowsIds,
+	    // new Filter(), this, new ArrayList());
+	    //
+	    // odm.populateComplexFields(target, fieldName, linkValues);
+
+	    Collection<Object> values = new HashSet<Object>();
+
+	    ObjectDataModel<?> fieldDataModel = (ObjectDataModel<?>) fdm.getDataModel();
+	    for (String nesteRowId : linkRowsIds) {
 		String rowData = getDataForRowId(fieldDataModel, nesteRowId);
 		values.add(buildObject(fieldDataModel.getTypeName(), fieldDataModel, rowData, filter, nesteRowId));
 	    }
-	    
+
 	    odm.populateComplexFields(target, fieldName, values);
 	}
     }
@@ -176,6 +175,55 @@ public class TransactionManager {
 	}
 	return odm.getObjectContext(object, create, this);
     }
+
+    public <T> T getObjectFromValuesMap(Class<T> type, Map<String, Object> valuesMap, Collection<String> targetFields,
+	    String path, String rowId) throws MdbException {
+	ObjectDataModel<T> odm = getObjectDataModel(type);
+	
+	T restored = null;
+	try {
+	    restored = odm.getType().newInstance();
+	} catch (Exception e) {
+	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR,
+		    new GenericNameValue("type", odm.getType()));
+	}
+
+	transactionContext.addPendingObject(rowId, restored);
+
+	boolean targetFieldsExist = targetFields != null && !targetFields.isEmpty();
+	/* populate the object with the target values */
+	
+	for (FieldDataModel<?> fdm : odm.getFields().values()) {
+	    String fieldName=fdm.getName();
+	    String fullFieldName = path + fieldName;
+
+	    if (targetFieldsExist && !targetFields.contains(fullFieldName)) {
+		continue;
+	    }
+	    Object fieldValue = null;
+	    if (fdm.getDataModel().isMultivalued()) {
+		continue;
+	    }
+
+	    if (fdm.getLinkModel() != null) {
+		String nestedRowId = transactionContext.getRowIdForPendingField(fullFieldName);
+		fieldValue = transactionContext.getPendingObject(nestedRowId);
+		if (fieldValue == null) {
+		    fieldValue = getObjectFromValuesMap(fdm.getType(), valuesMap, targetFields, fullFieldName
+			    + Constants.NESTED_FIELD_SEPARATOR, nestedRowId);
+		}
+	    } else {
+		fieldValue = valuesMap.get(fullFieldName);
+	    }
+
+	    if (fieldValue != null) {
+		odm.addValueToObject(restored, fdm, fieldValue);
+	    }
+
+	}
+	return restored;
+    }
+    
 
     public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type) {
 	return schemaContext.getObjectDataModel(type);
@@ -261,7 +309,7 @@ public class TransactionManager {
 	PersistentObjectDataManager<T> odm = getObjectDataManager(objectName, type);
 	return odm.create(target, this);
     }
-    
+
     public boolean processConstraint(ConstraintType constraintType, ObjectConstraintContext<?> occ) throws MdbException {
 	return schemaContext.getConstraintProcessor(constraintType).apply(occ);
     }
