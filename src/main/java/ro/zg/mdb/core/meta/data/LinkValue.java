@@ -8,19 +8,32 @@
  * Contributors:
  *     Adrian Cristian Ionescu - initial API and implementation
  ******************************************************************************/
-package ro.zg.mdb.core.schema;
+package ro.zg.mdb.core.meta.data;
 
-import ro.zg.mdb.core.annotations.PrimaryKey;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
-
-public class PrimaryKeyMapper extends ObjectDataModelAnnotationMapper<PrimaryKey>{
-
-    @Override
-    public void map(ObjectDataModelAnnotationMapperContext<PrimaryKey> amc) {
-	FieldDataModel fdm = amc.getFieldDataModel();
-	amc.getObjectDataModel().addPkField(fdm);
-	fdm.setPrimaryKey(true);
-	fdm.setUniqueIndexId(amc.getObjectDataModel().getPrimaryKeyId());
+public class LinkValue {
+    private String linkName;
+    private ObjectsLink link;
+    
+    
+    public LinkValue(String linkName, ObjectsLink link) {
+	super();
+	this.linkName = linkName;
+	this.link = link;
     }
-
+    /**
+     * @return the linkName
+     */
+    public String getLinkName() {
+        return linkName;
+    }
+    /**
+     * @return the link
+     */
+    public ObjectsLink getLink() {
+        return link;
+    }
+    
+    
+    
+    
 }

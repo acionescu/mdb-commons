@@ -41,6 +41,20 @@ public class SchemaMetadataManager extends PersistentDataManager {
     public ObjectsLink saveLink(String linkName, ObjectsLink link) throws MdbException {
 	return linksSchema.createCommand(ObjectsLink.class, linkName).insert(link).execute();
     }
+    
+    public long deleteLink(String linkName, ObjectsLink link) throws MdbException {
+	return linksSchema.createCommand(ObjectsLink.class,linkName).delete().where().field("id").eq(link.getId()).execute();
+    }
+    
+    public long deleteLinks(String linkName, String rowId, boolean isFirst) throws MdbException {
+	String queryField = null;
+	if (isFirst) {
+	    queryField = "firstRowId";
+	} else {
+	    queryField = "secondRowId";
+	}
+	return linksSchema.createCommand(ObjectsLink.class,linkName).delete().where().field(queryField).eq(rowId).execute();
+    }
 
     public Collection<ObjectsLink> getObjectLinks(LinkModel linkModel, String rowId, boolean reversed)
 	    throws MdbException {

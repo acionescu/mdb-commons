@@ -11,13 +11,13 @@
 package ro.zg.mdb.core.meta.data;
 
 import ro.zg.mdb.core.annotations.Persistable;
-import ro.zg.mdb.core.annotations.PrimaryKey;
+import ro.zg.mdb.core.annotations.ObjectId;
 
 @Persistable
 public class ObjectsLink {
-    @PrimaryKey
+    @ObjectId
+    private String id;
     private String firstRowId;
-    @PrimaryKey
     private String secondRowId;
     /**
      * @return the firstRowId
@@ -51,6 +51,23 @@ public class ObjectsLink {
     public void setSecondRowId(String secondRowId) {
         this.secondRowId = secondRowId;
     }
+    
+    
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
+    /**
+     * @param id the id to set
+     */
+    public void setId(String id) {
+        this.id = id;
+    }
+    
+    
+    
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
@@ -59,6 +76,7 @@ public class ObjectsLink {
 	final int prime = 31;
 	int result = 1;
 	result = prime * result + ((firstRowId == null) ? 0 : firstRowId.hashCode());
+	result = prime * result + ((id == null) ? 0 : id.hashCode());
 	result = prime * result + ((secondRowId == null) ? 0 : secondRowId.hashCode());
 	return result;
     }
@@ -78,6 +96,11 @@ public class ObjectsLink {
 	    if (other.firstRowId != null)
 		return false;
 	} else if (!firstRowId.equals(other.firstRowId))
+	    return false;
+	if (id == null) {
+	    if (other.id != null)
+		return false;
+	} else if (!id.equals(other.id))
 	    return false;
 	if (secondRowId == null) {
 	    if (other.secondRowId != null)

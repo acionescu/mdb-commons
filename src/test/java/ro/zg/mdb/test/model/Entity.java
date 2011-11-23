@@ -11,15 +11,13 @@
 package ro.zg.mdb.test.model;
 
 import ro.zg.mdb.core.annotations.Link;
+import ro.zg.mdb.core.annotations.ObjectId;
 import ro.zg.mdb.core.annotations.Persistable;
-import ro.zg.mdb.core.annotations.PrimaryKey;
-import ro.zg.mdb.core.annotations.Sequenced;
 
 @Persistable
 public class Entity {
-    @PrimaryKey
-    @Sequenced(id="EntitySeq")
-    private Long id;
+    @ObjectId
+    private String id;
     private String title;
     private String message;
     @Link(name="entities_users",first=true)
@@ -38,12 +36,23 @@ public class Entity {
     }
     
     
+    
     /**
      * @return the id
      */
-    public Long getId() {
+    public String getId() {
         return id;
     }
+
+
+    /**
+     * @param id the id to set
+     */
+    public void setId(String id) {
+        this.id = id;
+    }
+
+
     /**
      * @return the title
      */
@@ -56,12 +65,7 @@ public class Entity {
     public String getMessage() {
         return message;
     }
-    /**
-     * @param id the id to set
-     */
-    public void setId(Long id) {
-        this.id = id;
-    }
+   
     /**
      * @param title the title to set
      */

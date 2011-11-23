@@ -11,14 +11,19 @@
 package ro.zg.mdb.core.schema;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import ro.zg.mdb.core.concurrency.ResourceLock;
+import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.mdb.core.meta.data.LinkValue;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 import ro.zg.mdb.core.meta.data.Row;
 import ro.zg.mdb.core.meta.data.UniqueIndexValue;
 
 public class ObjectContext<T> {
+    private T target;
     private ResourceLock rowLock;
     private ObjectDataModel<T> objectDataModel;
     private Map<String, String> indexedValues;
@@ -39,10 +44,12 @@ public class ObjectContext<T> {
      * used to handle links
      */
     private Map<String,ObjectContext<?>> nestedObjectContexts=new HashMap<String, ObjectContext<?>>();
+    private Set<LinkValue> linksToAdd=new HashSet<LinkValue>();
+    private Set<LinkValue> linksToRemove=new HashSet<LinkValue>();
     
     public ObjectContext(ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
 	    Map<String, UniqueIndexValue> uniqueValues, Map<String, String> oldIndexedValues,
-	    Map<String, UniqueIndexValue> oldUniqueValues, String rowId) {
+	    Map<String, UniqueIndexValue> oldUniqueValues, String rowId, Map<String, ObjectContext<?>> nestedContexts, Set<LinkValue> linksToRemove, Set<LinkValue> linksToAdd) {
 	super();
 	this.objectDataModel = objectDataModel;
 	this.data = data;
@@ -53,12 +60,16 @@ public class ObjectContext<T> {
 	this.rowInfo=new Row(rowId);
 	this.alreadyCreated=true;
 	this.objectName=objectDataModel.getTypeName();
+	this.nestedObjectContexts=nestedContexts;
+	this.linksToRemove=linksToRemove;
+	this.linksToAdd=linksToAdd;
     }
 
 
-    public ObjectContext(ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
+    public ObjectContext(T target, ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
 	    Map<String, UniqueIndexValue> uniqueValues, Map<String, ObjectContext<?>> nestedContexts) {
 	super();
+	this.target=target;
 	this.objectDataModel = objectDataModel;
 	this.data = data;
 	this.indexedValues = indexedValues;
@@ -85,14 +96,15 @@ public class ObjectContext<T> {
 	this.objectName=objectDataModel.getTypeName();
     }
     
+    public void updateObjectId() throws MdbException {
+	objectDataModel.setObjectId(target, getRowId());
+    }
+    
+    
     public void addNestedObjectContext(String fieldName, ObjectContext<?> oc) {
 	nestedObjectContexts.put(fieldName, oc);
     }
     
-    public UniqueIndexValue getPkValue() {
-	return uniqueValues.get(objectDataModel.getPrimaryKeyId());
-    }
-
     /**
      * @return the indexedValues
      */
@@ -223,7 +235,28 @@ public class ObjectContext<T> {
     }
     
     public String getRowId() {
-	return rowInfo.getRowId();
+	return rowInfo.getHash();
     }
+    
+    public boolean isUpdated() {
+	return data != null;
+    }
+
+
+    /**
+     * @return the linksToAdd
+     */
+    public Set<LinkValue> getLinksToAdd() {
+        return linksToAdd;
+    }
+
+
+    /**
+     * @return the linksToRemove
+     */
+    public Set<LinkValue> getLinksToRemove() {
+        return linksToRemove;
+    }
+    
     
 }

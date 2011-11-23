@@ -29,7 +29,7 @@ public class FieldDataModel<T> {
     private DataModel<T> dataModel;
     private DataModel<T> implementation;
     private boolean required;
-    private boolean primaryKey;
+    private boolean objectId;
     private boolean indexed;
     private LinkModel linkModel;
     private String uniqueIndexId;
@@ -104,12 +104,6 @@ public class FieldDataModel<T> {
 	return required;
     }
 
-    /**
-     * @return the primaryKey
-     */
-    public boolean isPrimaryKey() {
-	return primaryKey;
-    }
 
     /**
      * @return the indexed
@@ -126,17 +120,7 @@ public class FieldDataModel<T> {
 	this.required = required;
     }
 
-    /**
-     * @param primaryKey
-     *            the primaryKey to set
-     */
-    public void setPrimaryKey(boolean primaryKey) {
-	this.primaryKey = primaryKey;
-	if (primaryKey == true) {
-	    this.required = true;
-	    this.indexed = true;
-	}
-    }
+    
 
     /**
      * @return the uniqueIndexId
@@ -177,6 +161,21 @@ public class FieldDataModel<T> {
     public void setSequenceId(String sequenceId) {
 	this.sequenceId = sequenceId;
     }
+    
+
+    /**
+     * @return the objectId
+     */
+    public boolean isObjectId() {
+        return objectId;
+    }
+
+    /**
+     * @param objectId the objectId to set
+     */
+    public void setObjectId(boolean objectId) {
+        this.objectId = objectId;
+    }
 
     public void testValue(Object value) throws MdbException {
 	if (required && value == null) {
@@ -197,6 +196,11 @@ public class FieldDataModel<T> {
      */
     public void setLinkModel(LinkModel linkModel) {
 	this.linkModel = linkModel;
+	/* if this is a direct link ( linkModel.first is true ) , add a reference on the data model of the field */
+	if(linkModel.isFirst()) {
+	    ObjectDataModel<T> fodm = (ObjectDataModel<T>)getDataModel();
+	    fodm.addReference(linkModel);
+	}
     }
 
     /**
@@ -226,7 +230,7 @@ public class FieldDataModel<T> {
 	result = prime * result + (indexed ? 1231 : 1237);
 	result = prime * result + ((linkModel == null) ? 0 : linkModel.hashCode());
 	result = prime * result + ((name == null) ? 0 : name.hashCode());
-	result = prime * result + (primaryKey ? 1231 : 1237);
+	result = prime * result + (objectId ? 1231 : 1237);
 	result = prime * result + (required ? 1231 : 1237);
 	result = prime * result + ((sequenceId == null) ? 0 : sequenceId.hashCode());
 	result = prime * result + ((uniqueIndexId == null) ? 0 : uniqueIndexId.hashCode());
@@ -267,7 +271,7 @@ public class FieldDataModel<T> {
 		return false;
 	} else if (!name.equals(other.name))
 	    return false;
-	if (primaryKey != other.primaryKey)
+	if (objectId != other.objectId)
 	    return false;
 	if (required != other.required)
 	    return false;
@@ -290,7 +294,7 @@ public class FieldDataModel<T> {
     @Override
     public String toString() {
 	return "FieldDataModel [name=" + name + ", dataModel=" + dataModel + ", implementation=" + implementation
-		+ ", required=" + required + ", primaryKey=" + primaryKey + ", indexed=" + indexed + ", linkModel="
+		+ ", required=" + required + ", objectId=" + objectId + ", indexed=" + indexed + ", linkModel="
 		+ linkModel + ", uniqueIndexId=" + uniqueIndexId + ", sequenceId=" + sequenceId + "]";
     }
 

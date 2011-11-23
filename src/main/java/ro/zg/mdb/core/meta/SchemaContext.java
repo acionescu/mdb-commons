@@ -53,7 +53,7 @@ public class SchemaContext {
 	return transactionManagerFactory.getTransactionManager();
     }
 
-    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type) {
+    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type) throws MdbException {
 	return schema.getObjectDataModel(type);
     }
 

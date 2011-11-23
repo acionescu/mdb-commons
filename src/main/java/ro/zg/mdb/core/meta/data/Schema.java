@@ -16,11 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import ro.zg.mdb.core.annotations.Link;
-import ro.zg.mdb.core.annotations.Indexed;
-import ro.zg.mdb.core.annotations.PrimaryKey;
-import ro.zg.mdb.core.annotations.Required;
-import ro.zg.mdb.core.annotations.Unique;
+import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.schema.AnnotationMappersManager;
 import ro.zg.mdb.core.schema.ObjectDataModelAnnotationMapperContext;
 import ro.zg.util.data.reflection.ReflectionUtility;
@@ -45,11 +41,11 @@ public class Schema {
     // return (T)odm.getObjectFromString(data,filter);
     // }
     
-    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type){
+    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type) throws MdbException{
 	return (ObjectDataModel<T>)getDataModel(type);
     }
 
-    private <T> DataModel<T> getDataModel(Class<T> type) {
+    private <T> DataModel<T> getDataModel(Class<T> type) throws MdbException {
 	DataModel<T> odm = (DataModel<T>) objectsModels.get(type);
 	if (odm == null) {
 	    if (config.isAutomaticObjectModelCreationOn()) {
@@ -67,11 +63,11 @@ public class Schema {
     }
 
 //    public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) {
-//	return createObjectDataModel(type, PrimaryKey.class, Unique.class, Link.class, Required.class,
+//	return createObjectDataModel(type, ObjectId.class, Unique.class, Link.class, Required.class,
 //		Indexed.class);
 //    }
 
-    public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) {
+    public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) throws MdbException {
 	Set<Class<? extends Annotation>> annotationTypes=annotationMappersManager.getKnownAnnotations();
 	ObjectDataModel<T> odm = new ObjectDataModel<T>(type);
 	Class<?> currentType=type;

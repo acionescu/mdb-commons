@@ -27,7 +27,7 @@ import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
 
 public class ObjectDataModel<T> extends DataModel<T> {
-    private String primaryKeyId = Constants.DEFAULT_PRIMARY_KEY_ID;
+    private FieldDataModel<String> objectIdField;
     private Set<FieldDataModel<?>> requiredFields = new HashSet<FieldDataModel<?>>();
     private Map<String, UniqueIndex> uniqueIndexes = new HashMap<String, UniqueIndex>();
     private Set<FieldDataModel<?>> indexedFields = new LinkedHashSet<FieldDataModel<?>>();
@@ -38,6 +38,8 @@ public class ObjectDataModel<T> extends DataModel<T> {
     private Map<String, Integer> fieldsPositions = new HashMap<String, Integer>();
     private Set<FieldDataModel<?>> linkedFields = new LinkedHashSet<FieldDataModel<?>>();
     private Set<FieldDataModel<?>> simpleFields = new LinkedHashSet<FieldDataModel<?>>();
+    
+    private Set<LinkModel> references=new HashSet<LinkModel>();
 
     public ObjectDataModel(Class<T> type) {
 	super(type, true);
@@ -50,6 +52,9 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	if (fdm.getLinkModel() != null) {
 	    linkedFields.add(fdm);
 	} else {
+	    if(fieldName.equals(getObjectIdFieldName())) {
+		return;
+	    }
 	    simpleFields.add(fdm);
 	    int pos = simpleFields.size() - 1;
 	    fieldsPositions.put(fieldName, pos);
@@ -61,10 +66,6 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	requiredFields.add(fdm);
     }
 
-    public void setPrimaryKey(UniqueIndex pk) {
-	primaryKeyId = pk.getId();
-	uniqueIndexes.put(primaryKeyId, pk);
-    }
 
     public void addUniqueIndex(UniqueIndex uniqueIndex) {
 	uniqueIndexes.put(uniqueIndex.getId(), uniqueIndex);
@@ -74,9 +75,6 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	indexedFields.add(fdm);
     }
 
-    public void addPkField(FieldDataModel<?> fdm) {
-	addUniqueField(primaryKeyId, fdm);
-    }
 
     public void addUniqueField(String id, FieldDataModel<?> fdm) {
 	UniqueIndex index = uniqueIndexes.get(id);
@@ -88,6 +86,10 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	index.addField(fdm);
 	requiredFields.add(fdm);
 	addIndexedField(fdm);
+    }
+    
+    public void addReference(LinkModel linkModel) {
+	references.add(linkModel);
     }
 
     /**
@@ -106,6 +108,12 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	    return (ObjectDataModel<?>) dm;
 	}
 	return null;
+    }
+    
+    public void setObjectId(T target, String id) throws MdbException {
+	if(objectIdField != null) {
+	    setFieldValue(target, objectIdField.getName(), id);
+	}
     }
 
     /**
@@ -219,9 +227,6 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	return null;
     }
 
-    public UniqueIndex getPrimaryKey() {
-	return uniqueIndexes.get(primaryKeyId);
-    }
 
     /**
      * @return the uniqueIndexes
@@ -234,11 +239,33 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	return uniqueIndexes.get(id);
     }
 
+
     /**
-     * @return the primaryKeyId
+     * @return the references
      */
-    public String getPrimaryKeyId() {
-	return primaryKeyId;
+    public Set<LinkModel> getReferences() {
+        return references;
+    }
+
+    /**
+     * @return the objectIdField
+     */
+    public FieldDataModel<String> getObjectIdField() {
+        return objectIdField;
+    }
+    
+    public String getObjectIdFieldName() {
+	if(objectIdField != null) {
+	    return objectIdField.getName();
+	}
+	return null;
+    }
+
+    /**
+     * @param objectIdField the objectIdField to set
+     */
+    public void setObjectIdField(FieldDataModel<String> objectIdField) {
+        this.objectIdField = objectIdField;
     }
 
     public T getObjectFromString(String data, Filter filter) throws MdbException {
@@ -274,7 +301,7 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	/* populate the object with the target values */
 	for (String fieldName : targetFields) {
 	    Object fieldValue = null;
-	    FieldDataModel fdm = fields.get(fieldName);
+	    FieldDataModel<?> fdm = fields.get(fieldName);
 	    if (hasConstraints && constrainedFields.contains(fieldName)) {
 		fieldValue = valuesMap.get(fieldName);
 	    } else {
@@ -287,6 +314,8 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	}
 	return restored;
     }
+    
+    
 
 //    public T getObjectFromValuesMap(Map<String, Object> valuesMap, Collection<String> targetFields, String path,
 //	    TransactionContext transactionContext, String rowId) throws MdbException {
@@ -364,7 +393,14 @@ public class ObjectDataModel<T> extends DataModel<T> {
 		    new GenericNameValue("value", value));
 	}
     }
-
+    
+    public String getObjectId(Object object) throws MdbException {
+	if(objectIdField == null) {
+	    return null;
+	}
+	return (String)getValueForField((T)object, objectIdField.getName());
+    }
+    
     public UniqueIndexValue getUniqueIndexValue(T target, String indexId) throws MdbException {
 	UniqueIndex ui = getUniqueIndex(indexId);
 	if (ui == null) {
@@ -439,6 +475,7 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	}
 	return true;
     }
+    
 
     // public ObjectContext getObjectContext(Object target) throws ObjectDataException {
     // Map<String, Object> valuesMap = getFieldValuesMap(target);
@@ -506,6 +543,13 @@ public class ObjectDataModel<T> extends DataModel<T> {
     // newValue += value;
     // uniqueIndexesValues.put(indexId, newValue);
     // }
+
+    /**
+     * @return the simpleFields
+     */
+    public Set<FieldDataModel<?>> getSimpleFields() {
+        return simpleFields;
+    }
 
     public Map<String, Object> getFieldValuesMap(T target) throws MdbException {
 	Map<String, Object> valuesMap = new HashMap<String, Object>();

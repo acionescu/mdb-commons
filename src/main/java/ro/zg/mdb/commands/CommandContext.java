@@ -10,6 +10,7 @@
  ******************************************************************************/
 package ro.zg.mdb.commands;
 
+import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
 import ro.zg.mdb.core.meta.TransactionManager;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
@@ -47,7 +48,7 @@ public class CommandContext<T> {
 	this.transactionManager = transactionManager;
     }
 
-    public ObjectDataModel<T> getObjectDataModel() {
+    public ObjectDataModel<T> getObjectDataModel() throws MdbException {
 	return transactionManager.getObjectDataModel(type);
     }
 

@@ -11,63 +11,55 @@
 package ro.zg.mdb.core.meta.data;
 
 import ro.zg.mdb.core.annotations.Persistable;
-import ro.zg.mdb.core.annotations.PrimaryKey;
+import ro.zg.mdb.core.annotations.ObjectId;
 import ro.zg.mdb.core.annotations.Unique;
 import ro.zg.util.hash.HashUtil;
 
 @Persistable
 public class Row {
-    @PrimaryKey
-    private String rowId;
+    @ObjectId
+    private String id;
+    
     @Unique(id=1)
-    private String currentHash;
+    private String hash;
     
     private long timestamp;
     
     private String oldHash;
     
     /**
-     * Constructor used when the rowId is already known, like in the update cases
-     * @param rowId
+     * Constructor used when the hash is already known, like in the update cases
+     * @param hash
      */
     public Row(String rowId) {
 	super();
-	this.rowId = rowId;
+	this.hash = rowId;
     }
     /**
      * Constructor used usually when row info is created from data 
-     * @param rowId
+     * @param hash
      * @param currentHash
      * @param timestamp
      */
-    public Row(String rowId, String currentHash, long timestamp) {
+    public Row(String rowId, long timestamp) {
 	super();
-	this.rowId = rowId;
-	this.currentHash = currentHash;
+	this.hash = rowId;
 	this.timestamp = timestamp;
     }
 
     public static Row buildFromData(String data) {
 	long timestamp=System.currentTimeMillis();
-	String currentHash=HashUtil.digestSHA1(data);
-	String rowId=HashUtil.digestSHA1(currentHash+timestamp);
-	return new Row(rowId,currentHash,timestamp);
+	String rowId=HashUtil.digestSHA1(data);
+	return new Row(rowId,timestamp);
     }
+
 
     /**
-     * @return the rowId
+     * @return the hash
      */
-    public String getRowId() {
-        return rowId;
+    public String getHash() {
+        return hash;
     }
-
-    /**
-     * @return the currentHash
-     */
-    public String getCurrentHash() {
-        return currentHash;
-    }
-
     /**
      * @return the timestamp
      */
@@ -80,6 +72,12 @@ public class Row {
      */
     public String getOldHash() {
         return oldHash;
+    }
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
     }
     
     

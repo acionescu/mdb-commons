@@ -10,15 +10,13 @@
  ******************************************************************************/
 package ro.zg.mdb.test.model;
 
+import ro.zg.mdb.core.annotations.ObjectId;
 import ro.zg.mdb.core.annotations.Persistable;
-import ro.zg.mdb.core.annotations.PrimaryKey;
-import ro.zg.mdb.core.annotations.Sequenced;
 
 @Persistable
 public class User{
-    @PrimaryKey
-    @Sequenced(id="UserSeq")
-    private Long id;
+    @ObjectId
+    private String id;
     private String username;
     private String password;
     private String email;
@@ -35,7 +33,7 @@ public class User{
     /**
      * @return the id
      */
-    public Long getId() {
+    public String getId() {
         return id;
     }
     /**
@@ -59,7 +57,7 @@ public class User{
     /**
      * @param id the id to set
      */
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
     /**

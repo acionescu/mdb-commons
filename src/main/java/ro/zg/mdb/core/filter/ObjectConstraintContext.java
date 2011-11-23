@@ -18,19 +18,21 @@ import java.util.HashSet;
 import java.util.Set;
 
 import ro.zg.mdb.constants.Constants;
+import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.meta.TransactionManager;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
 import ro.zg.mdb.core.meta.data.LinkModel;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 import ro.zg.mdb.core.meta.data.ObjectsLink;
+import ro.zg.util.data.GenericNameValue;
 
 public class ObjectConstraintContext<T> {
     private ObjectDataModel<T> objectDataModel;
     private String objectName;
     private Class<T> type;
     private ObjectConstraintContext<?> parentContext;
-    private int depth=0;
+    private int depth = 0;
     private String fieldName;
     private TransactionManager transactionManager;
     private Deque<Set<String>> allowedRowsIds = new ArrayDeque<Set<String>>();
@@ -42,9 +44,8 @@ public class ObjectConstraintContext<T> {
 
     private Deque<ObjectConstraintContext<?>> pendingObjectContexts = new ArrayDeque<ObjectConstraintContext<?>>();
 
-    
-    
-    public ObjectConstraintContext(String objectName, Class<T> type, TransactionManager transactionManager) {
+    public ObjectConstraintContext(String objectName, Class<T> type, TransactionManager transactionManager)
+	    throws MdbException {
 	super();
 
 	this.transactionManager = transactionManager;
@@ -56,12 +57,12 @@ public class ObjectConstraintContext<T> {
     private ObjectConstraintContext(String fieldName, ObjectDataModel<T> objectDataModel,
 	    TransactionManager transactionManager, ObjectConstraintContext<?> parentContext) {
 	this.objectDataModel = objectDataModel;
-	this.transactionManager=transactionManager;
+	this.transactionManager = transactionManager;
 	this.objectName = objectDataModel.getTypeName();
 	this.type = objectDataModel.getType();
 	this.parentContext = parentContext;
 	this.fieldName = fieldName;
-	this.depth=parentContext.depth+1;
+	this.depth = parentContext.depth + 1;
     }
 
     public ObjectConstraintContext<?> getObjectContraintContextForField(String fieldName) {
@@ -94,9 +95,13 @@ public class ObjectConstraintContext<T> {
     private void addFieldConstraintContext(FieldConstraintContext<?> context) throws MdbException {
 	// fieldsConstraintContexts.put(context.getFieldName(), context);
 	FieldDataModel<?> fdm = context.getFieldDataModel();
+	if (fdm.isObjectId()) {
+	    processObjectIdConstraint(context);
+	    return;
+	}
 	if (fdm.isIndexed()) {
 	    usedIndexes.add(fdm.getName());
-	    processConstraint(context);
+	    processFieldConstraint(context);
 	}
     }
 
@@ -107,7 +112,21 @@ public class ObjectConstraintContext<T> {
 	pendingObjectContexts.push(currentOcc);
     }
 
-    public <F extends Comparable<F>> void processConstraint(FieldConstraintContext<F> constraintContext)
+    private <F extends Comparable<F>> void processObjectIdConstraint(FieldConstraintContext<F> constraintContext)
+	    throws MdbException {
+	if (constraintContext.hasValues()) {
+	    if (constraintContext.isRestricted()) {
+		restrictedRowsIds.push(constraintContext.getValues());
+	    } else {
+		allowedRowsIds.push(constraintContext.getValues());
+	    }
+	}
+	else if(constraintContext.hasRanges()) {
+	    throw new MdbException(MdbErrorType.INVALID_CONSTRAINT, new GenericNameValue("type",objectDataModel.getType()),new GenericNameValue("field",constraintContext.getFieldName()),new GenericNameValue("constraint",constraintContext.getConstraint()));
+	}
+    }
+
+    private <F extends Comparable<F>> void processFieldConstraint(FieldConstraintContext<F> constraintContext)
 	    throws MdbException {
 	Set<String> allowedRows = new HashSet<String>();
 	Set<String> restrictedRows = new HashSet<String>();
@@ -136,16 +155,15 @@ public class ObjectConstraintContext<T> {
     }
 
     public void resolveNestedObjectContexts() throws MdbException {
-	for(ObjectConstraintContext<?> nestedContext : nestedObjectContexts.values()) {
+	for (ObjectConstraintContext<?> nestedContext : nestedObjectContexts.values()) {
 	    nestedContext.resolveNestedObjectContexts();
 	    extractRowsFromNested(nestedContext);
 	}
     }
-    
 
     public boolean extractRowsFromNested(ObjectConstraintContext<?> nestedContext) throws MdbException {
 	LinkModel lm = getLinkModel(nestedContext.fieldName);
-	
+
 	Set<String> allowed = getReverseLinkedRows(lm, nestedContext.getAllowed());
 	if (allowed != null) {
 	    allowedRowsIds.push(allowed);
@@ -216,12 +234,12 @@ public class ObjectConstraintContext<T> {
     public boolean isSimple() {
 	return simple;
     }
-    
+
     public int getPendingObjectContextsSize() {
 	return pendingObjectContexts.size();
     }
-    
-    public ObjectConstraintContext<?> popPendingObjectContext(){
+
+    public ObjectConstraintContext<?> popPendingObjectContext() {
 	return pendingObjectContexts.pop();
     }
 
@@ -229,23 +247,25 @@ public class ObjectConstraintContext<T> {
      * @return the depth
      */
     public int getDepth() {
-        return depth;
+	return depth;
     }
 
     /**
-     * @param intersection the intersection to set
+     * @param intersection
+     *            the intersection to set
      */
     public void setIntersection(boolean intersection) {
-        this.intersection = intersection;
+	this.intersection = intersection;
     }
 
     /**
-     * @param simple the simple to set
+     * @param simple
+     *            the simple to set
      */
     public void setSimple(boolean simple) {
-        this.simple = simple;
+	this.simple = simple;
     }
-    
+
     public void pushAllowedRows(Set<String> rows) {
 	allowedRowsIds.push(rows);
     }
@@ -253,12 +273,12 @@ public class ObjectConstraintContext<T> {
     public void pushRestrictedRows(Set<String> rows) {
 	restrictedRowsIds.push(rows);
     }
-    
-    public Set<String> popAllowedRows(){
+
+    public Set<String> popAllowedRows() {
 	return allowedRowsIds.pop();
     }
-    
-    public Set<String> popRestrictedRows(){
+
+    public Set<String> popRestrictedRows() {
 	return restrictedRowsIds.pop();
     }
 
@@ -266,22 +286,21 @@ public class ObjectConstraintContext<T> {
      * @return the allowedRowsIds
      */
     public Deque<Set<String>> getAllowedRowsIds() {
-        return allowedRowsIds;
+	return allowedRowsIds;
     }
 
     /**
      * @return the restrictedRowsIds
      */
     public Deque<Set<String>> getRestrictedRowsIds() {
-        return restrictedRowsIds;
+	return restrictedRowsIds;
     }
 
     /**
      * @return the parentContext
      */
     public ObjectConstraintContext<?> getParentContext() {
-        return parentContext;
+	return parentContext;
     }
-    
-    
+
 }

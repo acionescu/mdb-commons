@@ -11,6 +11,7 @@
 package ro.zg.mdb.core.schema;
 
 import ro.zg.mdb.core.annotations.Link;
+import ro.zg.mdb.core.meta.data.FieldDataModel;
 import ro.zg.mdb.core.meta.data.LinkModel;
 
 public class LinkMapper extends ObjectDataModelAnnotationMapper<Link>{
@@ -19,7 +20,9 @@ public class LinkMapper extends ObjectDataModelAnnotationMapper<Link>{
     public void map(ObjectDataModelAnnotationMapperContext<Link> amc) {
 	Link al = amc.getAnnotation();
 	LinkModel lm = new LinkModel(al.name(), al.first(), al.lazy(), al.key());
-	amc.getFieldDataModel().setLinkModel(lm);
+	FieldDataModel<?> fdm=amc.getFieldDataModel();
+	fdm.setLinkModel(lm);
+	
     }
 
 }

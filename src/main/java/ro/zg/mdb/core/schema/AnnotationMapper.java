@@ -12,9 +12,10 @@ package ro.zg.mdb.core.schema;
 
 import java.lang.annotation.Annotation;
 
+import ro.zg.mdb.core.exceptions.MdbException;
+
 
 public interface AnnotationMapper<A extends Annotation,C extends AnnotationMapperContext<A>> {
 
-//    void map(T target, A annotation, H annotationHolder);
-    void map(C amc);
+    void map(C amc) throws MdbException;
 }

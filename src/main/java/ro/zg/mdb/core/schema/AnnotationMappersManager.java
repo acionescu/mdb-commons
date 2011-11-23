@@ -18,17 +18,18 @@ import java.util.Set;
 import ro.zg.mdb.core.annotations.Implementation;
 import ro.zg.mdb.core.annotations.Indexed;
 import ro.zg.mdb.core.annotations.Link;
-import ro.zg.mdb.core.annotations.PrimaryKey;
+import ro.zg.mdb.core.annotations.ObjectId;
 import ro.zg.mdb.core.annotations.Required;
 import ro.zg.mdb.core.annotations.Sequenced;
 import ro.zg.mdb.core.annotations.Unique;
+import ro.zg.mdb.core.exceptions.MdbException;
 
 public class AnnotationMappersManager<A extends Annotation>{
     private Map<Class<? extends Annotation>,ObjectDataModelAnnotationMapper<? extends Annotation>> mappers;
     public AnnotationMappersManager() {
 	mappers = new HashMap<Class<? extends Annotation>, ObjectDataModelAnnotationMapper<? extends Annotation>>();
 	mappers.put(Required.class, new RequiredMapper());
-	mappers.put(PrimaryKey.class, new PrimaryKeyMapper());
+	mappers.put(ObjectId.class, new ObjectIdMapper());
 	mappers.put(Unique.class, new UniqueMapper());
 	mappers.put(Indexed.class, new IndexMapper());
 	mappers.put(Link.class, new LinkMapper());
@@ -36,7 +37,7 @@ public class AnnotationMappersManager<A extends Annotation>{
 	mappers.put(Sequenced.class, new SequenceMapper());
     }
     
-    public void map(ObjectDataModelAnnotationMapperContext<A> amc) {
+    public void map(ObjectDataModelAnnotationMapperContext<A> amc) throws MdbException {
 	ObjectDataModelAnnotationMapper mapper = mappers.get(amc.getAnnotation().annotationType());
 	if(mapper!=null) {
 	    mapper.map(amc);

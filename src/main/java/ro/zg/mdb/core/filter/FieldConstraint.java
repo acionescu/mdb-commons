@@ -31,7 +31,7 @@ public class FieldConstraint<T> implements Constraint<T>, ObjectConstraint {
     public boolean process(ObjectConstraintContext<?> objectContext) throws MdbException {
 	ObjectDataModel<?> odm = objectContext.getObjectDataModel();
 	FieldDataModel<?> fdm = odm.getField(fieldName);
-	if (!fdm.isIndexed()) {
+	if (!fdm.isIndexed() && !fdm.isObjectId()) {
 	    return false;
 	}
 	FieldConstraintContext<?> fieldContext = new FieldConstraintContext(fdm,constraint);

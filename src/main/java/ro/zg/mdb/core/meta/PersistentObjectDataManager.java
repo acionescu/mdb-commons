@@ -30,6 +30,7 @@ import ro.zg.mdb.core.filter.Filter;
 import ro.zg.mdb.core.filter.constraints.Range;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
 import ro.zg.mdb.core.meta.data.LinkModel;
+import ro.zg.mdb.core.meta.data.LinkValue;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 import ro.zg.mdb.core.meta.data.ObjectsLink;
 import ro.zg.mdb.core.meta.data.UniqueIndex;
@@ -47,11 +48,12 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
     private PersistableObjectLockManager locksManager = new PersistableObjectLockManager();
     private ObjectDataModel<T> objectDataModel;
     private String objectName;
-    
-    public PersistentObjectDataManager(PersistenceManager persistenceManager, ObjectDataModel<T> objectDataModel, String objectName) {
+
+    public PersistentObjectDataManager(PersistenceManager persistenceManager, ObjectDataModel<T> objectDataModel,
+	    String objectName) {
 	super(persistenceManager);
 	this.objectDataModel = objectDataModel;
-	this.objectName=objectName;
+	this.objectName = objectName;
     }
 
     protected String getPath(String p1, String p2) {
@@ -76,6 +78,14 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
     protected String getCompositeIndexPath(String indexName) {
 	return getPath(SpecialPaths.COMPOSITE_INDEXES, indexName);
+    }
+
+    protected boolean rowExists(String rowId) throws MdbException {
+	try {
+	    return persistenceManager.exists(getRowPath(rowId));
+	} catch (PersistenceException e) {
+	    throw new MdbException(e, MdbErrorType.PERSISTENCE_ERROR);
+	}
     }
 
     protected Collection<String> read(String id, final Collection<String> data) throws MdbException {
@@ -119,7 +129,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    rowLock.releaseReadLock();
 	    locksManager.releaseRowLock(rowLock);
 	}
-	
+
 	return handler.getData();
     }
 
@@ -285,14 +295,34 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	}
     }
 
-    protected boolean delete(ObjectContext<T> oc, String rowId) {
-	// System.out.println("start delete for row "+rowId);
-	deleteUnusedIndexes(oc, rowId);
-	// System.out.println("deleting "+rowId);
-	return persistenceManager.delete(getRowPath(rowId));
+    protected boolean delete(ObjectContext<T> oc, String rowId, TransactionManager transactionManager)
+	    throws MdbException {
+
+	ResourceLock rowLock = locksManager.getRowLock(rowId);
+	rowLock.acquireWriteLock();
+
+	try {
+
+	    // System.out.println("start delete for row "+rowId);
+	    deleteUnusedIndexes(oc, rowId);
+	    // System.out.println("deleting "+rowId);
+
+	    /* delete links */
+	    for (FieldDataModel<?> fdm : objectDataModel.getLinkedFields()) {
+		LinkModel lm = fdm.getLinkModel();
+		if (lm.isFirst()) {
+		    transactionManager.deleteLinks(lm, rowId);
+		}
+	    }
+
+	    return persistenceManager.delete(getRowPath(rowId));
+	} finally {
+	    rowLock.releaseWriteLock();
+	    locksManager.releaseRowLock(rowLock);
+	}
     }
 
-    public long deleteAll(final Filter filter) throws MdbException {
+    public long deleteAll(final Filter filter, final TransactionManager transactionManager) throws MdbException {
 	// final String typeName = objectDataModel.getTypeName();
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
 	    private ResourceLock rowLock;
@@ -315,9 +345,9 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		ObjectContext<T> oc = null;
 		boolean deleted = false;
 		try {
-		    oc = getObjectContextFromString(data, filter);
+		    oc = getObjectContextForDelete(data, filter, name, transactionManager);
 		    if (oc != null) {
-			deleted = delete(oc, name);
+			deleted = delete(oc, name,transactionManager);
 		    }
 		} catch (MdbException e) {
 		    error = e;
@@ -347,7 +377,8 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return handler.getRowCount();
     }
 
-    public long deleteAllBut(final Filter filter, final Collection<String> restricted) throws MdbException {
+    public long deleteAllBut(final Filter filter, final Collection<String> restricted,
+	    final TransactionManager transactionManager) throws MdbException {
 	// final String typeName = objectDataModel.getTypeName();
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
 	    private ResourceLock rowLock;
@@ -373,9 +404,9 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		ObjectContext<T> oc = null;
 		boolean deleted = false;
 		try {
-		    oc = getObjectContextFromString(data, filter);
+		    oc = getObjectContextForDelete(data, filter, name, transactionManager);
 		    if (oc != null) {
-			deleted = delete(oc, name);
+			deleted = delete(oc, name, transactionManager);
 		    }
 		} catch (MdbException e) {
 		    error = e;
@@ -404,7 +435,8 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return handler.getRowCount();
     }
 
-    public long deleteObjects(Collection<String> ids, final Filter filter) throws MdbException {
+    public long deleteObjects(Collection<String> ids, final Filter filter, final TransactionManager transactionManager)
+	    throws MdbException {
 	// final String typeName = objectDataModel.getTypeName();
 
 	MdbObjectHandler handler = new MdbObjectHandler() {
@@ -423,9 +455,9 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    try {
 		persistenceManager.read(getRowPath(id), handler);
 
-		ObjectContext<T> oc = getObjectContextFromString(handler.getData(), filter);
+		ObjectContext<T> oc = getObjectContextForDelete(handler.getData(), filter, id, transactionManager);
 		if (oc != null) {
-		    deleted = delete(oc, id);
+		    deleted = delete(oc, id,transactionManager);
 		}
 	    } catch (PersistenceException e) {
 		throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, e);
@@ -457,16 +489,38 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	F maxValue = range.getMaxValue();
 	boolean inRange = true;
 
+	String minValueString = (minValue != null) ? minValue.toString() : null;
+	String maxValueString = (maxValue != null) ? maxValue.toString() : null;
+
 	while ((elligiblePaths.size() > 0) && inRange) {
+	    Map<String, String> nextPaths = new HashMap<String, String>();
+
 	    for (Map.Entry<String, String> pe : elligiblePaths.entrySet()) {
 		String currentPath = pe.getKey();
-		Map<String, String> nextPaths = new HashMap<String, String>();
+
 		String[] nextVals;
 		try {
 		    nextVals = persistenceManager.listChildren(currentPath);
 		} catch (PersistenceException e) {
 		    throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, e);
 		}
+
+		String currentValuePath = pe.getValue();
+		int nextValueLength = currentValuePath.length() + 1;
+		F minValFragment = null;
+		boolean minSatisfied = false;
+
+		if (minValueString != null && (minValueString.length() >= nextValueLength)) {
+		    minValFragment = range.fromString(minValueString.substring(0, nextValueLength));
+		} else {
+		    minSatisfied = true;
+		}
+		//
+		// boolean maxSatisfied=true;
+		// if(maxValueString != null && (maxValueString.length() == nextValueLength)) {
+		// maxSatisfied=false;
+		// }
+
 		for (String nextVal : nextVals) {
 		    if (nextVal.length() > 1) {
 			continue;
@@ -482,11 +536,11 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
 		    int minComp = 1;
 		    int maxComp = -1;
-		    inRange = ((minValue == null) || ((minComp = value.compareTo(minValue)) >= 0))
-			    && ((maxValue == null) || ((maxComp = value.compareTo(maxValue)) <= 0));
+		    inRange = (minSatisfied || ((minComp = value.compareTo(minValFragment)) >= 0))
+			    && (maxValue == null || ((maxComp = value.compareTo(maxValue)) <= 0));
 		    /* the value is in range */
 		    if (inRange) {
-			if (minComp > 0 && maxComp < 0) {
+			if (minComp >= 0 && maxComp <= 0) {
 			    nextPaths.put(nextPath, valuePath);
 			}
 
@@ -547,7 +601,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
     }
 
     private String getRowIdForUniqueIndex(UniqueIndexValue uiv) throws MdbException {
-	if(uiv==null) {
+	if (uiv == null) {
 	    return null;
 	}
 	String indexPath = getIndexValuePath(uiv);
@@ -662,9 +716,14 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	Map<String, ObjectContext<?>> nestedObjectContexts = new HashMap<String, ObjectContext<?>>();
 	String data = "";
 	boolean addSeparator = false;
+	String objectIdFieldName = objectDataModel.getObjectIdFieldName();
 
 	for (FieldDataModel<?> fdm : objectDataModel.getFields().values()) {
 	    String fieldName = fdm.getName();
+	    if (fieldName.equals(objectIdFieldName)) {
+		continue;
+	    }
+
 	    Object fieldValue = valuesMap.get(fieldName);
 	    /* convert value to string */
 	    String fieldData = null;
@@ -687,8 +746,8 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		     * if the linked object already exists, get the rowId, otherwise create an ObjectContext for it
 		     */
 		    if (fieldValue != null) {
-			ObjectContext<?> nestedObjectContext = transactionManager.getObjectContext(fieldValue.getClass().getName(),
-				fieldValue, true);
+			ObjectContext<?> nestedObjectContext = transactionManager.getObjectContext(fieldValue
+				.getClass().getName(), fieldValue, true);
 			nestedObjectContexts.put(fieldName, nestedObjectContext);
 		    }
 
@@ -735,7 +794,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	}
 	/* build object context */
 
-	return new ObjectContext<T>(objectDataModel, data, indexedValues, uniqueValues,nestedObjectContexts);
+	return new ObjectContext<T>(target, objectDataModel, data, indexedValues, uniqueValues, nestedObjectContexts);
     }
 
     /**
@@ -748,28 +807,45 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
      * @return
      * @throws MdbException
      */
-    protected ObjectContext<T> getObjectContext(T target, Filter filter, String rawOldData, String rowId)
-	    throws MdbException {
+    public ObjectContext<T> getObjectContext(TransactionManager transactionManager, T target, Filter filter,
+	    String rawOldData, String rowId) throws MdbException {
 	if (rawOldData == null) {
 	    return null;
 	}
-	Class<?> type = target.getClass();
-	Map<String, Object> oldValuesMap = new HashMap<String, Object>();
-	String[] oldData = rawOldData.split(Constants.COLUMN_SEPARATOR);
 
-	/* first check if the oldData satisfies the filter */
-	Set<String> constrainedFields = filter.getConstraintFields();
-	/* first get the constrained fields */
-	if (constrainedFields != null && !constrainedFields.isEmpty()) {
-	    for (String fieldName : constrainedFields) {
-		oldValuesMap.put(fieldName, objectDataModel.getValueForField(fieldName, oldData));
-	    }
-	    /* now do a check on the values map */
-	    if (!filter.isSatisfied(oldValuesMap)) {
-		return null;
-	    }
+	Map<String, Object> oldValuesMap = transactionManager.getAndCheckValuesMap(objectName, objectDataModel,
+		rawOldData, filter, rowId);
+	if (oldValuesMap == null) {
+	    return null;
 	}
-	/* if the filter is satisfied, let's get the data for the updated fields */
+	transactionManager.clearPendingRows();
+	return getObjectContext(transactionManager, target, filter, rowId, oldValuesMap, "");
+
+    }
+
+    public ObjectContext<T> getObjectContext(TransactionManager transactionManager, T target, Filter filter,
+	    String rawOldData, String rowId, String path) throws MdbException {
+	if (rawOldData == null) {
+	    return null;
+	}
+
+	Map<String, Object> oldValuesMap = transactionManager.getValuesMap(objectName, objectDataModel, rawOldData,
+		filter, rowId);
+	if (oldValuesMap == null) {
+	    return null;
+	}
+
+	return getObjectContext(transactionManager, target, filter, rowId, oldValuesMap, path);
+
+    }
+
+    public ObjectContext<T> getObjectContext(TransactionManager transactionManager, T target, Filter filter,
+	    String rowId, Map<String, Object> oldValuesMap, String path) throws MdbException {
+
+	if (transactionManager.isRowPending(objectName, rowId)) {
+	    return null;
+	}
+	transactionManager.addPendingRowId(objectName, rowId);
 
 	Map<String, String> indexedValues = new HashMap<String, String>();
 	Map<String, UniqueIndexValue> uniqueValues = new HashMap<String, UniqueIndexValue>();
@@ -782,17 +858,24 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	Set<String> targetFields = filter.getTargetFields();
 	Set<String> changedFields = new HashSet<String>();
 
-	String[] newData = new String[oldData.length];
-	System.arraycopy(oldData, 0, newData, 0, oldData.length);
+	Set<FieldDataModel<?>> simpleFields = objectDataModel.getSimpleFields();
+	String[] newData = new String[simpleFields.size()];
 
-	if (targetFields == null || targetFields.size() == 0) {
-	    /* if no fields were specified assume all */
-	    targetFields = objectDataModel.getFields().keySet();
-	}
-
-	for (String fieldName : targetFields) {
-	    FieldDataModel<?> fdm = objectDataModel.getField(fieldName);
+	for (FieldDataModel<?> fdm : simpleFields) {
+	    String fieldName = fdm.getName();
+	    /* the full field name in the nested hierarchy */
+	    String fullFieldName = path + fieldName;
 	    int position = objectDataModel.getFieldPosition(fieldName);
+
+	    Object oldVal = oldValuesMap.get(fullFieldName);
+	    String oldValData = (oldVal != null) ? oldVal.toString() : "";
+
+	    /* if the current field is not targeted for update, keep the old value */
+	    if (targetFields != null && !targetFields.contains(fullFieldName)) {
+		newData[position] = oldValData;
+		continue;
+	    }
+
 	    String fieldData = "";
 
 	    Object fieldValue = newValuesMap.get(fieldName);
@@ -800,121 +883,197 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    if (fieldValue != null) {
 		fieldData = fieldValue.toString();
 	    }
-	    String oldVal = oldData[position];
 
-	    if (ObjectsUtil.areEqual(fieldData, oldVal)) {
+	    /* update the new data with this field value */
+	    newData[position] = fieldData;
+
+	    if (ObjectsUtil.areEqual(fieldValue, oldVal)) {
 		/* if the value of this field hasn't changed there's nothing more to do */
 		continue;
 	    }
+
 	    changedFields.add(fieldName);
 
 	    /* test if the value is valid for this field */
 	    try {
 		fdm.testValue(fieldData);
 	    } catch (MdbException ode) {
-		throw new MdbException(MdbErrorType.REQUIRED, new GenericNameValue("type", type.getName()),
-			new GenericNameValue(fieldName, fieldData));
+		throw new MdbException(MdbErrorType.REQUIRED, new GenericNameValue("type", objectDataModel.getType()
+			.getName()), new GenericNameValue(fieldName, fieldData));
 	    }
-
-	    /* update the new data with this field value */
-	    newData[position] = fieldData;
 
 	    /* build reqular indexes */
 	    if (fdm.isIndexed()) {
 		indexedValues.put(fieldName, fieldData);
-		outdatedIndexValues.put(fieldName, oldVal);
+		outdatedIndexValues.put(fieldName, oldVal.toString());
 	    }
 	}
 
-	if (changedFields.size() == 0) {
-	    /* nothing changed */
-	    return null;
-	}
+	String data = null;
 
-	/* ok now we should see how many unique indexes have changed */
-	Collection<UniqueIndex> touchedUniqueIndexes = objectDataModel.getTouchedUniqueIndexes(changedFields);
+	if (changedFields.size() > 0) {
 
-	/*
-	 * for each composite index that has changed we need to compute the new value and the old value that is going to
-	 * be deleted
-	 */
+	    /* ok, now we should see how many unique indexes have changed */
+	    Collection<UniqueIndex> touchedUniqueIndexes = objectDataModel.getTouchedUniqueIndexes(changedFields);
 
-	for (UniqueIndex ui : touchedUniqueIndexes) {
-	    for (FieldDataModel<?> fdm : ui.getFields()) {
-		String uniqueIndexName = ui.getId();
-		String fieldName = fdm.getName();
-		int position = objectDataModel.getFieldPosition(fieldName);
-		if (objectDataModel.getUniqueIndex(uniqueIndexName).isComposite()) {
-		    addUniqueIndex(uniqueIndexName, newData[position], uniqueValues);
-		    addUniqueIndex(uniqueIndexName, oldData[position], outdatedUniqueValues);
+	    /*
+	     * for each composite index that has changed we need to compute the new value and the old value that is
+	     * going to be deleted
+	     */
+
+	    for (UniqueIndex ui : touchedUniqueIndexes) {
+		for (FieldDataModel<?> fdm : ui.getFields()) {
+		    String uniqueIndexName = ui.getId();
+		    String fieldName = fdm.getName();
+		    String fullFieldName = path + fieldName;
+		    int position = objectDataModel.getFieldPosition(fieldName);
+		    if (objectDataModel.getUniqueIndex(uniqueIndexName).isComposite()) {
+			addUniqueIndex(uniqueIndexName, newData[position], uniqueValues);
+			addUniqueIndex(uniqueIndexName, oldValuesMap.get(fullFieldName).toString(),
+				outdatedUniqueValues);
+		    } else {
+
+			addUniqueIndex(fieldName, newData[position], uniqueValues);
+			addUniqueIndex(fieldName, oldValuesMap.get(fullFieldName).toString(), outdatedUniqueValues);
+			/* remove unique indexes from regular indexes */
+			indexedValues.remove(fieldName);
+			outdatedIndexValues.remove(fieldName);
+		    }
+		}
+	    }
+
+	    data = "";
+	    boolean addSeparator = false;
+	    for (int i = 0; i < newData.length; i++) {
+		String fieldData = newData[i];
+		if (addSeparator) {
+		    data += Constants.COLUMN_SEPARATOR;
 		} else {
-		    
-		    addUniqueIndex(fieldName, newData[position], uniqueValues);
-		    addUniqueIndex(fieldName, oldData[position], outdatedUniqueValues);
-		    /* remove unique indexes from regular indexes */
-		    indexedValues.remove(fieldName);
-		    outdatedIndexValues.remove(fieldName);
+		    addSeparator = true;
+		}
+
+		if (fieldData != null) {
+		    data += fieldData;
 		}
 	    }
 	}
 
-	String data = "";
-	boolean addSeparator = false;
-	for (int i = 0; i < newData.length; i++) {
-	    String fieldData = newData[i];
-	    if (addSeparator) {
-		data += Constants.COLUMN_SEPARATOR;
-	    } else {
-		addSeparator = true;
-	    }
+	/* Now we must deal with the pesky nested objects */
 
-	    if (fieldData != null) {
-		data += fieldData;
+	Map<String, ObjectContext<?>> nestedContexts = new HashMap<String, ObjectContext<?>>();
+	Set<LinkValue> linksToRemove = new HashSet<LinkValue>();
+	Set<LinkValue> linksToAdd = new HashSet<LinkValue>();
+
+	for (FieldDataModel<?> fdm : objectDataModel.getLinkedFields()) {
+	    String fieldName = fdm.getName();
+	    String fullFieldName = path + fieldName;
+	    /* first, check if the field is actually targeted for update */
+	    if (targetFields != null && !targetFields.contains(fullFieldName)) {
+		continue;
+	    }
+	    /* now let's see if there is a link for this field */
+	    ObjectsLink ol = transactionManager.getPendingLinkForField(fullFieldName);
+	    /* get the new value */
+	    Object fieldValue = newValuesMap.get(fieldName);
+
+	    /* get the object data model of the field */
+	    ObjectDataModel<?> fodm = (ObjectDataModel<?>) fdm.getDataModel();
+
+	    /* let's test different cases */
+	    if (ol == null && fieldValue == null) {
+		/* nothing to do */
+		continue;
+	    } else if (ol != null && fieldValue != null) {
+		/*
+		 * so, there already is a link for this field and a new value was also specified
+		 */
+		/* nestedRowId should not be null, because the link is not null */
+		String nestedRowId = transactionManager.getPendingRowIdForField(fullFieldName);
+		String currentValueId = fodm.getObjectId(fieldValue);
+
+		if (currentValueId == null) {
+		    /* new object */
+		    nestedContexts.put(fieldName,
+			    transactionManager.getObjectContext(fodm.getTypeName(), fieldValue, true));
+		    /* remove the old link */
+		    linksToRemove.add(new LinkValue(fdm.getLinkModel().getName(), ol));
+		} else if (nestedRowId.equals(currentValueId)) {
+		    /* same object, we need to see if something has updated */
+		    nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(), fieldValue,
+			    filter, nestedRowId, oldValuesMap, fullFieldName + Constants.NESTED_FIELD_SEPARATOR));
+		} else {
+		    /* reference has changed to another object */
+		    nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(), fieldValue,
+			    filter, currentValueId, oldValuesMap, fullFieldName + Constants.NESTED_FIELD_SEPARATOR));
+		    /* remove the old link */
+		    linksToRemove.add(new LinkValue(fdm.getLinkModel().getName(), ol));
+		    linksToAdd.add(getLinkValue(fdm, rowId, currentValueId));
+		}
+	    } else if (ol != null) {
+		/* the field value was set to null, we need to remove the old link */
+		linksToRemove.add(new LinkValue(fdm.getLinkModel().getName(), ol));
+	    } else {
+		/*
+		 * there is no old link, but a new value was set we need to see if this is a completely new object, or a
+		 * reference to an existing one which should be updated if changed
+		 */
+		String currentValueId = fodm.getObjectId(fieldValue);
+		if (currentValueId == null) {
+		    nestedContexts.put(fieldName,
+			    transactionManager.getObjectContext(fodm.getTypeName(), fieldValue, true));
+		} else {
+		    /*
+		     * the tricky part here is that this object's data is not found in the oldValuesMap so we need to
+		     * call the main getObjectContext for update
+		     */
+
+		    String nestedData = transactionManager.getDataForRowId(fodm, currentValueId);
+		    nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(), fieldValue,
+			    filter, nestedData, currentValueId, fullFieldName + Constants.NESTED_FIELD_SEPARATOR));
+		    linksToAdd.add(getLinkValue(fdm, rowId, currentValueId));
+		}
 	    }
 	}
 
 	/* build object context */
 
-	// TODO: remove this
-	// ObjectContext<T> oc = new ObjectContext<T>();
-	// oc.setData(data);
-	// oc.setIndexedValues(indexedValues);
-	// oc.setUniqueValues(uniqueValues);
-	// oc.setObjectDataModel(odm);
-	// oc.setOldIndexedValues(outdatedIndexValues);
-	// oc.setOldUniqueValues(outdatedUniqueValues);
-	// return oc;
-
 	return new ObjectContext<T>(objectDataModel, data, indexedValues, uniqueValues, outdatedIndexValues,
-		outdatedUniqueValues, rowId);
+		outdatedUniqueValues, rowId, nestedContexts, linksToRemove, linksToAdd);
 
     }
 
-    public ObjectContext<T> getObjectContextFromString(String data, Filter filter) throws MdbException {
+    public ObjectContext<T> getObjectContextForDelete(String data, Filter filter, String rowId,
+	    TransactionManager transactionManager) throws MdbException {
 	if (data == null) {
 	    return null;
 	}
-	Map<String, Object> valuesMap = new HashMap<String, Object>();
-	String[] columns = data.split(Constants.COLUMN_SEPARATOR);
-	Set<String> constrainedFields = filter.getConstraintFields();
-	/* first get the constrained fields */
-	if (constrainedFields != null && !constrainedFields.isEmpty()) {
-	    for (String fieldName : constrainedFields) {
-		valuesMap.put(fieldName, objectDataModel.getValueForField(fieldName, columns));
-	    }
-	    /* now do a check on the values map */
-	    if (!filter.isSatisfied(valuesMap)) {
-		// System.out.println(data+" is not satisfying "+filter.getConstraint());
-		return null;
-	    }
+
+	Map<String, Object> valuesMap = transactionManager.getAndCheckValuesMap(data, objectDataModel, data, filter,
+		rowId);
+	if (valuesMap == null) {
+	    return null;
 	}
+
+	/*
+	 * We need to check if any direct references exist for this object, in which case we abort this action by
+	 * throwing an appropriate error
+	 */
+	transactionManager.checkForDirectReferences(objectDataModel, rowId);
+
+	/*
+	 * if this object is valid for deletion, proceed on finding out the unique indexes that also need to be deleted
+	 */
+
 	Map<String, String> indexedValues = new HashMap<String, String>();
 	Map<String, UniqueIndexValue> uniqueValues = new HashMap<String, UniqueIndexValue>();
 
 	for (FieldDataModel<?> fdm : objectDataModel.getIndexedFields()) {
 	    String fieldName = fdm.getName();
-	    int position = objectDataModel.getFieldPosition(fieldName);
-	    String fieldData = columns[position];
+	    Object fieldValue = valuesMap.get(fieldName);
+	    if (fieldValue == null) {
+		continue;
+	    }
+	    String fieldData = fieldValue.toString();
 
 	    indexedValues.put(fieldName, fieldData);
 	    String uniqueIndexName = fdm.getUniqueIndexId();
@@ -932,11 +1091,6 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		indexedValues.put(fieldName, fieldData);
 	    }
 	}
-
-	// ObjectContext<T> oc = new ObjectContext<T>();
-	// oc.setOldIndexedValues(indexedValues);
-	// oc.setOldUniqueValues(uniqueValues);
-	// return oc;
 
 	return new ObjectContext<T>(objectDataModel, indexedValues, uniqueValues);
     }
@@ -957,10 +1111,9 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
     public ObjectContext<T> getObjectContext(T target, boolean create, TransactionManager transactionManager)
 	    throws MdbException {
-	
-	/* check if an object with the specified pk already exists */
-	UniqueIndexValue pkValue = objectDataModel.getUniqueIndexValue(target, objectDataModel.getPrimaryKeyId());
-	String rowId = getRowIdForUniqueIndex(pkValue);
+
+	/* check if an object with the specified row id already exists */
+	String rowId = objectDataModel.getObjectId(target);
 	if (rowId != null) {
 	    return new ObjectContext<T>(objectDataModel, rowId);
 	} else if (create) {
@@ -1003,7 +1156,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    public boolean endFile(String name) {
 		ObjectContext<T> oc = null;
 		try {
-		    oc = getObjectContext(source, filter, data, name);
+		    oc = getObjectContext(transactionManager, source, filter, data, name);
 		    if (oc != null) {
 			// oc.setRowIdProvider(new StaticRowIdProvider(name));
 			oc.setRowLock(rowLock);
@@ -1064,7 +1217,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    public boolean endFile(String name) {
 		ObjectContext<T> oc = null;
 		try {
-		    oc = getObjectContext(source, filter, data, name);
+		    oc = getObjectContext(transactionManager, source, filter, data, name);
 		    if (oc != null) {
 			// oc.setRowIdProvider(new StaticRowIdProvider(name));
 			oc.setRowLock(rowLock);
@@ -1133,7 +1286,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    ObjectContext<T> oc = null;
 	    try {
 		persistenceManager.read(getRowPath(id), handler);
-		oc = getObjectContext(source, filter, handler.getData(), id);
+		oc = getObjectContext(transactionManager, source, filter, handler.getData(), id);
 		if (oc != null) {
 		    // oc.setRowIdProvider(new StaticRowIdProvider(id));
 		    oc.setRowLock(rowLock);
@@ -1178,9 +1331,13 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return target;
     }
 
-    protected boolean update(ObjectContext<T> oc, TransactionManager transactionManager) throws MdbException {
+    public boolean update(ObjectContext<T> oc, TransactionManager transactionManager) throws MdbException {
 	save(oc, transactionManager);
 	deleteUnusedIndexes(oc, oc.getRowId());
+	for (LinkValue lv : oc.getLinksToRemove()) {
+	    transactionManager.deleteLinkValue(lv);
+	}
+
 	return true;
     }
 
@@ -1192,12 +1349,26 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	Collection<UniqueIndexValue> uniqueValues = objectContext.getUniqueValues().values();
 	Collection<ResourceLock> uniqueValuesLocks = null;
 
-	String rowId = null;
+	String rowId = objectContext.getRowId();
+	ResourceLock rowLock = objectContext.getRowLock();
+	if (rowLock == null) {
+	    rowLock = locksManager.getRowLock(rowId);
+	    rowLock.acquireWriteLock();
+	}
+
+	if (!objectContext.isAlreadyCreated() && rowExists(rowId)) {
+	    rowLock.releaseWriteLock();
+	    locksManager.releaseRowLock(rowLock);
+	    throw new MdbException(MdbErrorType.UNIQUENESS_VIOLATED, new GenericNameValue("type",
+		    objectDataModel.getType()), new GenericNameValue("rowId", rowId));
+	}
+
 	/* hold the unique values */
 	synchronized (odm) {
+
 	    uniqueValuesLocks = lockUniqueValues(uniqueValues);
 	    // rowId = objectContext.getRowIdProvider().provideRowId();
-	    rowId = objectContext.getRowId();
+
 	}
 
 	// System.out.println("start saving "+rowId);
@@ -1210,33 +1381,28 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    throw e;
 	}
 
-	ResourceLock rowLock = objectContext.getRowLock();
-	if (rowLock == null) {
-	    rowLock = locksManager.getRowLock(rowId);
-	    rowLock.acquireWriteLock();
-	}
+	/* set this row as pending */
+	transactionManager.addPendingRowId(objectName, rowId);
 
 	/*
 	 * take care of the nested objects
 	 */
 	for (Map.Entry<String, ObjectContext<?>> e : objectContext.getNestedObjectContexts().entrySet()) {
-	    ObjectContext<?> noc = e.getValue();
 
+	    ObjectContext<?> noc = e.getValue();
+	    if (noc == null) {
+		continue;
+	    }
 	    if (!noc.isAlreadyCreated()) {
 		transactionManager.save(noc);
+
+		LinkValue lv = getLinkValue(odm.getField(e.getKey()), rowId, noc.getRowId());
+		transactionManager.saveLinkValue(lv);
+
+	    } else if (noc.isUpdated()) {
+		transactionManager.update(noc);
 	    }
 
-	    LinkModel linkModel = odm.getField(e.getKey()).getLinkModel();
-	    String linkName = linkModel.getName();
-	    ObjectsLink ol = new ObjectsLink();
-	    if (linkModel.isFirst()) {
-		ol.setFirstRowId(rowId);
-		ol.setSecondRowId(noc.getRowId());
-	    } else {
-		ol.setSecondRowId(rowId);
-		ol.setFirstRowId(noc.getRowId());
-	    }
-	    transactionManager.saveObjectsLink(ol, linkName);
 	}
 
 	try {
@@ -1266,10 +1432,34 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    for (Map.Entry<String, String> e : objectContext.getIndexedValues().entrySet()) {
 		addIndex(e.getKey(), e.getValue(), rowId);
 	    }
+
+	    /* udpate the object id */
+	    if (!objectContext.isAlreadyCreated()) {
+		objectContext.updateObjectId();
+	    }
+
+	    /* create links */
+	    for (LinkValue lv : objectContext.getLinksToAdd()) {
+		transactionManager.saveLinkValue(lv);
+	    }
+
 	} finally {
 	    releaseUniqueValuesLocks(uniqueValuesLocks);
 	}
+    }
 
+    protected LinkValue getLinkValue(FieldDataModel<?> fdm, String mainRowId, String nestedRowId) {
+	LinkModel linkModel = fdm.getLinkModel();
+	String linkName = linkModel.getName();
+	ObjectsLink ol = new ObjectsLink();
+	if (linkModel.isFirst()) {
+	    ol.setFirstRowId(mainRowId);
+	    ol.setSecondRowId(nestedRowId);
+	} else {
+	    ol.setSecondRowId(mainRowId);
+	    ol.setFirstRowId(nestedRowId);
+	}
+	return new LinkValue(linkName, ol);
     }
 
     protected Collection<ResourceLock> lockUniqueValues(Collection<UniqueIndexValue> uniqueValues) {

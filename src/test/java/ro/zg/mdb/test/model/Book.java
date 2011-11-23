@@ -12,14 +12,14 @@ package ro.zg.mdb.test.model;
 
 import ro.zg.mdb.core.annotations.Indexed;
 import ro.zg.mdb.core.annotations.Persistable;
-import ro.zg.mdb.core.annotations.PrimaryKey;
+import ro.zg.mdb.core.annotations.ObjectId;
 import ro.zg.mdb.core.annotations.Required;
 import ro.zg.mdb.core.annotations.Unique;
 
 @Persistable
 public class Book {
-    @PrimaryKey
-    private Long id;
+    @ObjectId
+    private String id;
     @Unique(id=1)
     private String author;
     @Unique(id=1)
@@ -91,16 +91,18 @@ public class Book {
     public void setReleaseYear(Integer releaseYear) {
         this.releaseYear = releaseYear;
     }
+  
+        
     /**
      * @return the id
      */
-    public Long getId() {
+    public String getId() {
         return id;
     }
     /**
      * @param id the id to set
      */
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
     /* (non-Javadoc)

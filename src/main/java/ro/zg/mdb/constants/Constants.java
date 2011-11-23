@@ -15,4 +15,5 @@ public class Constants {
     public static final String COLUMN_SEPARATOR="~";
     public static final String COMPOSITE_INDEX_SEPARATOR="~";
     public static final String NESTED_FIELD_SEPARATOR=".";
+    public static final String MINUS="-";
 }

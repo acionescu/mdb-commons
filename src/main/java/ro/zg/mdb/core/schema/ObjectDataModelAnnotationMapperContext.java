@@ -17,12 +17,12 @@ import ro.zg.mdb.core.meta.data.ObjectDataModel;
 import ro.zg.mdb.core.meta.data.Schema;
 
 public class ObjectDataModelAnnotationMapperContext<A extends Annotation> extends AnnotationMapperContext<A> {
-    private ObjectDataModel objectDataModel;
-    private FieldDataModel fieldDataModel;
+    private ObjectDataModel<?> objectDataModel;
+    private FieldDataModel<?> fieldDataModel;
     private Schema schema;
     
-    public ObjectDataModelAnnotationMapperContext(A annotation, ObjectDataModel objectDataModel,
-	    FieldDataModel fieldDataModel, Schema schema) {
+    public ObjectDataModelAnnotationMapperContext(A annotation, ObjectDataModel<?> objectDataModel,
+	    FieldDataModel<?> fieldDataModel, Schema schema) {
 	super(annotation);
 	this.objectDataModel = objectDataModel;
 	this.fieldDataModel = fieldDataModel;
@@ -31,13 +31,13 @@ public class ObjectDataModelAnnotationMapperContext<A extends Annotation> extend
     /**
      * @return the objectDataModel
      */
-    public ObjectDataModel getObjectDataModel() {
+    public ObjectDataModel<?> getObjectDataModel() {
         return objectDataModel;
     }
     /**
      * @return the fieldDataModel
      */
-    public FieldDataModel getFieldDataModel() {
+    public FieldDataModel<?> getFieldDataModel() {
         return fieldDataModel;
     }
     /**
