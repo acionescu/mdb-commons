@@ -347,7 +347,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		try {
 		    oc = getObjectContextForDelete(data, filter, name, transactionManager);
 		    if (oc != null) {
-			deleted = delete(oc, name,transactionManager);
+			deleted = delete(oc, name, transactionManager);
 		    }
 		} catch (MdbException e) {
 		    error = e;
@@ -457,10 +457,12 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
 		ObjectContext<T> oc = getObjectContextForDelete(handler.getData(), filter, id, transactionManager);
 		if (oc != null) {
-		    deleted = delete(oc, id,transactionManager);
+		    deleted = delete(oc, id, transactionManager);
 		}
 	    } catch (PersistenceException e) {
 		throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, e);
+	    } catch (MdbException e) {
+		throw e;
 	    } catch (Exception e) {
 		throw new RuntimeException("Delete error: " + rowLock, e);
 	    } finally {
@@ -1393,14 +1395,22 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    if (noc == null) {
 		continue;
 	    }
+
+	    boolean createLink = false;
+
 	    if (!noc.isAlreadyCreated()) {
 		transactionManager.save(noc);
-
-		LinkValue lv = getLinkValue(odm.getField(e.getKey()), rowId, noc.getRowId());
-		transactionManager.saveLinkValue(lv);
+		createLink = true;
 
 	    } else if (noc.isUpdated()) {
 		transactionManager.update(noc);
+	    } else {
+		createLink = true;
+	    }
+
+	    if (createLink) {
+		LinkValue lv = getLinkValue(odm.getField(e.getKey()), rowId, noc.getRowId());
+		transactionManager.saveLinkValue(lv);
 	    }
 
 	}

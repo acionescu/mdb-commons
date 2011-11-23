@@ -123,10 +123,14 @@ public class ObjectDataModel<T> extends DataModel<T> {
      * @param path
      * @return
      */
-    public Map<String, FieldDataModel<?>> getNestedFieldsForFilter(Filter filter, String path) {
-	Map<String, FieldDataModel<?>> nestedFields = new HashMap<String, FieldDataModel<?>>();
+    public Set<FieldDataModel<?>> getNestedFieldsForFilter(Filter filter, String path) {
+	Set<FieldDataModel<?>> nestedFields = new HashSet<FieldDataModel<?>>();
 //	Set<String> targetFields = filter.getTargetFields();
 //	boolean targetFieldsEmpty = (targetFields == null || targetFields.isEmpty());
+	if(filter.getTargetFields() == null) {
+	    return linkedFields;
+	}
+	
 	boolean isMainField="".equals(path);
 	for (FieldDataModel<?> fdm : linkedFields) {
 	    if (fdm.getDataModel().isMultivalued()) {
@@ -155,7 +159,7 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	    }
 	    
 	    if(filter.isFieldNeeded(fullFieldName)) {
-		nestedFields.put(fdm.getName(), fdm);
+		nestedFields.add(fdm);
 	    }
 	}
 
@@ -268,52 +272,52 @@ public class ObjectDataModel<T> extends DataModel<T> {
         this.objectIdField = objectIdField;
     }
 
-    public T getObjectFromString(String data, Filter filter) throws MdbException {
-	if (data == null) {
-	    return null;
-	}
-	T restored = null;
-	try {
-	    restored = getType().newInstance();
-	} catch (Exception e) {
-	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR,
-		    new GenericNameValue("type", getType()));
-	}
-
-	Map<String, Object> valuesMap = new HashMap<String, Object>();
-	String[] columns = data.split(Constants.COLUMN_SEPARATOR);
-	Set<String> constrainedFields = filter.getConstraintFields();
-	/* first get the constrained fields */
-	if (constrainedFields != null && !constrainedFields.isEmpty()) {
-	    for (String fieldName : constrainedFields) {
-		valuesMap.put(fieldName, getValueForField(fields.get(fieldName), columns));
-	    }
-	    /* now do a check on the values map */
-	    if (!filter.isSatisfied(valuesMap)) {
-		return null;
-	    }
-	}
-	Set<String> targetFields = filter.getTargetFields();
-	if (targetFields == null || targetFields.isEmpty()) {
-	    targetFields = fields.keySet();
-	}
-	boolean hasConstraints = constrainedFields != null && !constrainedFields.isEmpty();
-	/* populate the object with the target values */
-	for (String fieldName : targetFields) {
-	    Object fieldValue = null;
-	    FieldDataModel<?> fdm = fields.get(fieldName);
-	    if (hasConstraints && constrainedFields.contains(fieldName)) {
-		fieldValue = valuesMap.get(fieldName);
-	    } else {
-		fieldValue = getValueForField(fdm, columns);
-	    }
-	    if (fieldValue != null) {
-		addValueToObject(restored, fdm, fieldValue);
-	    }
-
-	}
-	return restored;
-    }
+//    public T getObjectFromString(String data, Filter filter) throws MdbException {
+//	if (data == null) {
+//	    return null;
+//	}
+//	T restored = null;
+//	try {
+//	    restored = getType().newInstance();
+//	} catch (Exception e) {
+//	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR,
+//		    new GenericNameValue("type", getType()));
+//	}
+//
+//	Map<String, Object> valuesMap = new HashMap<String, Object>();
+//	String[] columns = data.split(Constants.COLUMN_SEPARATOR);
+//	Set<String> constrainedFields = filter.getConstraintFields();
+//	/* first get the constrained fields */
+//	if (constrainedFields != null && !constrainedFields.isEmpty()) {
+//	    for (String fieldName : constrainedFields) {
+//		valuesMap.put(fieldName, getValueForField(fields.get(fieldName), columns));
+//	    }
+//	    /* now do a check on the values map */
+//	    if (!filter.isSatisfied(valuesMap)) {
+//		return null;
+//	    }
+//	}
+//	Set<String> targetFields = filter.getTargetFields();
+//	if (targetFields == null || targetFields.isEmpty()) {
+//	    targetFields = fields.keySet();
+//	}
+//	boolean hasConstraints = constrainedFields != null && !constrainedFields.isEmpty();
+//	/* populate the object with the target values */
+//	for (String fieldName : targetFields) {
+//	    Object fieldValue = null;
+//	    FieldDataModel<?> fdm = fields.get(fieldName);
+//	    if (hasConstraints && constrainedFields.contains(fieldName)) {
+//		fieldValue = valuesMap.get(fieldName);
+//	    } else {
+//		fieldValue = getValueForField(fdm, columns);
+//	    }
+//	    if (fieldValue != null) {
+//		addValueToObject(restored, fdm, fieldValue);
+//	    }
+//
+//	}
+//	return restored;
+//    }
     
     
 

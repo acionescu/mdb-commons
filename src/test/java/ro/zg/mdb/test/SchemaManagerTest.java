@@ -13,6 +13,8 @@ package ro.zg.mdb.test;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import javax.jws.soap.SOAPBinding.Use;
+
 import junit.framework.Assert;
 
 import org.junit.Test;
@@ -32,7 +34,6 @@ public class SchemaManagerTest {
     public void testSchemaManager() throws MdbException {
 	MemoryPersistenceManager mpm = new MemoryPersistenceManager();
 	SchemaManager sm = new MdbInstance("TestInstance", mpm, new MdbConfig()).getSchema("TestSchema");
-	
 
 	Book book = new Book();
 	book.setAuthor("Gigel de la Constanţa");
@@ -56,81 +57,89 @@ public class SchemaManagerTest {
 	book2.setPublisher("Bantamdell");
 	book2.setReleaseYear(1789);
 	book2.setPrintTimestamp(System.currentTimeMillis());
-	
+
 	Book savedBook2 = sm.createCommand(Book.class).insert(book2).execute();
 	Assert.assertEquals(book2, savedBook2);
 	mpm.print(System.out);
-	
+
 	allBooks = sm.createCommand(Book.class).get().execute();
 	Assert.assertNotNull(allBooks);
 	Assert.assertTrue(allBooks.size() == 2);
-	
-	Collection<Book> yearSearch=sm.createCommand(Book.class).get().where().field("releaseYear").eq(1999).execute();
-	Assert.assertTrue(yearSearch.size()==1);
+
+	Collection<Book> yearSearch = sm.createCommand(Book.class).get().where().field("releaseYear").eq(1999)
+		.execute();
+	Assert.assertTrue(yearSearch.size() == 1);
 	Assert.assertTrue(yearSearch.contains(book));
-	
-	yearSearch=sm.createCommand(Book.class).get().where().field("releaseYear").not().eq(1999).execute();
-	Assert.assertTrue(yearSearch.size()==1);
+
+	yearSearch = sm.createCommand(Book.class).get().where().field("releaseYear").not().eq(1999).execute();
+	Assert.assertTrue(yearSearch.size() == 1);
 	Assert.assertTrue(yearSearch.contains(book2));
-	
-	Collection<Book> search3=sm.createCommand(Book.class).get().where().field("releaseYear").eq(1999).and().field("author").eq("Zuza").execute();
+
+	Collection<Book> search3 = sm.createCommand(Book.class).get().where().field("releaseYear").eq(1999).and()
+		.field("author").eq("Zuza").execute();
 	Assert.assertTrue(search3.isEmpty());
-	
-	Collection<Book> search4=sm.createCommand(Book.class).get().where().field("releaseYear").eq(1999).and().field("id").eq(savedBook.getId()).execute();
-	Assert.assertTrue(search4.size()==1);
+
+	Collection<Book> search4 = sm.createCommand(Book.class).get().where().field("releaseYear").eq(1999).and()
+		.field("id").eq(savedBook.getId()).execute();
+	Assert.assertTrue(search4.size() == 1);
 	Assert.assertTrue(search4.contains(book));
-	
-	Collection<Book> search6=sm.createCommand(Book.class).get().where().field("releaseYear").gt(1500).execute();
-	Assert.assertEquals(2,search6.size());
-	
-	Collection<Book> search7=sm.createCommand(Book.class).get().where().field("releaseYear").lt(1995).execute();
-	Assert.assertTrue(search7.size()==1);
-	
-	Collection<Book> search8=sm.createCommand(Book.class).get().where().field("releaseYear").between(1000, 2000).execute();
-	Assert.assertTrue(search8.size()==2);
-	
+
+	Collection<Book> search6 = sm.createCommand(Book.class).get().where().field("releaseYear").gt(1500).execute();
+	Assert.assertEquals(2, search6.size());
+
+	Collection<Book> search7 = sm.createCommand(Book.class).get().where().field("releaseYear").lt(1995).execute();
+	Assert.assertTrue(search7.size() == 1);
+
+	Collection<Book> search8 = sm.createCommand(Book.class).get().where().field("releaseYear").between(1000, 2000)
+		.execute();
+	Assert.assertTrue(search8.size() == 2);
+
 	/* test update */
-	
-	Book update1Book=new Book();
+
+	Book update1Book = new Book();
 	update1Book.setPublisher("Changed");
-	long update1 = sm.createCommand(Book.class).update(update1Book, "publisher").where().field("id").eq(book2.getId()).execute();
-	Assert.assertTrue(update1==1);
+	long update1 = sm.createCommand(Book.class).update(update1Book, "publisher").where().field("id")
+		.eq(book2.getId()).execute();
+	Assert.assertTrue(update1 == 1);
 	mpm.print(System.out);
-	
-	Collection<Book> afterUpdate1 = sm.createCommand(Book.class).get("publisher").where().field("id").eq(book2.getId()).execute();
-	Assert.assertTrue(afterUpdate1.size()==1);
+
+	Collection<Book> afterUpdate1 = sm.createCommand(Book.class).get("publisher").where().field("id")
+		.eq(book2.getId()).execute();
+	Assert.assertTrue(afterUpdate1.size() == 1);
 	Assert.assertEquals(update1Book.getPublisher(), new ArrayList<Book>(afterUpdate1).get(0).getPublisher());
-	
-	Book update2Book=new Book();
+
+	Book update2Book = new Book();
 	update2Book.setPublisher("Same publisher");
 	long update2 = sm.createCommand(Book.class).update(update2Book, "publisher").execute();
-	Assert.assertTrue(update2==2);
-	
-	Collection<Book> afterUpdate2=sm.createCommand(Book.class).get("publisher").execute();
-	Assert.assertTrue(afterUpdate2.size()==2);
-	for(Book b : afterUpdate2) {
+	Assert.assertTrue(update2 == 2);
+
+	Collection<Book> afterUpdate2 = sm.createCommand(Book.class).get("publisher").execute();
+	Assert.assertTrue(afterUpdate2.size() == 2);
+	for (Book b : afterUpdate2) {
 	    Assert.assertEquals(update2Book.getPublisher(), b.getPublisher());
 	}
-	
-	Book update3Book=new Book();
+
+	Book update3Book = new Book();
 	update3Book.setPublisher("Changed again");
-	long update3 = sm.createCommand(Book.class).update(update3Book, "publisher").where().field("id").not().eq(book2.getId()).execute();
-	Assert.assertTrue(update3==1);
-	
-	Collection<Book> afterUpdate3 = sm.createCommand(Book.class).get("publisher").where().field("id").eq(book.getId()).execute();
-	Assert.assertTrue(afterUpdate3.size()==1);
-	Assert.assertEquals(update3Book.getPublisher(),new ArrayList<Book>(afterUpdate3).get(0).getPublisher());
-	
+	long update3 = sm.createCommand(Book.class).update(update3Book, "publisher").where().field("id").not()
+		.eq(book2.getId()).execute();
+	Assert.assertTrue(update3 == 1);
+
+	Collection<Book> afterUpdate3 = sm.createCommand(Book.class).get("publisher").where().field("id")
+		.eq(book.getId()).execute();
+	Assert.assertTrue(afterUpdate3.size() == 1);
+	Assert.assertEquals(update3Book.getPublisher(), new ArrayList<Book>(afterUpdate3).get(0).getPublisher());
+
 	/* test delete */
 	long del1 = sm.createCommand(Book.class).delete().where().field("id").eq(book.getId()).execute();
-	Assert.assertTrue(del1==1);
-	
-	Collection<Book> search5=sm.createCommand(Book.class).get().where().field("id").eq(book.getId()).execute();
-	Assert.assertTrue(search5.size()==0);
-	
+	Assert.assertTrue(del1 == 1);
+
+	Collection<Book> search5 = sm.createCommand(Book.class).get().where().field("id").eq(book.getId()).execute();
+	Assert.assertTrue(search5.size() == 0);
+
 	long del2 = sm.createCommand(Book.class).delete().where().field("id").not().eq(book.getId()).execute();
-	Assert.assertTrue(del2==1);
-	
+	Assert.assertTrue(del2 == 1);
+
 	mpm.print(System.out);
     }
 
@@ -138,53 +147,109 @@ public class SchemaManagerTest {
     public void testNestedFeature() throws MdbException {
 	MemoryPersistenceManager mpm = new MemoryPersistenceManager();
 	SchemaManager sm = new MdbInstance("TestInstance", mpm, new MdbConfig()).getSchema("TestSchema");
-	
-	User user1 = new User("user1","I'm not hiding","simple@mdb.com");
-	Entity post1=new Entity("test 1","let's see if we can save nested objects",user1);
-	
+
+	User user1 = new User("user1", "I'm not hiding", "simple@mdb.com");
+	Entity post1 = new Entity("test 1", "let's see if we can save nested objects", user1);
+
 	/* test create with inexistent nested object */
 	post1 = sm.createCommand(Entity.class).insert(post1).execute();
-	
+
 	mpm.print(System.out);
-	
+
 	Assert.assertNotNull(post1.getId());
 	Assert.assertNotNull(post1.getUser().getId());
-	
-	/* test successful search by nested field*/
-	Collection<Entity> afterSave1 = sm.createCommand(Entity.class).get().where().field("user.username").eq("user1").execute();
+
+	/* test successful search by nested field */
+	Collection<Entity> afterSave1 = sm.createCommand(Entity.class).get().where().field("user.username").eq("user1")
+		.execute();
 	Assert.assertEquals(1, afterSave1.size());
 	Assert.assertEquals(post1, new ArrayList<Entity>(afterSave1).get(0));
-	
+
 	/* test successful filter out by nested field */
 	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.username").eq("user2").execute();
 	Assert.assertEquals(0, afterSave1.size());
-	
+
 	/* test successful search by nested object pk */
 	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(user1.getId()).execute();
 	Assert.assertEquals(1, afterSave1.size());
 	Assert.assertEquals(post1, new ArrayList<Entity>(afterSave1).get(0));
-	
+
 	/* test successful filter by nested object pk */
 	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq("inexistent id").execute();
 	Assert.assertEquals(0, afterSave1.size());
-	
+
 	/* test successful search by main object and nested object indexed fields */
-	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(user1.getId()).and().field("id").eq(post1.getId()).execute();
+	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(user1.getId()).and().field("id")
+		.eq(post1.getId()).execute();
 	Assert.assertEquals(1, afterSave1.size());
 	Assert.assertEquals(post1, new ArrayList<Entity>(afterSave1).get(0));
-	
+
 	/* test successful filter by main or nested object indexed field */
-	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(user1.getId()).and().field("id").eq("inexistent id").execute();
+	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(user1.getId()).and().field("id")
+		.eq("inexistent id").execute();
 	Assert.assertEquals(0, afterSave1.size());
-	
+
 	/* test create with existent nested object */
-	Entity post2=new Entity("second post", "Will test insert with existent neted object", user1);
-	
-	post2=sm.createCommand(Entity.class).insert(post2).execute();
+	Entity post2 = new Entity("second post", "Will test insert with existent neted object", user1);
+
+	post2 = sm.createCommand(Entity.class).insert(post2).execute();
 	Assert.assertEquals(user1.getId(), post2.getUser().getId());
 	
+	Collection<Entity> fetchResult1=sm.createCommand(Entity.class).get().where().field("id").eq(post2.getId()).execute();
+	Assert.assertEquals(1, fetchResult1.size());
+	Entity fetchedPost2=new ArrayList<Entity>(fetchResult1).get(0);
+	Assert.assertEquals(post2, fetchedPost2);
+	
+
+	User user2 = new User("user2", "password", "user2@mdb.com");
+	Entity post3 = new Entity("post 3", "will test update an delte", user2);
+
+	post3 = sm.createCommand(Entity.class).insert(post3).execute();
+
+	/* try to delete user2, should fail because it is being reference by post3 */
+	try {
+	    sm.createCommand(User.class).delete().where().field("id").eq(user2.getId()).execute();
+	    Assert.fail("Should have failed due to direct reference by post3");
+	} catch (MdbException e) {
+	    /* pass */
+	}
+
+	user2.setPassword("123456");
+	post3.setMessage("will test update an delete");
+	
+	/* update the entity, only message field */
+	long updated1 = sm.createCommand(Entity.class).update(post3, "message").where().field("id").eq(post3.getId()).execute();
+	Assert.assertEquals(1L, updated1);
+	
+	Collection<Entity> afterUpdate1=sm.createCommand(Entity.class).get().where().field("id").eq(post3.getId()).execute();
+	Assert.assertEquals(1, afterUpdate1.size());
+	Entity post3AfterUpdate1=new ArrayList<Entity>(afterUpdate1).get(0);
+	
+	Assert.assertEquals(post3.getMessage(), post3AfterUpdate1.getMessage());
+	/* the user shouldn't have updated because it was not specified as an update field */
+	Assert.assertTrue(post3.getUser().getPassword() != post3AfterUpdate1.getUser().getPassword());
+	
+	/* test update all fields */
+	mpm.print(System.out);
+	
+	post3.setTitle("post3 updated");
+	
+	long updated2 = sm.createCommand(Entity.class).update(post3).where().field("id").eq(post3.getId()).execute();
+	Assert.assertEquals(1L, updated2);
+	
+	mpm.print(System.out);
+	
+	/* check if we still have only 2 users */
+	Collection<User> users=sm.createCommand(User.class).get().execute();
+	Assert.assertEquals(2, users.size());
+	
+	Collection<Entity> afterUpdate2=sm.createCommand(Entity.class).get().where().field("id").eq(post3.getId()).execute();
+	Assert.assertEquals(1, afterUpdate2.size());
+	Entity post3AfterUpdate2=new ArrayList<Entity>(afterUpdate2).get(0);
+	
+	Assert.assertEquals(post3, post3AfterUpdate2);
 	
 	mpm.print(System.out);
     }
-    
+
 }

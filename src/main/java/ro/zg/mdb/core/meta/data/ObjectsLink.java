@@ -109,6 +109,13 @@ public class ObjectsLink {
 	    return false;
 	return true;
     }
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+	return "ObjectsLink [id=" + id + ", firstRowId=" + firstRowId + ", secondRowId=" + secondRowId + "]";
+    }
     
     
 }

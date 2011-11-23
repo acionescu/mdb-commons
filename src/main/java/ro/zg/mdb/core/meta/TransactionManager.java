@@ -158,9 +158,9 @@ public class TransactionManager {
 
     private <T> void getNestedObjectsData(ObjectDataModel<T> odm, Filter filter, String rowId,
 	    Map<String, Object> valuesMap, String path) throws MdbException {
-	Map<String, FieldDataModel<?>> nestedFields = odm.getNestedFieldsForFilter(filter, path);
+	Set<FieldDataModel<?>> nestedFields = odm.getNestedFieldsForFilter(filter, path);
 	/* iterate over the nested fields and get data if a link exists */
-	for (FieldDataModel<?> fdm : nestedFields.values()) {
+	for (FieldDataModel<?> fdm : nestedFields) {
 	    LinkModel lm = fdm.getLinkModel();
 	    /* check for a link */
 	    Collection<ObjectsLink> links = getObjectLinks(lm, rowId, false);
