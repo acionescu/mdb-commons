@@ -298,14 +298,14 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
     protected boolean delete(ObjectContext<T> oc, String rowId, TransactionManager transactionManager)
 	    throws MdbException {
 
+	// System.out.println("start delete for row "+rowId);
+	deleteUnusedIndexes(oc, rowId);
+	// System.out.println("deleting "+rowId);
+
 	ResourceLock rowLock = locksManager.getRowLock(rowId);
 	rowLock.acquireWriteLock();
 
 	try {
-
-	    // System.out.println("start delete for row "+rowId);
-	    deleteUnusedIndexes(oc, rowId);
-	    // System.out.println("deleting "+rowId);
 
 	    /* delete links */
 	    for (FieldDataModel<?> fdm : objectDataModel.getLinkedFields()) {
@@ -1344,7 +1344,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
     }
 
     public void save(ObjectContext<T> objectContext, TransactionManager transactionManager) throws MdbException {
-	ObjectDataModel<T> odm = objectContext.getObjectDataModel();
+	// ObjectDataModel<T> odm = objectContext.getObjectDataModel();
 	// String objectName = objectContext.getObjectName();
 
 	/* assure there is no duplication for unique indexes */
@@ -1366,10 +1366,9 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	}
 
 	/* hold the unique values */
-	synchronized (odm) {
+	synchronized (objectDataModel) {
 
 	    uniqueValuesLocks = lockUniqueValues(uniqueValues);
-	    // rowId = objectContext.getRowIdProvider().provideRowId();
 
 	}
 
@@ -1379,6 +1378,8 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    // System.out.println(Thread.currentThread().getId() + " passed testing for " + uniqueValues);
 	} catch (MdbException e) {
 	    /* in case the test fails release the locks */
+	    rowLock.releaseWriteLock();
+	    locksManager.releaseRowLock(rowLock);
 	    releaseUniqueValuesLocks(uniqueValuesLocks);
 	    throw e;
 	}
@@ -1409,43 +1410,44 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    }
 
 	    if (createLink) {
-		LinkValue lv = getLinkValue(odm.getField(e.getKey()), rowId, noc.getRowId());
+		LinkValue lv = getLinkValue(objectDataModel.getField(e.getKey()), rowId, noc.getRowId());
 		transactionManager.saveLinkValue(lv);
 	    }
 
 	}
 
 	try {
-	    /* create the actual data record */
 
-	    try {
-		// System.out.println("saving "+objectContext.getData()+" for "+ typeName+" at row "+rowId);
-		saveData(objectContext.getData(), rowId);
-	    } catch (PersistenceException e) {
-		throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, e);
-	    } finally {
-		rowLock.releaseWriteLock();
-		locksManager.releaseRowLock(rowLock);
-	    }
+	    if (!objectContext.isAlreadyCreated() || objectContext.isUpdated()) {
 
-	    /* create unique indexes */
-	    for (UniqueIndexValue uiv : objectContext.getUniqueValues().values()) {
-		if (uiv.isComposite()) {
-		    addCompositeIndex(uiv.getName(), uiv.getValue(), rowId);
-		} else {
-		    addUniqueIndex(uiv.getName(), uiv.getValue(), rowId);
+		/* create the actual data record */
+		try {
+		    // System.out.println("saving "+objectContext.getData()+" for "+ typeName+" at row "+rowId);
+		    saveData(objectContext.getData(), rowId);
+		} catch (PersistenceException e) {
+		    throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, e);
 		}
-	    }
-	    // System.out.println(Thread.currentThread().getId() + " created " +
-	    // objectContext.getUniqueValues().values());
-	    /* create indexes */
-	    for (Map.Entry<String, String> e : objectContext.getIndexedValues().entrySet()) {
-		addIndex(e.getKey(), e.getValue(), rowId);
-	    }
 
-	    /* udpate the object id */
-	    if (!objectContext.isAlreadyCreated()) {
-		objectContext.updateObjectId();
+		/* create unique indexes */
+		for (UniqueIndexValue uiv : objectContext.getUniqueValues().values()) {
+		    if (uiv.isComposite()) {
+			addCompositeIndex(uiv.getName(), uiv.getValue(), rowId);
+		    } else {
+			addUniqueIndex(uiv.getName(), uiv.getValue(), rowId);
+		    }
+		}
+		// System.out.println(Thread.currentThread().getId() + " created " +
+		// objectContext.getUniqueValues().values());
+
+		/* create indexes */
+		for (Map.Entry<String, String> e : objectContext.getIndexedValues().entrySet()) {
+		    addIndex(e.getKey(), e.getValue(), rowId);
+		}
+
+		/* udpate the object id */
+		if (!objectContext.isAlreadyCreated()) {
+		    objectContext.updateObjectId();
+		}
 	    }
 
 	    /* create links */
@@ -1454,6 +1456,8 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    }
 
 	} finally {
+	    rowLock.releaseWriteLock();
+	    locksManager.releaseRowLock(rowLock);
 	    releaseUniqueValuesLocks(uniqueValuesLocks);
 	}
     }

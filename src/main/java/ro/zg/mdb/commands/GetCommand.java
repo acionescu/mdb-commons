@@ -16,6 +16,7 @@ import java.util.LinkedHashSet;
 
 import ro.zg.mdb.commands.builders.CommandBuilderContext;
 import ro.zg.mdb.commands.builders.FilteredCommand;
+import ro.zg.mdb.constants.OperationType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
 
@@ -30,6 +31,7 @@ public class GetCommand<T> extends FilteredCommand<T,Collection<T>>{
     @Override
     public Collection<T> execute() throws MdbException {
 	Filter filter =filterContext.getFilter();
+	filter.setOperationType(OperationType.READ);
 	String[] requiredFields=commandContext.getFields();
 	
 	if(requiredFields != null) {

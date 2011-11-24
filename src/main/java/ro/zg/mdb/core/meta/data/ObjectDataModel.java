@@ -21,6 +21,7 @@ import java.util.Set;
 import ro.zg.commons.exceptions.ContextAwareException;
 import ro.zg.mdb.constants.Constants;
 import ro.zg.mdb.constants.MdbErrorType;
+import ro.zg.mdb.constants.OperationType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
 import ro.zg.util.data.GenericNameValue;
@@ -125,9 +126,13 @@ public class ObjectDataModel<T> extends DataModel<T> {
      */
     public Set<FieldDataModel<?>> getNestedFieldsForFilter(Filter filter, String path) {
 	Set<FieldDataModel<?>> nestedFields = new HashSet<FieldDataModel<?>>();
-//	Set<String> targetFields = filter.getTargetFields();
-//	boolean targetFieldsEmpty = (targetFields == null || targetFields.isEmpty());
-	if(filter.getTargetFields() == null) {
+	
+	/* 
+	 * in the case of an update we need to bring the data for all nested fields if, no target 
+	 * field was specified
+	 */
+	Set<String> targetFields = filter.getTargetFields();
+	if( targetFields == null && OperationType.UPDATE.equals(filter.getOperationType())) {
 	    return linkedFields;
 	}
 	
@@ -136,29 +141,13 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	    if (fdm.getDataModel().isMultivalued()) {
 		continue;
 	    }
-//	    boolean add = false;
-//	    if (targetFieldsEmpty) {
-//		if (!fdm.getLinkModel().isLazy()) {
-//		    add = true;
-//		}
-//	    } else {
-//		add = targetFields.contains(path + fdm.getName());
-//	    }
-//
-//	    if (!add) {
-//		add = filter.getConstraintFields().contains(path + Constants.NESTED_FIELD_SEPARATOR + fdm.getName());
-//	    }
-//
-//	    if (add) {
-//		nestedFields.put(fdm.getName(), fdm);
-//	    }
 	    
 	    String fullFieldName=fdm.getName();
 	    if(!isMainField) {
 		fullFieldName=path+Constants.NESTED_FIELD_SEPARATOR+fullFieldName;
 	    }
 	    
-	    if(filter.isFieldNeeded(fullFieldName)) {
+	    if(filter.isFieldNeeded(fullFieldName) || (targetFields == null && !fdm.getLinkModel().isLazy())) {
 		nestedFields.add(fdm);
 	    }
 	}

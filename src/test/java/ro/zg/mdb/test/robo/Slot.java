@@ -11,11 +11,11 @@
 package ro.zg.mdb.test.robo;
 
 import ro.zg.mdb.core.annotations.Persistable;
-import ro.zg.mdb.core.annotations.ObjectId;
+import ro.zg.mdb.core.annotations.Unique;
 
 @Persistable
 public class Slot {
-    @ObjectId
+    @Unique(id=1)
     private int position;
     private char value; 
     

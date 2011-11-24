@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 import ro.zg.mdb.constants.Constants;
+import ro.zg.mdb.constants.OperationType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.constraints.All;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
@@ -24,6 +25,7 @@ public class Filter implements ObjectConstraint {
     private Set<String> targetFields;
     private Set<String> constraintFields;
     private Set<String> neededFields;
+    private OperationType operationType;
 
     public Filter() {
 	super();
@@ -117,4 +119,20 @@ public class Filter implements ObjectConstraint {
     public boolean isTargetFieldPresent(String fieldName) {
 	return targetFields.contains(fieldName);
     }
+
+    /**
+     * @return the operationType
+     */
+    public OperationType getOperationType() {
+        return operationType;
+    }
+
+    /**
+     * @param operationType the operationType to set
+     */
+    public void setOperationType(OperationType operationType) {
+        this.operationType = operationType;
+    }
+    
+    
 }

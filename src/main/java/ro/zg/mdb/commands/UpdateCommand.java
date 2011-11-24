@@ -15,6 +15,7 @@ import java.util.LinkedHashSet;
 
 import ro.zg.mdb.commands.builders.CommandBuilderContext;
 import ro.zg.mdb.commands.builders.FilteredCommand;
+import ro.zg.mdb.constants.OperationType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
 
@@ -28,6 +29,7 @@ public class UpdateCommand<T> extends FilteredCommand<T,Long>{
     public Long execute() throws MdbException {
 	T source = commandContext.getSource();
 	Filter filter =filterContext.getFilter();
+	filter.setOperationType(OperationType.UPDATE);
 	String[] targetFields=commandContext.getFields();
 	
 	if(targetFields != null) {

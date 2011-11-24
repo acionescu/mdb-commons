@@ -194,12 +194,12 @@ public class SchemaManagerTest {
 
 	post2 = sm.createCommand(Entity.class).insert(post2).execute();
 	Assert.assertEquals(user1.getId(), post2.getUser().getId());
-	
-	Collection<Entity> fetchResult1=sm.createCommand(Entity.class).get().where().field("id").eq(post2.getId()).execute();
+
+	Collection<Entity> fetchResult1 = sm.createCommand(Entity.class).get().where().field("id").eq(post2.getId())
+		.execute();
 	Assert.assertEquals(1, fetchResult1.size());
-	Entity fetchedPost2=new ArrayList<Entity>(fetchResult1).get(0);
+	Entity fetchedPost2 = new ArrayList<Entity>(fetchResult1).get(0);
 	Assert.assertEquals(post2, fetchedPost2);
-	
 
 	User user2 = new User("user2", "password", "user2@mdb.com");
 	Entity post3 = new Entity("post 3", "will test update an delte", user2);
@@ -216,39 +216,68 @@ public class SchemaManagerTest {
 
 	user2.setPassword("123456");
 	post3.setMessage("will test update an delete");
-	
+
 	/* update the entity, only message field */
-	long updated1 = sm.createCommand(Entity.class).update(post3, "message").where().field("id").eq(post3.getId()).execute();
+	long updated1 = sm.createCommand(Entity.class).update(post3, "message").where().field("id").eq(post3.getId())
+		.execute();
 	Assert.assertEquals(1L, updated1);
-	
-	Collection<Entity> afterUpdate1=sm.createCommand(Entity.class).get().where().field("id").eq(post3.getId()).execute();
+
+	Collection<Entity> afterUpdate1 = sm.createCommand(Entity.class).get().where().field("id").eq(post3.getId())
+		.execute();
 	Assert.assertEquals(1, afterUpdate1.size());
-	Entity post3AfterUpdate1=new ArrayList<Entity>(afterUpdate1).get(0);
-	
+	Entity post3AfterUpdate1 = new ArrayList<Entity>(afterUpdate1).get(0);
+
 	Assert.assertEquals(post3.getMessage(), post3AfterUpdate1.getMessage());
 	/* the user shouldn't have updated because it was not specified as an update field */
 	Assert.assertTrue(post3.getUser().getPassword() != post3AfterUpdate1.getUser().getPassword());
-	
+
 	/* test update all fields */
-	mpm.print(System.out);
-	
+
 	post3.setTitle("post3 updated");
-	
+
 	long updated2 = sm.createCommand(Entity.class).update(post3).where().field("id").eq(post3.getId()).execute();
 	Assert.assertEquals(1L, updated2);
-	
-	mpm.print(System.out);
-	
+
 	/* check if we still have only 2 users */
-	Collection<User> users=sm.createCommand(User.class).get().execute();
+	Collection<User> users = sm.createCommand(User.class).get().execute();
 	Assert.assertEquals(2, users.size());
-	
-	Collection<Entity> afterUpdate2=sm.createCommand(Entity.class).get().where().field("id").eq(post3.getId()).execute();
+
+	Collection<Entity> afterUpdate2 = sm.createCommand(Entity.class).get().where().field("id").eq(post3.getId())
+		.execute();
 	Assert.assertEquals(1, afterUpdate2.size());
-	Entity post3AfterUpdate2=new ArrayList<Entity>(afterUpdate2).get(0);
-	
+	Entity post3AfterUpdate2 = new ArrayList<Entity>(afterUpdate2).get(0);
+
 	Assert.assertEquals(post3, post3AfterUpdate2);
+
+	/* test changing the reference to a nested object */
+	post3.setUser(user1);
+
+	long updated3 = sm.createCommand(Entity.class).update(post3).where().field("id").eq(post3.getId()).execute();
+	Assert.assertEquals(1L, updated3);
+
+	Collection<Entity> afterUpdate3 = sm.createCommand(Entity.class).get().where().field("id").eq(post3.getId())
+		.execute();
+	Assert.assertEquals(1, afterUpdate3.size());
+	Entity post3AfterUpdate3 = new ArrayList<Entity>(afterUpdate3).get(0);
+
+	Assert.assertEquals(user1, post3AfterUpdate3.getUser());
+
+	/* test successful delete */
+	long delete1 = sm.createCommand(User.class).delete().where().field("id").eq(user2.getId()).execute();
+	Assert.assertEquals(1L, delete1);
+
+	Collection<User> afterDelete1 = sm.createCommand(User.class).get().where().field("id").eq(user2.getId())
+		.execute();
+	Assert.assertEquals(0, afterDelete1.size());
 	
+	/* test successful delete of objects with other nested objects but without a direct referece to it */
+	
+	long delete2 = sm.createCommand(Entity.class).delete().execute();
+	Assert.assertEquals(3L, delete2);
+	
+	Collection<Entity> afterDelete2 = sm.createCommand(Entity.class).get().execute();
+	Assert.assertEquals(0, afterDelete2.size());
+
 	mpm.print(System.out);
     }
 
