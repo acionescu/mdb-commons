@@ -28,16 +28,16 @@ public class ObjectDataManagersRepository extends PersistentDataManager{
 	this.schemaContext=schemaContext;
     }
 
-    private Map<Class<?>, PersistentObjectDataManager<?>> objectDataManagers = new HashMap<Class<?>, PersistentObjectDataManager<?>>();
+    private Map<String, PersistentObjectDataManager<?>> objectDataManagers = new HashMap<String, PersistentObjectDataManager<?>>();
     
     @SuppressWarnings("unchecked")
     public <T> PersistentObjectDataManager<T> getObjectDataManager(Class<T> type, String objectName) throws MdbException {
 	synchronized (type) {
-	    PersistentObjectDataManager<T> odm = (PersistentObjectDataManager<T>) objectDataManagers.get(type);
+	    PersistentObjectDataManager<T> odm = (PersistentObjectDataManager<T>) objectDataManagers.get(objectName);
 	    if (odm == null) {
 		ObjectDataModel<T> odModel = (ObjectDataModel<T>) schema.getObjectDataModel(type);
 		odm = new PersistentObjectDataManager<T>(getPersistenceManager(objectName), odModel,objectName);
-		objectDataManagers.put(type, odm);
+		objectDataManagers.put(objectName, odm);
 	    }
 	    return odm;
 	}

@@ -27,6 +27,8 @@ public class Row {
     
     private String oldHash;
     
+    private static transient volatile long uniqueIndex;
+    
     /**
      * Constructor used when the hash is already known, like in the update cases
      * @param hash
@@ -49,7 +51,7 @@ public class Row {
 
     public static Row buildFromData(String data) {
 	long timestamp=System.currentTimeMillis();
-	String rowId=HashUtil.digestSHA1(data);
+	String rowId=HashUtil.digestSHA1(data+timestamp+(uniqueIndex++));
 	return new Row(rowId,timestamp);
     }
 

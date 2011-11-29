@@ -40,9 +40,9 @@ public class Schema {
     // ObjectDataModel<T> odm = getObjectDataModel(type);
     // return (T)odm.getObjectFromString(data,filter);
     // }
-    
-    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type) throws MdbException{
-	return (ObjectDataModel<T>)getDataModel(type);
+
+    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type) throws MdbException {
+	return (ObjectDataModel<T>) getDataModel(type);
     }
 
     private <T> DataModel<T> getDataModel(Class<T> type) throws MdbException {
@@ -62,18 +62,24 @@ public class Schema {
 	return odm;
     }
 
-//    public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) {
-//	return createObjectDataModel(type, ObjectId.class, Unique.class, Link.class, Required.class,
-//		Indexed.class);
-//    }
+    // public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) {
+    // return createObjectDataModel(type, ObjectId.class, Unique.class, Link.class, Required.class,
+    // Indexed.class);
+    // }
 
     public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) throws MdbException {
-	Set<Class<? extends Annotation>> annotationTypes=annotationMappersManager.getKnownAnnotations();
+	Set<Class<? extends Annotation>> annotationTypes = annotationMappersManager.getKnownAnnotations();
 	ObjectDataModel<T> odm = new ObjectDataModel<T>(type);
-	Class<?> currentType=type;
+	Class<?> currentType = type;
 	do {
 	    for (Field field : currentType.getDeclaredFields()) {
-		FieldDataModel<?> fdm = new FieldDataModel(field.getName(), getDataModel(field.getType()));
+		FieldDataModel<?> fdm = null;
+		/* in case a class has a reference to itself*/
+		if (field.getType().equals(currentType)) {
+		    fdm = new FieldDataModel(field.getName(), odm);
+		} else {
+		    fdm = new FieldDataModel(field.getName(), getDataModel(field.getType()));
+		}
 		for (Class<? extends Annotation> annotationType : annotationTypes) {
 		    Annotation currentAnnotation = field.getAnnotation(annotationType);
 		    if (currentAnnotation != null) {
@@ -88,7 +94,6 @@ public class Schema {
 	} while (currentType != null);
 	return odm;
     }
-
 
     /**
      * @return the config

@@ -67,16 +67,16 @@ public class ObjectContext<T> {
 
 
     public ObjectContext(T target, ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
-	    Map<String, UniqueIndexValue> uniqueValues, Map<String, ObjectContext<?>> nestedContexts) {
+	    Map<String, UniqueIndexValue> uniqueValues, Map<String, ObjectContext<?>> nestedContexts) throws MdbException {
 	super();
 	this.target=target;
 	this.objectDataModel = objectDataModel;
 	this.data = data;
 	this.indexedValues = indexedValues;
 	this.uniqueValues = uniqueValues;
-	this.rowInfo=Row.buildFromData(data);
 	this.objectName=objectDataModel.getTypeName();
 	this.nestedObjectContexts=nestedContexts;
+	updateRowInfo();
     }
 
 
@@ -94,6 +94,17 @@ public class ObjectContext<T> {
 	this.alreadyCreated=true;
 	this.objectDataModel=objectDataModel;
 	this.objectName=objectDataModel.getTypeName();
+    }
+    
+    private void updateRowInfo() throws MdbException {
+	String rowId = objectDataModel.getObjectId(target);
+	if(rowId == null) {
+	    rowInfo=Row.buildFromData(data);
+	    objectDataModel.setObjectId(target, rowInfo.getHash());
+	}
+	else {
+	    rowInfo = new Row(rowId);
+	}
     }
     
     public void updateObjectId() throws MdbException {

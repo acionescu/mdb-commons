@@ -13,8 +13,6 @@ package ro.zg.mdb.test;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import javax.jws.soap.SOAPBinding.Use;
-
 import junit.framework.Assert;
 
 import org.junit.Test;

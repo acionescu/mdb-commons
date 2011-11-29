@@ -10,14 +10,17 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta.data;
 
-import ro.zg.mdb.core.annotations.Persistable;
 import ro.zg.mdb.core.annotations.ObjectId;
+import ro.zg.mdb.core.annotations.Persistable;
+import ro.zg.mdb.core.annotations.Unique;
 
 @Persistable
 public class ObjectsLink {
     @ObjectId
     private String id;
+    @Unique(id=1)
     private String firstRowId;
+    @Unique(id=1)
     private String secondRowId;
     /**
      * @return the firstRowId

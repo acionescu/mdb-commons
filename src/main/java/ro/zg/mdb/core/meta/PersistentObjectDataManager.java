@@ -1444,10 +1444,10 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		    addIndex(e.getKey(), e.getValue(), rowId);
 		}
 
-		/* udpate the object id */
-		if (!objectContext.isAlreadyCreated()) {
-		    objectContext.updateObjectId();
-		}
+//		/* udpate the object id */
+//		if (!objectContext.isAlreadyCreated()) {
+//		    objectContext.updateObjectId();
+//		}
 	    }
 
 	    /* create links */
