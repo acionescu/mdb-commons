@@ -10,91 +10,30 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta.data;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import ro.zg.util.data.reflection.ReflectionUtility;
 
 public class DataModel<T> {
     private Class<T> type;
     private boolean complexType;
-    private boolean multivalued;
-    private boolean set;
-    private boolean list;
-    private boolean map;
+    protected boolean multivalued;
     
     public DataModel(Class<T> type, boolean complexType) {
 	super();
 	this.type = type;
 	this.complexType = complexType;
-	initMultivalued();
     }
 
 
     public DataModel(Class<T> type) {
 	super();
 	this.type = type;
-	initMultivalued();
     }
     
     
-    private void initMultivalued() {
-	if( checkSuperType(Collection.class)) {
-	    if(checkSuperType(List.class)) {
-		list=true;
-	    }
-	    else if(checkSuperType(Set.class)) {
-		set=true;
-	    }
-	    else {
-		throw new IllegalArgumentException("Unknown collection "+type.getName());
-	    }
-	    multivalued=true;
-	}
-	else if(checkSuperType(Map.class)) {
-	    map=true;
-	    multivalued=true;
-	}
-    }
-    
-    private boolean checkSuperType(Class<?> superClass) {
-	return ReflectionUtility.checkInstanceOf(type, superClass);
-    }
-    
-    
-    
-
     /**
      * @return the multivalued
      */
     public boolean isMultivalued() {
         return multivalued;
-    }
-
-
-    /**
-     * @return the set
-     */
-    public boolean isSet() {
-        return set;
-    }
-
-
-    /**
-     * @return the list
-     */
-    public boolean isList() {
-        return list;
-    }
-
-
-    /**
-     * @return the map
-     */
-    public boolean isMap() {
-        return map;
     }
 
 

@@ -12,6 +12,7 @@ package ro.zg.mdb.core.schema;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,6 +45,7 @@ public class ObjectContext<T> {
      * used to handle links
      */
     private Map<String,ObjectContext<?>> nestedObjectContexts=new HashMap<String, ObjectContext<?>>();
+    private Map<String, List<ObjectContext<?>>> nestedMultivaluedObjectContexts=new HashMap<String, List<ObjectContext<?>>>(); 
     private Set<LinkValue> linksToAdd=new HashSet<LinkValue>();
     private Set<LinkValue> linksToRemove=new HashSet<LinkValue>();
     
@@ -67,7 +69,7 @@ public class ObjectContext<T> {
 
 
     public ObjectContext(T target, ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
-	    Map<String, UniqueIndexValue> uniqueValues, Map<String, ObjectContext<?>> nestedContexts) throws MdbException {
+	    Map<String, UniqueIndexValue> uniqueValues, Map<String, ObjectContext<?>> nestedContexts, Map<String, List<ObjectContext<?>>> nestedMultivaluedObjectContexts) throws MdbException {
 	super();
 	this.target=target;
 	this.objectDataModel = objectDataModel;
@@ -76,6 +78,7 @@ public class ObjectContext<T> {
 	this.uniqueValues = uniqueValues;
 	this.objectName=objectDataModel.getTypeName();
 	this.nestedObjectContexts=nestedContexts;
+	this.nestedMultivaluedObjectContexts=nestedMultivaluedObjectContexts;
 	updateRowInfo();
     }
 
@@ -91,6 +94,12 @@ public class ObjectContext<T> {
     
     public ObjectContext(ObjectDataModel<T> objectDataModel, String rowId) {
 	this.rowInfo=new Row(rowId);
+	this.alreadyCreated=true;
+	this.objectDataModel=objectDataModel;
+	this.objectName=objectDataModel.getTypeName();
+    }
+    
+    public ObjectContext(ObjectDataModel<T> objectDataModel) {
 	this.alreadyCreated=true;
 	this.objectDataModel=objectDataModel;
 	this.objectName=objectDataModel.getTypeName();
@@ -268,6 +277,16 @@ public class ObjectContext<T> {
     public Set<LinkValue> getLinksToRemove() {
         return linksToRemove;
     }
+
+
+    /**
+     * @return the nestedMultivaluedObjectContexts
+     */
+    public Map<String, List<ObjectContext<?>>> getNestedMultivaluedObjectContexts() {
+        return nestedMultivaluedObjectContexts;
+    }
     
-    
+    public void setRowId(String rowId) {
+	rowInfo=new Row(rowId);
+    }
 }

@@ -48,17 +48,24 @@ public class FieldDataModel<T> {
 		impl = implementation.getType();
 	    }
 	    try {
-		if (dataModel.isList()) {
-		    if (impl == null) {
-			impl = DEFAULT_LIST_IMPLEMENTATION;
+		if (dataModel instanceof CollectionDataModel) {
+		    CollectionDataModel<T> collectionModel = (CollectionDataModel<T>) dataModel;
+
+		    if (collectionModel.isList()) {
+			if (impl == null) {
+			    impl = DEFAULT_LIST_IMPLEMENTATION;
+			}
+			return ReflectionUtility.createCollection(impl, values);
+		    } else if (collectionModel.isSet()) {
+			if (impl == null) {
+			    impl = DEFAULT_SET_IMPLEMENTATION;
+			}
+			return ReflectionUtility.createCollection(impl, values);
 		    }
-		    return ReflectionUtility.createCollection(impl, values);
-		} else if (dataModel.isSet()) {
-		    if (impl == null) {
-			impl = DEFAULT_SET_IMPLEMENTATION;
-		    }
-		    return ReflectionUtility.createCollection(impl, values);
-		} else if (dataModel.isMap()) {
+		}
+
+		else if (dataModel instanceof MapDataModel) {
+		    
 		    if (impl == null) {
 			impl = DEFAULT_MAP_IMPLEMENTATION;
 		    }
@@ -104,7 +111,6 @@ public class FieldDataModel<T> {
 	return required;
     }
 
-
     /**
      * @return the indexed
      */
@@ -119,8 +125,6 @@ public class FieldDataModel<T> {
     public void setRequired(boolean required) {
 	this.required = required;
     }
-
-    
 
     /**
      * @return the uniqueIndexId
@@ -161,20 +165,20 @@ public class FieldDataModel<T> {
     public void setSequenceId(String sequenceId) {
 	this.sequenceId = sequenceId;
     }
-    
 
     /**
      * @return the objectId
      */
     public boolean isObjectId() {
-        return objectId;
+	return objectId;
     }
 
     /**
-     * @param objectId the objectId to set
+     * @param objectId
+     *            the objectId to set
      */
     public void setObjectId(boolean objectId) {
-        this.objectId = objectId;
+	this.objectId = objectId;
     }
 
     public void testValue(Object value) throws MdbException {
@@ -197,8 +201,8 @@ public class FieldDataModel<T> {
     public void setLinkModel(LinkModel linkModel) {
 	this.linkModel = linkModel;
 	/* if this is a direct link ( linkModel.first is true ) , add a reference on the data model of the field */
-	if(linkModel.isFirst()) {
-	    ObjectDataModel<T> fodm = (ObjectDataModel<T>)getDataModel();
+	if (linkModel.isFirst()) {
+	    ObjectDataModel<T> fodm = (ObjectDataModel<T>) getDataModel();
 	    fodm.addReference(linkModel);
 	}
     }
@@ -218,7 +222,9 @@ public class FieldDataModel<T> {
 	this.implementation = implementation;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -237,7 +243,9 @@ public class FieldDataModel<T> {
 	return result;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -288,7 +296,9 @@ public class FieldDataModel<T> {
 	return true;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#toString()
      */
     @Override

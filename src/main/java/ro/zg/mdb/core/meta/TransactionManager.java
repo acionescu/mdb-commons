@@ -13,6 +13,7 @@ package ro.zg.mdb.core.meta;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -286,6 +287,16 @@ public class TransactionManager {
 	PersistentObjectDataManager<T> odm = getObjectDataManager(objectName, (Class<T>) target.getClass());
 	return odm.getObjectContext(this, target, filter, rawOldData, rowId, path);
     }
+    
+    public <T> List<ObjectContext<T>> getObjectContextsList(String objectName, Collection<T> values, boolean create) throws MdbException{
+	List<ObjectContext<T>> objectContexts=new ArrayList<ObjectContext<T>>();
+	
+	for(T target : values) {
+	    objectContexts.add(getObjectContext(objectName, target, create));
+	}
+	
+	return objectContexts;
+    }
 
     public <T> T getObjectFromValuesMap(Class<T> type, Map<String, Object> valuesMap, Collection<String> targetFields,
 	    String path, String rowId) throws MdbException {
@@ -308,15 +319,21 @@ public class TransactionManager {
 	    String fieldName = fdm.getName();
 	    String fullFieldName = path + fieldName;
 
-	    if (targetFieldsExist && !targetFields.contains(fullFieldName)) {
-		continue;
-	    }
-	    Object fieldValue = null;
 	    if (fdm.getDataModel().isMultivalued()) {
 		continue;
 	    }
-
-	    if (fdm.getLinkModel() != null) {
+	    
+	    if (targetFieldsExist && !targetFields.contains(fullFieldName)) {
+		continue;
+	    }
+	    
+	    Object fieldValue = null;
+	    LinkModel lm = fdm.getLinkModel();
+	    if ( lm != null ) {
+		if(!targetFieldsExist && lm.isLazy()) {
+		    continue;
+		}
+		
 		String nestedRowId = transactionContext.getRowIdForPendingField(fullFieldName);
 		fieldValue = transactionContext.getPendingObject(nestedRowId);
 		if (fieldValue == null) {
@@ -449,4 +466,20 @@ public class TransactionManager {
     public void clearPendingRows() {
 	transactionContext.clearPendingRows();
     }
+    
+    public <T> ObjectContext<T> addPendingObjectForWrite(T o, ObjectDataModel<T> odm) {
+	ObjectContext<T> pendingContext = new ObjectContext<T>(odm);
+	transactionContext.addPendingObjectForWrite(o,pendingContext);
+	return pendingContext;
+    }
+
+    public <T> ObjectContext<T> getObjectContextForPendingObject(T o) {
+	return transactionContext.getObjectContextForPendingObject(o);
+    }
+    
+    
+    public <T> ObjectContext<T> removePendingObjectForWrite(T o) {
+	return transactionContext.removePendingObjectForWrite(o);
+    }
+    
 }

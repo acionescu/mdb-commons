@@ -33,9 +33,9 @@ public class Row {
      * Constructor used when the hash is already known, like in the update cases
      * @param hash
      */
-    public Row(String rowId) {
+    public Row(String hash) {
 	super();
-	this.hash = rowId;
+	this.hash = hash;
     }
     /**
      * Constructor used usually when row info is created from data 

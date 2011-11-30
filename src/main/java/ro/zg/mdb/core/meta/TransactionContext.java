@@ -11,9 +11,11 @@
 package ro.zg.mdb.core.meta;
 
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 import ro.zg.mdb.core.meta.data.ObjectsLink;
+import ro.zg.mdb.core.schema.ObjectContext;
 import ro.zg.util.data.ListMap;
 
 public class TransactionContext {
@@ -21,6 +23,16 @@ public class TransactionContext {
     private Map<String, Object> pendingObjects = new HashMap<String, Object>();
     private Map<String, String> pendingFields = new HashMap<String, String>();
     private Map<String, ObjectsLink> pendingLinks = new HashMap<String, ObjectsLink>();
+    /**
+     * This map keeps track of the objects in the course of writing 
+     * <br/>
+     * An {@link IdentityHashMap} is used because we want to keep track of objects by reference only
+     * <br/>
+     * Each time a nested object has a reference to an object already in the course of processing
+     * will get a dummy {@link ObjectContext} on which the rowId will be filled after the creation of the pending
+     * object's {@link ObjectContext}
+     */
+    private Map<Object, ObjectContext<?>> pendingObjectsForWrite = new IdentityHashMap<Object, ObjectContext<?>>();
 
     public void addPendingRow(String objectName, String rowId) {
 	pendingRows.add(objectName, rowId);
@@ -68,5 +80,17 @@ public class TransactionContext {
     public void clearPendingRows() {
 	pendingRows = new ListMap<String, String>();
     }
+    
+    public <T> void addPendingObjectForWrite(T o, ObjectContext<T> oc) {
+	pendingObjectsForWrite.put(o,oc);
+    }
 
+    public <T> ObjectContext<T> getObjectContextForPendingObject(T o) {
+	return (ObjectContext<T>)pendingObjectsForWrite.get(o);
+    }
+    
+    public <T> ObjectContext<T> removePendingObjectForWrite(T o) {
+	return (ObjectContext<T>)pendingObjectsForWrite.remove(o);
+    }
+    
 }

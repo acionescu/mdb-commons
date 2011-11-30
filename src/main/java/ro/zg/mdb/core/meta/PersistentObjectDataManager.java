@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,9 +29,11 @@ import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.FieldConstraintContext;
 import ro.zg.mdb.core.filter.Filter;
 import ro.zg.mdb.core.filter.constraints.Range;
+import ro.zg.mdb.core.meta.data.DataModel;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
 import ro.zg.mdb.core.meta.data.LinkModel;
 import ro.zg.mdb.core.meta.data.LinkValue;
+import ro.zg.mdb.core.meta.data.MultivaluedDataModel;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 import ro.zg.mdb.core.meta.data.ObjectsLink;
 import ro.zg.mdb.core.meta.data.UniqueIndex;
@@ -716,6 +719,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	Map<String, String> indexedValues = new HashMap<String, String>();
 	Map<String, UniqueIndexValue> uniqueValues = new HashMap<String, UniqueIndexValue>();
 	Map<String, ObjectContext<?>> nestedObjectContexts = new HashMap<String, ObjectContext<?>>();
+	Map<String, List<ObjectContext<?>>> nestedMultivaluedObjectContexts = new HashMap<String, List<ObjectContext<?>>>();
 	String data = "";
 	boolean addSeparator = false;
 	String objectIdFieldName = objectDataModel.getObjectIdFieldName();
@@ -748,9 +752,23 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		     * if the linked object already exists, get the rowId, otherwise create an ObjectContext for it
 		     */
 		    if (fieldValue != null) {
-			ObjectContext<?> nestedObjectContext = transactionManager.getObjectContext(fieldValue
-				.getClass().getName(), fieldValue, true);
-			nestedObjectContexts.put(fieldName, nestedObjectContext);
+			DataModel<?> fieldType = fdm.getDataModel();
+
+			if (fieldType.isMultivalued()) {
+			    MultivaluedDataModel<?, ?> multivaluedModel = (MultivaluedDataModel) fieldType;
+			    if (multivaluedModel.isCollection()) {
+				nestedMultivaluedObjectContexts.put(fieldName, transactionManager
+					.getObjectContextsList(fdm.getType().getName(), (Collection) fieldValue, true));
+			    } else if (multivaluedModel.isMap()) {
+				nestedMultivaluedObjectContexts.put(fieldName, transactionManager
+					.getObjectContextsList(fdm.getType().getName(), ((Map) fieldValue).values(),
+						true));
+			    }
+			} else {
+			    ObjectContext<?> nestedObjectContext = transactionManager.getObjectContext(fdm.getType()
+				    .getName(), fieldValue, true);
+			    nestedObjectContexts.put(fieldName, nestedObjectContext);
+			}
 		    }
 
 		    continue;
@@ -796,7 +814,8 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	}
 	/* build object context */
 
-	return new ObjectContext<T>(target, objectDataModel, data, indexedValues, uniqueValues, nestedObjectContexts);
+	return new ObjectContext<T>(target, objectDataModel, data, indexedValues, uniqueValues, nestedObjectContexts,
+		nestedMultivaluedObjectContexts);
     }
 
     /**
@@ -1119,7 +1138,24 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	if (rowId != null) {
 	    return new ObjectContext<T>(objectDataModel, rowId);
 	} else if (create) {
-	    return getObjectContext(target, transactionManager);
+	    ObjectContext<T> pendingContext = transactionManager.getObjectContextForPendingObject(target);
+
+	    if (pendingContext == null) {
+		/*
+		 * this object is not pending so it's safe to start building an ObjectContext, after we're marking it as
+		 * pending
+		 */
+		pendingContext = transactionManager.addPendingObjectForWrite(target, objectDataModel);
+		ObjectContext<T> realContext = getObjectContext(target, transactionManager);
+		/* we need to set the rowId on the pending context so that dependencies can create links */
+		pendingContext.setRowId(realContext.getRowId());
+
+		return realContext;
+	    }
+	    /* this object is pending so we'll just return the pendingContext */
+
+	    return pendingContext;
+
 	}
 	return null;
     }
@@ -1392,28 +1428,41 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	 */
 	for (Map.Entry<String, ObjectContext<?>> e : objectContext.getNestedObjectContexts().entrySet()) {
 
-	    ObjectContext<?> noc = e.getValue();
-	    if (noc == null) {
-		continue;
+	    // ObjectContext<?> noc = e.getValue();
+	    // if (noc == null) {
+	    // continue;
+	    // }
+	    //
+	    // boolean createLink = false;
+	    //
+	    // if (!noc.isAlreadyCreated()) {
+	    // transactionManager.save(noc);
+	    // createLink = true;
+	    //
+	    // } else if (noc.isUpdated()) {
+	    // transactionManager.update(noc);
+	    // } else {
+	    // createLink = true;
+	    // }
+	    //
+	    // if (createLink) {
+	    // LinkValue lv = getLinkValue(objectDataModel.getField(e.getKey()), rowId, noc.getRowId());
+	    // transactionManager.saveLinkValue(lv);
+	    // }
+
+	    processNestedObjectContext(objectDataModel.getField(e.getKey()), e.getValue(), transactionManager, rowId);
+
+	}
+
+	/* handle multivalued nested objects */
+
+	for (Map.Entry<String, List<ObjectContext<?>>> e : objectContext.getNestedMultivaluedObjectContexts()
+		.entrySet()) {
+	    FieldDataModel<?> fdm = objectDataModel.getField(e.getKey());
+
+	    for (ObjectContext<?> noc : e.getValue()) {
+		processNestedObjectContext(fdm, noc, transactionManager, rowId);
 	    }
-
-	    boolean createLink = false;
-
-	    if (!noc.isAlreadyCreated()) {
-		transactionManager.save(noc);
-		createLink = true;
-
-	    } else if (noc.isUpdated()) {
-		transactionManager.update(noc);
-	    } else {
-		createLink = true;
-	    }
-
-	    if (createLink) {
-		LinkValue lv = getLinkValue(objectDataModel.getField(e.getKey()), rowId, noc.getRowId());
-		transactionManager.saveLinkValue(lv);
-	    }
-
 	}
 
 	try {
@@ -1444,10 +1493,10 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		    addIndex(e.getKey(), e.getValue(), rowId);
 		}
 
-//		/* udpate the object id */
-//		if (!objectContext.isAlreadyCreated()) {
-//		    objectContext.updateObjectId();
-//		}
+		// /* udpate the object id */
+		// if (!objectContext.isAlreadyCreated()) {
+		// objectContext.updateObjectId();
+		// }
 	    }
 
 	    /* create links */
@@ -1459,6 +1508,26 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    rowLock.releaseWriteLock();
 	    locksManager.releaseRowLock(rowLock);
 	    releaseUniqueValuesLocks(uniqueValuesLocks);
+	}
+    }
+
+    private void processNestedObjectContext(FieldDataModel<?> fdm, ObjectContext<?> noc,
+	    TransactionManager transactionManager, String rowId) throws MdbException {
+	boolean createLink = false;
+
+	if (!noc.isAlreadyCreated()) {
+	    transactionManager.save(noc);
+	    createLink = true;
+
+	} else if (noc.isUpdated()) {
+	    transactionManager.update(noc);
+	} else {
+	    createLink = true;
+	}
+
+	if (createLink) {
+	    LinkValue lv = getLinkValue(fdm, rowId, noc.getRowId());
+	    transactionManager.saveLinkValue(lv);
 	}
     }
 
