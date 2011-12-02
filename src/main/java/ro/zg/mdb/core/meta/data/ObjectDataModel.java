@@ -171,11 +171,6 @@ public class ObjectDataModel<T> extends DataModel<T> {
 		    add = targetFields.contains(path + fdm.getName());
 		}
 
-		// if (!add) {
-		// add = filter.getConstraintFields()
-		// .contains(path + Constants.NESTED_FIELD_SEPARATOR + fdm.getName());
-		// }
-
 		if (add) {
 		    nestedFields.put(fdm.getName(), fdm);
 		}
@@ -433,12 +428,11 @@ public class ObjectDataModel<T> extends DataModel<T> {
 
     private Object getValueForField(FieldDataModel<?> fdm, String[] columns) throws MdbException {
 	String fieldName = fdm.getName();
-	String fieldType = fdm.getType().getSimpleName();
 	int colIndex = fieldsPositions.get(fieldName);
 	String fieldData = columns[colIndex];
 
 	try {
-	    return ReflectionUtility.createObjectByTypeAndValue(fieldType, fieldData);
+	    return ReflectionUtility.createObjectByTypeAndValue(fdm.getType(), fieldData);
 	} catch (ContextAwareException e) {
 	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR, new GenericNameValue("type", getType()
 		    .getName()), new GenericNameValue("fieldName", fieldName));

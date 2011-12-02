@@ -27,6 +27,7 @@ import ro.zg.mdb.core.filter.ObjectConstraintContext;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
 import ro.zg.mdb.core.meta.data.LinkModel;
 import ro.zg.mdb.core.meta.data.LinkValue;
+import ro.zg.mdb.core.meta.data.MultivaluedDataModel;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 import ro.zg.mdb.core.meta.data.ObjectsLink;
 import ro.zg.mdb.core.schema.ObjectContext;
@@ -71,7 +72,7 @@ public class TransactionManager {
     public long deleteLinkValue(LinkValue linkValue) throws MdbException {
 	return schemaContext.getMetadataManager().deleteLink(linkValue.getLinkName(), linkValue.getLink());
     }
-    
+
     public long deleteLinks(LinkModel lm, String rowId) throws MdbException {
 	return schemaContext.getMetadataManager().deleteLinks(lm.getName(), rowId, lm.isFirst());
     }
@@ -190,7 +191,7 @@ public class TransactionManager {
 		/* set the object id */
 		String objectIdFieldName = fodm.getObjectIdFieldName();
 		if (objectIdFieldName != null) {
-		    valuesMap.put(newPath+objectIdFieldName, nestedRowId);
+		    valuesMap.put(newPath + objectIdFieldName, nestedRowId);
 		}
 
 		/* do the same for any nested fields that this object might have */
@@ -210,23 +211,23 @@ public class TransactionManager {
 	    throws MdbException {
 	return schemaContext.getMetadataManager().getObjectLinks(linkModel, rowId, reversed);
     }
-    
+
     /**
-     * Iterates over all the possible references for this object type and
-     * checks for direct references to the object identified by the rowId
-     * <br/>
+     * Iterates over all the possible references for this object type and checks for direct references to the object
+     * identified by the rowId <br/>
      * If any link is found an {@link MdbErrorType#DIRECT_REFERENCE_VIOLATED} error is thrown
      * 
      * @param odm
      * @param rowId
      * @throws MdbException
      */
-    public <T> void checkForDirectReferences(ObjectDataModel<T> odm, String rowId) throws MdbException{
+    public <T> void checkForDirectReferences(ObjectDataModel<T> odm, String rowId) throws MdbException {
 	SchemaMetadataManager smm = schemaContext.getMetadataManager();
-	for(LinkModel lm : odm.getReferences()) {
+	for (LinkModel lm : odm.getReferences()) {
 	    Collection<ObjectsLink> links = smm.getObjectLinks(lm, rowId, true);
-	    if(links.size() > 0) {
-		throw new MdbException(MdbErrorType.DIRECT_REFERENCE_VIOLATED, new GenericNameValue("link", new LinkValue(lm.getName(), new ArrayList<ObjectsLink>(links).get(0))));
+	    if (links.size() > 0) {
+		throw new MdbException(MdbErrorType.DIRECT_REFERENCE_VIOLATED, new GenericNameValue("link",
+			new LinkValue(lm.getName(), new ArrayList<ObjectsLink>(links).get(0))));
 	    }
 	}
     }
@@ -241,10 +242,10 @@ public class TransactionManager {
 	for (FieldDataModel<?> fdm : nestedFields.values()) {
 	    String fieldName = fdm.getName();
 	    LinkModel lm = fdm.getLinkModel();
-	    /* skip the field if it is lazy and not specifically mentioned for retrieval */
-	    if (lm.isLazy() && !filter.isTargetFieldPresent(fieldName)) {
-		continue;
-	    }
+//	    /* skip the field if it is lazy and not specifically mentioned for retrieval */
+//	    if (lm.isLazy() && !filter.isTargetFieldPresent(fieldName)) {
+//		continue;
+//	    }
 	    Collection<ObjectsLink> links = getObjectLinks(lm, rowId, false);
 	    Collection<String> linkRowsIds = ObjectsLinkUtil.getRows(links, !lm.isFirst());
 
@@ -255,10 +256,16 @@ public class TransactionManager {
 
 	    Collection<Object> values = new HashSet<Object>();
 
-	    ObjectDataModel<?> fieldDataModel = (ObjectDataModel<?>) fdm.getDataModel();
+	    MultivaluedDataModel<?, ?> multivaluedDataModel = (MultivaluedDataModel<?, ?>) fdm.getDataModel();
+	    ObjectDataModel<?> nodm = getObjectDataModel(multivaluedDataModel.getType());
 	    for (String nesteRowId : linkRowsIds) {
-		String rowData = getDataForRowId(fieldDataModel, nesteRowId);
-		values.add(buildObject(fieldDataModel.getTypeName(), fieldDataModel, rowData, filter, nesteRowId));
+		Object nestedObject = transactionContext.getPendingObject(nesteRowId);
+		if (nestedObject == null) {
+		    String rowData = getDataForRowId(nodm, nesteRowId);
+		    nestedObject = buildObject(nodm.getTypeName(), nodm, rowData, new Filter(), nesteRowId);
+		}
+
+		values.add(nestedObject);
 	    }
 
 	    odm.populateComplexFields(target, fieldName, values);
@@ -287,14 +294,15 @@ public class TransactionManager {
 	PersistentObjectDataManager<T> odm = getObjectDataManager(objectName, (Class<T>) target.getClass());
 	return odm.getObjectContext(this, target, filter, rawOldData, rowId, path);
     }
-    
-    public <T> List<ObjectContext<T>> getObjectContextsList(String objectName, Collection<T> values, boolean create) throws MdbException{
-	List<ObjectContext<T>> objectContexts=new ArrayList<ObjectContext<T>>();
-	
-	for(T target : values) {
+
+    public <T> List<ObjectContext<T>> getObjectContextsList(String objectName, Collection<T> values, boolean create)
+	    throws MdbException {
+	List<ObjectContext<T>> objectContexts = new ArrayList<ObjectContext<T>>();
+
+	for (T target : values) {
 	    objectContexts.add(getObjectContext(objectName, target, create));
 	}
-	
+
 	return objectContexts;
     }
 
@@ -322,18 +330,18 @@ public class TransactionManager {
 	    if (fdm.getDataModel().isMultivalued()) {
 		continue;
 	    }
-	    
+
 	    if (targetFieldsExist && !targetFields.contains(fullFieldName)) {
 		continue;
 	    }
-	    
+
 	    Object fieldValue = null;
 	    LinkModel lm = fdm.getLinkModel();
-	    if ( lm != null ) {
-		if(!targetFieldsExist && lm.isLazy()) {
+	    if (lm != null) {
+		if (!targetFieldsExist && lm.isLazy()) {
 		    continue;
 		}
-		
+
 		String nestedRowId = transactionContext.getRowIdForPendingField(fullFieldName);
 		fieldValue = transactionContext.getPendingObject(nestedRowId);
 		if (fieldValue == null) {
@@ -382,19 +390,19 @@ public class TransactionManager {
 
     public <T> long deleteAll(String objectName, Class<T> type, final Filter filter) throws MdbException {
 	PersistentObjectDataManager<T> odm = getObjectDataManager(objectName, type);
-	return odm.deleteAll(filter,this);
+	return odm.deleteAll(filter, this);
     }
 
     public <T> long deleteAllBut(String objectName, Class<T> type, final Filter filter,
 	    final Collection<String> restricted) throws MdbException {
 	PersistentObjectDataManager<T> odm = getObjectDataManager(objectName, type);
-	return odm.deleteAllBut(filter, restricted,this);
+	return odm.deleteAllBut(filter, restricted, this);
     }
 
     public <T> long deleteObjects(String objectName, Class<T> type, Collection<String> ids, final Filter filter)
 	    throws MdbException {
 	PersistentObjectDataManager<T> odm = getObjectDataManager(objectName, type);
-	return odm.deleteObjects(ids, filter,this);
+	return odm.deleteObjects(ids, filter, this);
     }
 
     public <T> Collection<T> readAllObjects(String objectName, Class<T> type, final Filter filter,
@@ -462,24 +470,23 @@ public class TransactionManager {
     public void clearTransactionContext() {
 	transactionContext.clear();
     }
-    
+
     public void clearPendingRows() {
 	transactionContext.clearPendingRows();
     }
-    
+
     public <T> ObjectContext<T> addPendingObjectForWrite(T o, ObjectDataModel<T> odm) {
 	ObjectContext<T> pendingContext = new ObjectContext<T>(odm);
-	transactionContext.addPendingObjectForWrite(o,pendingContext);
+	transactionContext.addPendingObjectForWrite(o, pendingContext);
 	return pendingContext;
     }
 
     public <T> ObjectContext<T> getObjectContextForPendingObject(T o) {
 	return transactionContext.getObjectContextForPendingObject(o);
     }
-    
-    
+
     public <T> ObjectContext<T> removePendingObjectForWrite(T o) {
 	return transactionContext.removePendingObjectForWrite(o);
     }
-    
+
 }
