@@ -21,46 +21,46 @@ public class Row {
     private String id;
     
     @Unique(id=1)
-    private String hash;
+    private String globalHash;
     
     private long timestamp;
     
-    private String oldHash;
+    private String currentHash;
     
     private static transient volatile long uniqueIndex;
     
     /**
-     * Constructor used when the hash is already known, like in the update cases
-     * @param hash
+     * Constructor used when the globalHash is already known, like in the update cases
+     * @param globalHash
      */
     public Row(String hash) {
 	super();
-	this.hash = hash;
+	this.globalHash = hash;
     }
     /**
      * Constructor used usually when row info is created from data 
-     * @param hash
+     * @param globalHash
      * @param currentHash
      * @param timestamp
      */
     public Row(String rowId, long timestamp) {
 	super();
-	this.hash = rowId;
+	this.globalHash = rowId;
 	this.timestamp = timestamp;
     }
 
     public static Row buildFromData(String data) {
 	long timestamp=System.currentTimeMillis();
-	String rowId=HashUtil.digestSHA1(data+timestamp+(uniqueIndex++));
+	String rowId=HashUtil.digestSHA1(data+timestamp+(++uniqueIndex));
 	return new Row(rowId,timestamp);
     }
 
 
     /**
-     * @return the hash
+     * @return the globalHash
      */
-    public String getHash() {
-        return hash;
+    public String getGlobalHash() {
+        return globalHash;
     }
     /**
      * @return the timestamp
@@ -69,11 +69,12 @@ public class Row {
         return timestamp;
     }
 
+   
     /**
-     * @return the oldHash
+     * @return the currentHash
      */
-    public String getOldHash() {
-        return oldHash;
+    public String getCurrentHash() {
+        return currentHash;
     }
     /**
      * @return the id

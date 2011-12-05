@@ -109,7 +109,7 @@ public class ObjectContext<T> {
 	String rowId = objectDataModel.getObjectId(target);
 	if(rowId == null) {
 	    rowInfo=Row.buildFromData(data);
-	    objectDataModel.setObjectId(target, rowInfo.getHash());
+	    objectDataModel.setObjectId(target, rowInfo.getGlobalHash());
 	}
 	else {
 	    rowInfo = new Row(rowId);
@@ -255,7 +255,7 @@ public class ObjectContext<T> {
     }
     
     public String getRowId() {
-	return rowInfo.getHash();
+	return rowInfo.getGlobalHash();
     }
     
     public boolean isUpdated() {
