@@ -1,12 +1,17 @@
 /*******************************************************************************
- * Copyright (c) 2011 Adrian Cristian Ionescu.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser Public License v2.1
- * which accompanies this distribution, and is available at
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * Copyright 2011 Adrian Cristian Ionescu
  * 
- * Contributors:
- *     Adrian Cristian Ionescu - initial API and implementation
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
@@ -66,15 +71,15 @@ public class TransactionManager {
     }
 
     public void saveLinkValue(LinkValue linkValue) throws MdbException {
-	schemaContext.getMetadataManager().saveLink(linkValue.getLinkName(), linkValue.getLink());
+	schemaContext.getLinksManager().saveLink(linkValue.getLinkName(), linkValue.getLink());
     }
 
     public long deleteLinkValue(LinkValue linkValue) throws MdbException {
-	return schemaContext.getMetadataManager().deleteLink(linkValue.getLinkName(), linkValue.getLink());
+	return schemaContext.getLinksManager().deleteLink(linkValue.getLinkName(), linkValue.getLink());
     }
 
     public long deleteLinks(LinkModel lm, String rowId) throws MdbException {
-	return schemaContext.getMetadataManager().deleteLinks(lm.getName(), rowId, lm.isFirst());
+	return schemaContext.getLinksManager().deleteLinks(lm.getName(), rowId, lm.isFirst());
     }
 
     public <T> Map<String, Object> getAndCheckValuesMap(String objectName, ObjectDataModel<T> odm, String data,
@@ -209,7 +214,7 @@ public class TransactionManager {
 
     public Collection<ObjectsLink> getObjectLinks(LinkModel linkModel, String rowId, boolean reversed)
 	    throws MdbException {
-	return schemaContext.getMetadataManager().getObjectLinks(linkModel, rowId, reversed);
+	return schemaContext.getLinksManager().getObjectLinks(linkModel, rowId, reversed);
     }
 
     /**
@@ -222,7 +227,7 @@ public class TransactionManager {
      * @throws MdbException
      */
     public <T> void checkForDirectReferences(ObjectDataModel<T> odm, String rowId) throws MdbException {
-	SchemaMetadataManager smm = schemaContext.getMetadataManager();
+	LinksManager smm = schemaContext.getLinksManager();
 	for (LinkModel lm : odm.getReferences()) {
 	    Collection<ObjectsLink> links = smm.getObjectLinks(lm, rowId, true);
 	    if (links.size() > 0) {
@@ -234,7 +239,7 @@ public class TransactionManager {
 
     private <T> void populateMultivaluedLinkFields(T target, ObjectDataModel<T> odm, Filter filter, String rowId,
 	    String path) throws MdbException {
-	// SchemaMetadataManager smm = schemaContext.getMetadataManager();
+	// LinksManager smm = schemaContext.getMetadataManager();
 
 	Map<String, FieldDataModel<?>> nestedFields = odm.getMultivaluedNestedFieldsForFilter(filter, path);
 

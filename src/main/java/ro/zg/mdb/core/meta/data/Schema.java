@@ -1,12 +1,17 @@
 /*******************************************************************************
- * Copyright (c) 2011 Adrian Cristian Ionescu.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser Public License v2.1
- * which accompanies this distribution, and is available at
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * Copyright 2011 Adrian Cristian Ionescu
  * 
- * Contributors:
- *     Adrian Cristian Ionescu - initial API and implementation
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  ******************************************************************************/
 package ro.zg.mdb.core.meta.data;
 
@@ -32,17 +37,23 @@ public class Schema {
     public Schema(SchemaConfig config) {
 	this.config = config;
     }
+    
 
-    private void addDataModel(DataModel<?> odm) {
+    public Schema() {
+	super();
+    }
+
+    public void addDataModels(Collection<DataModel<?>> dmc) {
+	for(DataModel<?> dm : dmc) {
+	    addDataModel(dm);
+	}
+    }
+    
+
+    public void addDataModel(DataModel<?> odm) {
 	objectsModels.put(odm.getType(), odm);
     }
 
-    //
-    //
-    // public <T> T getObjectFromString(String data, Class<T> type, Filter filter) throws MdbException {
-    // ObjectDataModel<T> odm = getObjectDataModel(type);
-    // return (T)odm.getObjectFromString(data,filter);
-    // }
 
     public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type) throws MdbException {
 	return (ObjectDataModel<T>) getDataModel(type);

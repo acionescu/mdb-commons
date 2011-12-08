@@ -1,12 +1,17 @@
 /*******************************************************************************
- * Copyright (c) 2011 Adrian Cristian Ionescu.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser Public License v2.1
- * which accompanies this distribution, and is available at
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * Copyright 2011 Adrian Cristian Ionescu
  * 
- * Contributors:
- *     Adrian Cristian Ionescu - initial API and implementation
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
@@ -25,32 +30,48 @@ import ro.zg.mdb.persistence.PersistenceManager;
 public class SchemaManager extends PersistentDataManager {
     private Schema schema;
     private SchemaContext schemaContext;
-    
+
     public SchemaManager(PersistenceManager persistenceManager, SchemaConfig config) throws MdbException {
 	super(persistenceManager);
 	schema = new Schema(config);
-	
-	SchemaMetadataManager metadataManager=null;
 
-	if (config.isMetadataAllowed()) {
+	LinksManager linksManager = null;
+	if (config.isObjectReferenceAllowed()) {
 	    try {
-		metadataManager = new SchemaMetadataManager(persistenceManager.getPersistenceManager(SpecialPaths.META));
+		linksManager = new LinksManager(persistenceManager.getPersistenceManager(SpecialPaths.LINKS));
 	    } catch (PersistenceException e) {
 		throw new MdbException(e, MdbErrorType.PERSISTENCE_ERROR);
 	    }
 	}
-	SequencesManager sequencesManager = new SequencesManager();
-	ObjectDataManagersRepository objectsManagersRepository; objectsManagersRepository=new ObjectDataManagersRepository(schema, schemaContext, persistenceManager);
+	SequencesManager sequencesManager = null;
+	if (config.isSequenceUsageAllowed()) {
+	    try {
+		sequencesManager = new SequencesManager(
+			persistenceManager.getPersistenceManager(SpecialPaths.SEQUENCES));
+	    } catch (PersistenceException e) {
+		throw new MdbException(e, MdbErrorType.PERSISTENCE_ERROR);
+	    }
+	}
+	ObjectDataManagersRepository objectsManagersRepository;
+	try {
+	    objectsManagersRepository = new ObjectDataManagersRepository(schema, schemaContext,
+		    persistenceManager.getPersistenceManager(SpecialPaths.TABLES));
+	} catch (PersistenceException e) {
+	    throw new MdbException(e, MdbErrorType.PERSISTENCE_ERROR);
+	}
+
+	SchemaMetadataManager metadataManager = new SchemaMetadataManager(persistenceManager, config);
 	
-	
-	schemaContext = new SchemaContext(schema,sequencesManager,objectsManagersRepository,metadataManager);
-	
+
+	schemaContext = new SchemaContext(schema, sequencesManager, objectsManagersRepository, linksManager,
+		metadataManager);
+
 	schemaContext.addConstraintProcessor(ConstraintType.AND, new AndObjectConstraintProcessor());
 	schemaContext.addConstraintProcessor(ConstraintType.OR, new OrObjectConstraintProcessor());
-	
+
 	TransactionManagerFactory transactionManagerFactory = new DefaultTransactionManagerFactory(schemaContext);
 	schemaContext.setTransactionManagerFactory(transactionManagerFactory);
-	
+
     }
 
     private void init() {
@@ -62,13 +83,12 @@ public class SchemaManager extends PersistentDataManager {
     }
 
     public <T> SchemaCommandBuilder<T> createCommand(Class<T> type) throws MdbException {
-	return new SchemaCommandBuilder<T>(new ObjectDataManager<T>( type.getName(),type,schemaContext));
+	return new SchemaCommandBuilder<T>(new ObjectDataManager<T>(type.getName(), type, schemaContext));
     }
 
     public <T> SchemaCommandBuilder<T> createCommand(Class<T> type, String objectName) throws MdbException {
-	return new SchemaCommandBuilder<T>(new ObjectDataManager<T>( objectName,type,schemaContext));
+	return new SchemaCommandBuilder<T>(new ObjectDataManager<T>(objectName, type, schemaContext));
     }
-
 
     /**
      * @return the schema
