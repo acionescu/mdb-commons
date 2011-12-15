@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import ro.zg.mdb.core.meta.data.LinkValue;
 import ro.zg.mdb.core.meta.data.ObjectsLink;
 import ro.zg.mdb.core.schema.ObjectContext;
 import ro.zg.util.data.ListMap;
@@ -27,7 +28,7 @@ public class TransactionContext {
     private ListMap<String, String> pendingRows = new ListMap<String, String>();
     private Map<String, Object> pendingObjects = new HashMap<String, Object>();
     private Map<String, String> pendingFields = new HashMap<String, String>();
-    private Map<String, ObjectsLink> pendingLinks = new HashMap<String, ObjectsLink>();
+    private Map<String, LinkValue> pendingLinks = new HashMap<String, LinkValue>();
     /**
      * This map keeps track of the objects in the course of writing 
      * <br/>
@@ -67,11 +68,11 @@ public class TransactionContext {
 	return pendingFields.get(fullFieldName);
     }
 
-    public void addPendingLink(String fullFieldName, ObjectsLink ol) {
-	pendingLinks.put(fullFieldName, ol);
+    public void addPendingLink(String fullFieldName, LinkValue linkValue) {
+	pendingLinks.put(fullFieldName, linkValue);
     }
 
-    public ObjectsLink getPendingLink(String fullFieldName) {
+    public LinkValue getPendingLink(String fullFieldName) {
 	return pendingLinks.get(fullFieldName);
     }
 
@@ -79,7 +80,7 @@ public class TransactionContext {
 	pendingRows = new ListMap<String, String>();
 	pendingObjects = new HashMap<String, Object>();
 	pendingFields = new HashMap<String, String>();
-	pendingLinks = new HashMap<String, ObjectsLink>();
+	pendingLinks = new HashMap<String, LinkValue>();
     }
     
     public void clearPendingRows() {

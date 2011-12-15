@@ -20,16 +20,13 @@ import java.util.Map;
 
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
-import ro.zg.mdb.core.meta.data.Schema;
 import ro.zg.mdb.persistence.PersistenceManager;
 
 public class ObjectDataManagersRepository extends PersistentDataManager{
-    private Schema schema;
     private SchemaContext schemaContext;
     
-    public ObjectDataManagersRepository(Schema schema, SchemaContext schemaContext, PersistenceManager persistenceManager) {
+    public ObjectDataManagersRepository(SchemaContext schemaContext, PersistenceManager persistenceManager) {
 	super(persistenceManager);
-	this.schema = schema;
 	this.schemaContext=schemaContext;
     }
 
@@ -40,12 +37,26 @@ public class ObjectDataManagersRepository extends PersistentDataManager{
 	synchronized (type) {
 	    PersistentObjectDataManager<T> odm = (PersistentObjectDataManager<T>) objectDataManagers.get(objectName);
 	    if (odm == null) {
-		ObjectDataModel<T> odModel = (ObjectDataModel<T>) schema.getObjectDataModel(type);
+		ObjectDataModel<T> odModel = (ObjectDataModel<T>) schemaContext.getObjectDataModel(type);
 		odm = new PersistentObjectDataManager<T>(getPersistenceManager(objectName), odModel,objectName);
 		objectDataManagers.put(objectName, odm);
 	    }
 	    return odm;
 	}
+    }
+
+    /**
+     * @return the schemaContext
+     */
+    public SchemaContext getSchemaContext() {
+        return schemaContext;
+    }
+
+    /**
+     * @param schemaContext the schemaContext to set
+     */
+    public void setSchemaContext(SchemaContext schemaContext) {
+        this.schemaContext = schemaContext;
     }
     
    

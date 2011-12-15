@@ -27,19 +27,26 @@ import ro.zg.commons.exceptions.ContextAwareException;
 import ro.zg.mdb.constants.Constants;
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.constants.OperationType;
+import ro.zg.mdb.core.annotations.Link;
+import ro.zg.mdb.core.annotations.Persistable;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
 import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
 
+@Persistable
 public class ObjectDataModel<T> extends DataModel<T> {
     private FieldDataModel<String> objectIdField;
+    @Link(name="object_type_required_fields")
     private Set<FieldDataModel<?>> requiredFields = new HashSet<FieldDataModel<?>>();
+    @Link(name="object_type_unique_indexes", key="id")
     private Map<String, UniqueIndex> uniqueIndexes = new HashMap<String, UniqueIndex>();
+    @Link(name="object_type_indexed_fields")
     private Set<FieldDataModel<?>> indexedFields = new LinkedHashSet<FieldDataModel<?>>();
     /**
      * the fields with the position as a key
      */
+    @Link(name="object_type_fields",key="name")
     private Map<String, FieldDataModel<?>> fields = new LinkedHashMap<String, FieldDataModel<?>>();
     private Map<String, Integer> fieldsPositions = new HashMap<String, Integer>();
     private Set<FieldDataModel<?>> linkedFields = new LinkedHashSet<FieldDataModel<?>>();
@@ -437,8 +444,9 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	String fieldData = columns[colIndex];
 
 	try {
-	    return ReflectionUtility.createObjectByTypeAndValue(fdm.getType(), fieldData);
-	} catch (ContextAwareException e) {
+//	    return ReflectionUtility.createObjectByTypeAndValue(fdm.getType(), fieldData);
+	    return fdm.createValueFromString(fieldData);
+	} catch (Exception e) {
 	    throw new MdbException(e, MdbErrorType.OBJECT_MATERIALIZATION_ERROR, new GenericNameValue("type", getType()
 		    .getName()), new GenericNameValue("fieldName", fieldName));
 	}

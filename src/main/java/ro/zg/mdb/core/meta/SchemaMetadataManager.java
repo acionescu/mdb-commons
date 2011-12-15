@@ -16,10 +16,12 @@
 package ro.zg.mdb.core.meta;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -64,10 +66,16 @@ public class SchemaMetadataManager extends PersistentDataManager {
     }
 
     private void loadSchema() throws MdbException {
-	Collection results = metadataSchema.createCommand(ObjectDataModel.class).get().execute();
+	Collection results = metadataSchema.createCommand(ObjectDataModel.class).get().execute().getValues();
 	schema.addDataModels(results);
-	
-	results = metadataSchema.createCommand(MapDataModel.class).get().execute();
+
+	results = metadataSchema.createCommand(MapDataModel.class).get().execute().getValues();
+	schema.addDataModels(results);
+
+	results = metadataSchema.createCommand(CollectionDataModel.class).get().execute().getValues();
+	schema.addDataModels(results);
+
+	results = metadataSchema.createCommand(DataModel.class).get().execute().getValues();
 	schema.addDataModels(results);
     }
 
@@ -76,39 +84,71 @@ public class SchemaMetadataManager extends PersistentDataManager {
     }
 
     private <T> DataModel<T> getDataModel(Type type) throws MdbException {
-
+	DataModel<T> odm = null;
 	if (type instanceof Class) {
 	    Class<T> clazz = (Class<T>) type;
-	    DataModel<T> odm = (DataModel<T>) objectsModels.get(clazz);
+	    odm = schema.getDataModelByClass(clazz);
 	    if (odm == null) {
 		if (config.isAutomaticObjectModelCreationOn()) {
-		    if (ReflectionUtility.checkSimpleFieldType(clazz)) {
+		    if (ReflectionUtility.checkSimpleFieldType(clazz) || clazz.isAssignableFrom(Class.class)) {
 			odm = new DataModel<T>(clazz);
 		    } else {
 			odm = createObjectDataModel(clazz);
 		    }
-		    addDataModel(odm);
+
 		} else {
 		    throw new RuntimeException("Object data model does not exist for type " + clazz.getName());
 		}
+	    } else {
+		return odm;
 	    }
-	    return odm;
 	} else if (type instanceof ParameterizedType) {
-	    return getDataModelForParameterizedType((ParameterizedType) type);
-	}
+	    ParameterizedType pt = (ParameterizedType) type;
+	    odm = schema.getMultivaluedDataModel(pt);
+	    if (odm != null) {
+		return odm;
+	    }
 
-	throw new IllegalArgumentException("Unsupported type " + type);
+	    odm = createDataModelForParameterizedType((ParameterizedType) type);
+	} else if (type instanceof GenericArrayType) {
+	    GenericArrayType gat = (GenericArrayType) type;
+	    odm = schema.getMultivaluedDataModel(gat);
+	    if (odm != null) {
+		return odm;
+	    }
+
+	    odm = createDataModelForGenericArrayType(gat);
+	} else {
+	    throw new IllegalArgumentException("Unsupported type " + type);
+	}
+	schema.addDataModel(odm);
+	return odm;
     }
 
-    public <T> DataModel<T> getDataModelForParameterizedType(ParameterizedType pt) {
+    public <T> DataModel<T> createDataModelForParameterizedType(ParameterizedType pt) throws MdbException {
 	Class<T> clazz = (Class<T>) pt.getRawType();
 	if (ReflectionUtility.checkInstanceOf(clazz, Collection.class)) {
 	    return createCollectionDataModel(pt);
 	} else if (ReflectionUtility.checkInstanceOf(clazz, Map.class)) {
 	    return createMapDataModel(pt);
 	}
+	return getDataModel(clazz);
+	// throw new IllegalArgumentException("Unsupported parameterized type " + pt);
+    }
 
-	throw new IllegalArgumentException("Unsupported parameterized type " + pt);
+    public DataModel createDataModelForGenericArrayType(GenericArrayType gat) {
+	Type arrayType = gat.getGenericComponentType();
+	return new CollectionDataModel(getRawType(arrayType), Array.class);
+
+    }
+
+    private Class<?> getRawType(Type type) {
+	if (type instanceof Class) {
+	    return (Class<?>) type;
+	} else if (type instanceof ParameterizedType) {
+	    return (Class<?>) ((ParameterizedType) type).getRawType();
+	}
+	throw new IllegalArgumentException("Unknown type " + type);
     }
 
     public <T> DataModel<T> createCollectionDataModel(ParameterizedType pt) {
@@ -118,7 +158,7 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	    throw new IllegalArgumentException("Expecting one generic type argument but there was none");
 	}
 
-	Class<T> nestedType = (Class<T>) typeArguments[0];
+	Class<T> nestedType = (Class<T>) getRawType(typeArguments[0]);
 
 	return new CollectionDataModel<T>(nestedType, (Class<? extends Collection<T>>) pt.getRawType());
 
@@ -129,8 +169,8 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	if (typeArguments.length < 2) {
 	    throw new IllegalArgumentException("Expecting two generic type arguments but there were less");
 	}
-	Class<K> keyType = (Class<K>) typeArguments[0];
-	Class<T> valueType = (Class<T>) typeArguments[1];
+	Class<K> keyType = (Class<K>) getRawType(typeArguments[0]);
+	Class<T> valueType = (Class<T>) getRawType(typeArguments[1]);
 
 	return new MapDataModel<K, T>(keyType, valueType, (Class<? extends Map<K, T>>) pt.getRawType());
 
@@ -142,6 +182,9 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	Class<?> currentType = type;
 	do {
 	    for (Field field : currentType.getDeclaredFields()) {
+		if (Modifier.isTransient(field.getModifiers())) {
+		    continue;
+		}
 		FieldDataModel<?> fdm = null;
 		/* in case a class has a reference to itself */
 		if (field.getType().equals(currentType)) {

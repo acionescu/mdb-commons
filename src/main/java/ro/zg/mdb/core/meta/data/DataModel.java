@@ -15,7 +15,9 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta.data;
 
+import ro.zg.mdb.core.annotations.Persistable;
 
+@Persistable
 public class DataModel<T> {
     private Class<T> type;
     private boolean complexType;

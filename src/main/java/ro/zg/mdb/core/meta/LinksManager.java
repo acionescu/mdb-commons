@@ -15,7 +15,7 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
-import java.util.Collection;
+import java.util.List;
 
 import ro.zg.mdb.commands.GetCommand;
 import ro.zg.mdb.constants.SpecialPaths;
@@ -53,21 +53,59 @@ public class LinksManager extends PersistentDataManager {
 		.execute();
     }
 
-    public Collection<ObjectsLink> getObjectLinks(LinkModel linkModel, String rowId, boolean reversed)
+    public LinksSet getObjectLinks(LinkModel linkModel, String rowId, boolean reversed)
 	    throws MdbException {
-	GetCommand<ObjectsLink> getCommand = linksSchema.createCommand(ObjectsLink.class, linkModel.getName()).get();
-	String queryField = null;
+
+	
 	boolean first = linkModel.isFirst();
 	if (reversed) {
 	    first = !first;
 	}
+	String queryField = getQueryField(first);
+
+	if(linkModel.isPolymorphic()) {
+	    return getPolymorphicLinks(linkModel, rowId, queryField);
+	}
+	else {
+	    return new SimpleLinksSet(getLinks(linkModel.getName(), rowId, queryField));
+	}
+	
+    }
+    
+    private String getQueryField(boolean first) {
+	String queryField = null;
 	if (first) {
 	    queryField = "firstRowId";
 	} else {
 	    queryField = "secondRowId";
 	}
-
-	return getCommand.where().field(queryField).eq(rowId).execute();
+	return queryField;
+    }
+    
+    public SimpleLinksSet getLinks(String linkName, String rowId, boolean first) throws MdbException {
+	String queryField = getQueryField(first);
+	return new SimpleLinksSet(getLinks(linkName, rowId, queryField));
     }
 
+    private LinksSet getPolymorphicLinks(LinkModel linkModel, String rowId, String queryField) throws MdbException {
+	PolymorphicLinksSet linksSet = new PolymorphicLinksSet();
+
+	for (Class<?> type : linkModel.getAllowedTypes()) {
+	    String fullLinkName = linkModel.getFullName(type);
+	    List<ObjectsLink> links = getLinks(fullLinkName, rowId, queryField);
+	    if (links.size() > 0) {
+		linksSet.addLinks(type, links);
+		/* if we've fond a value and the field is not multivalued, return */
+		if(!linkModel.isMultivalued()) {
+		    return linksSet;
+		}
+	    }
+	}
+	return linksSet;
+    }
+
+    private List<ObjectsLink> getLinks(String linkName, String rowId, String queryField) throws MdbException {
+	GetCommand<ObjectsLink, ObjectsLink> getCommand = linksSchema.createCommand(ObjectsLink.class, linkName).get();
+	return getCommand.where().field(queryField).eq(rowId).execute().getValues();
+    }
 }

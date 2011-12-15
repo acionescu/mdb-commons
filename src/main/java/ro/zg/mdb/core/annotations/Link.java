@@ -27,5 +27,5 @@ public @interface Link {
     boolean first() default true;
     boolean lazy() default true;
     String key() default "id";
-    Class<?>[] allowedTypes();
+    Class<?>[] allowedTypes() default {};
 }

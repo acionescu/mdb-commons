@@ -15,7 +15,11 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta.data;
 
+import ro.zg.mdb.core.annotations.Persistable;
+
+@Persistable
 public class MultivaluedDataModel<M,T> extends DataModel<T>{
+    private String parameteriezedTypeHash;
     protected Class<? extends M> multivaluedType;
     protected boolean collection;
     protected boolean map;
@@ -60,6 +64,14 @@ public class MultivaluedDataModel<M,T> extends DataModel<T>{
     public Class<? extends M> getMultivaluedType() {
         return multivaluedType;
     }
+
+    /**
+     * @return the parameteriezedTypeHash
+     */
+    public String getParameteriezedTypeHash() {
+        return parameteriezedTypeHash;
+    }
+    
     
     
 }

@@ -49,7 +49,7 @@ public class SchemaManagerTest {
 	Assert.assertEquals(book, savedBook);
 	Assert.assertNotNull(savedBook.getId());
 
-	Collection<Book> allBooks = sm.createCommand(Book.class).get().execute();
+	Collection<Book> allBooks = sm.createCommand(Book.class).get().execute().getValues();
 	Assert.assertNotNull(allBooks);
 	Assert.assertTrue(allBooks.size() == 1);
 
@@ -65,36 +65,36 @@ public class SchemaManagerTest {
 	Assert.assertEquals(book2, savedBook2);
 	mpm.print(System.out);
 
-	allBooks = sm.createCommand(Book.class).get().execute();
+	allBooks = sm.createCommand(Book.class).get().execute().getValues();
 	Assert.assertNotNull(allBooks);
 	Assert.assertTrue(allBooks.size() == 2);
 
 	Collection<Book> yearSearch = sm.createCommand(Book.class).get().where().field("releaseYear").eq(1999)
-		.execute();
+		.execute().getValues();
 	Assert.assertTrue(yearSearch.size() == 1);
 	Assert.assertTrue(yearSearch.contains(book));
 
-	yearSearch = sm.createCommand(Book.class).get().where().field("releaseYear").not().eq(1999).execute();
+	yearSearch = sm.createCommand(Book.class).get().where().field("releaseYear").not().eq(1999).execute().getValues();
 	Assert.assertTrue(yearSearch.size() == 1);
 	Assert.assertTrue(yearSearch.contains(book2));
 
 	Collection<Book> search3 = sm.createCommand(Book.class).get().where().field("releaseYear").eq(1999).and()
-		.field("author").eq("Zuza").execute();
+		.field("author").eq("Zuza").execute().getValues();
 	Assert.assertTrue(search3.isEmpty());
 
 	Collection<Book> search4 = sm.createCommand(Book.class).get().where().field("releaseYear").eq(1999).and()
-		.field("id").eq(savedBook.getId()).execute();
+		.field("id").eq(savedBook.getId()).execute().getValues();
 	Assert.assertTrue(search4.size() == 1);
 	Assert.assertTrue(search4.contains(book));
 
-	Collection<Book> search6 = sm.createCommand(Book.class).get().where().field("releaseYear").gt(1500).execute();
+	Collection<Book> search6 = sm.createCommand(Book.class).get().where().field("releaseYear").gt(1500).execute().getValues();
 	Assert.assertEquals(2, search6.size());
 
-	Collection<Book> search7 = sm.createCommand(Book.class).get().where().field("releaseYear").lt(1995).execute();
+	Collection<Book> search7 = sm.createCommand(Book.class).get().where().field("releaseYear").lt(1995).execute().getValues();
 	Assert.assertTrue(search7.size() == 1);
 
 	Collection<Book> search8 = sm.createCommand(Book.class).get().where().field("releaseYear").between(1000, 2000)
-		.execute();
+		.execute().getValues();
 	Assert.assertTrue(search8.size() == 2);
 
 	/* test update */
@@ -107,7 +107,7 @@ public class SchemaManagerTest {
 	mpm.print(System.out);
 
 	Collection<Book> afterUpdate1 = sm.createCommand(Book.class).get("publisher").where().field("id")
-		.eq(book2.getId()).execute();
+		.eq(book2.getId()).execute().getValues();
 	Assert.assertTrue(afterUpdate1.size() == 1);
 	Assert.assertEquals(update1Book.getPublisher(), new ArrayList<Book>(afterUpdate1).get(0).getPublisher());
 
@@ -116,7 +116,7 @@ public class SchemaManagerTest {
 	long update2 = sm.createCommand(Book.class).update(update2Book, "publisher").execute();
 	Assert.assertTrue(update2 == 2);
 
-	Collection<Book> afterUpdate2 = sm.createCommand(Book.class).get("publisher").execute();
+	Collection<Book> afterUpdate2 = sm.createCommand(Book.class).get("publisher").execute().getValues();
 	Assert.assertTrue(afterUpdate2.size() == 2);
 	for (Book b : afterUpdate2) {
 	    Assert.assertEquals(update2Book.getPublisher(), b.getPublisher());
@@ -129,7 +129,7 @@ public class SchemaManagerTest {
 	Assert.assertTrue(update3 == 1);
 
 	Collection<Book> afterUpdate3 = sm.createCommand(Book.class).get("publisher").where().field("id")
-		.eq(book.getId()).execute();
+		.eq(book.getId()).execute().getValues();
 	Assert.assertTrue(afterUpdate3.size() == 1);
 	Assert.assertEquals(update3Book.getPublisher(), new ArrayList<Book>(afterUpdate3).get(0).getPublisher());
 
@@ -137,7 +137,7 @@ public class SchemaManagerTest {
 	long del1 = sm.createCommand(Book.class).delete().where().field("id").eq(book.getId()).execute();
 	Assert.assertTrue(del1 == 1);
 
-	Collection<Book> search5 = sm.createCommand(Book.class).get().where().field("id").eq(book.getId()).execute();
+	Collection<Book> search5 = sm.createCommand(Book.class).get().where().field("id").eq(book.getId()).execute().getValues();
 	Assert.assertTrue(search5.size() == 0);
 
 	long del2 = sm.createCommand(Book.class).delete().where().field("id").not().eq(book.getId()).execute();
@@ -164,32 +164,32 @@ public class SchemaManagerTest {
 
 	/* test successful search by nested field */
 	Collection<Entity> afterSave1 = sm.createCommand(Entity.class).get().where().field("user.username").eq("user1")
-		.execute();
+		.execute().getValues();
 	Assert.assertEquals(1, afterSave1.size());
 	Assert.assertEquals(post1, new ArrayList<Entity>(afterSave1).get(0));
 
 	/* test successful filter out by nested field */
-	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.username").eq("user2").execute();
+	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.username").eq("user2").execute().getValues();
 	Assert.assertEquals(0, afterSave1.size());
 
 	/* test successful search by nested object pk */
-	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(user1.getId()).execute();
+	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(user1.getId()).execute().getValues();
 	Assert.assertEquals(1, afterSave1.size());
 	Assert.assertEquals(post1, new ArrayList<Entity>(afterSave1).get(0));
 
 	/* test successful filter by nested object pk */
-	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq("inexistent id").execute();
+	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq("inexistent id").execute().getValues();
 	Assert.assertEquals(0, afterSave1.size());
 
 	/* test successful search by main object and nested object indexed fields */
 	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(user1.getId()).and().field("id")
-		.eq(post1.getId()).execute();
+		.eq(post1.getId()).execute().getValues();
 	Assert.assertEquals(1, afterSave1.size());
 	Assert.assertEquals(post1, new ArrayList<Entity>(afterSave1).get(0));
 
 	/* test successful filter by main or nested object indexed field */
 	afterSave1 = sm.createCommand(Entity.class).get().where().field("user.id").eq(user1.getId()).and().field("id")
-		.eq("inexistent id").execute();
+		.eq("inexistent id").execute().getValues();
 	Assert.assertEquals(0, afterSave1.size());
 
 	/* test create with existent nested object */
@@ -199,7 +199,7 @@ public class SchemaManagerTest {
 	Assert.assertEquals(user1.getId(), post2.getUser().getId());
 
 	Collection<Entity> fetchResult1 = sm.createCommand(Entity.class).get().where().field("id").eq(post2.getId())
-		.execute();
+		.execute().getValues();
 	Assert.assertEquals(1, fetchResult1.size());
 	Entity fetchedPost2 = new ArrayList<Entity>(fetchResult1).get(0);
 	Assert.assertEquals(post2, fetchedPost2);
@@ -208,10 +208,11 @@ public class SchemaManagerTest {
 	Entity post3 = new Entity("post 3", "will test update an delte", user2);
 
 	post3 = sm.createCommand(Entity.class).insert(post3).execute();
-
+	mpm.print(System.out);
 	/* try to delete user2, should fail because it is being reference by post3 */
 	try {
 	    sm.createCommand(User.class).delete().where().field("id").eq(user2.getId()).execute();
+	    mpm.print(System.out);
 	    Assert.fail("Should have failed due to direct reference by post3");
 	} catch (MdbException e) {
 	    /* pass */
@@ -226,7 +227,7 @@ public class SchemaManagerTest {
 	Assert.assertEquals(1L, updated1);
 
 	Collection<Entity> afterUpdate1 = sm.createCommand(Entity.class).get().where().field("id").eq(post3.getId())
-		.execute();
+		.execute().getValues();
 	Assert.assertEquals(1, afterUpdate1.size());
 	Entity post3AfterUpdate1 = new ArrayList<Entity>(afterUpdate1).get(0);
 
@@ -242,11 +243,11 @@ public class SchemaManagerTest {
 	Assert.assertEquals(1L, updated2);
 
 	/* check if we still have only 2 users */
-	Collection<User> users = sm.createCommand(User.class).get().execute();
+	Collection<User> users = sm.createCommand(User.class).get().execute().getValues();
 	Assert.assertEquals(2, users.size());
 
 	Collection<Entity> afterUpdate2 = sm.createCommand(Entity.class).get().where().field("id").eq(post3.getId())
-		.execute();
+		.execute().getValues();
 	Assert.assertEquals(1, afterUpdate2.size());
 	Entity post3AfterUpdate2 = new ArrayList<Entity>(afterUpdate2).get(0);
 
@@ -259,7 +260,7 @@ public class SchemaManagerTest {
 	Assert.assertEquals(1L, updated3);
 
 	Collection<Entity> afterUpdate3 = sm.createCommand(Entity.class).get().where().field("id").eq(post3.getId())
-		.execute();
+		.execute().getValues();
 	Assert.assertEquals(1, afterUpdate3.size());
 	Entity post3AfterUpdate3 = new ArrayList<Entity>(afterUpdate3).get(0);
 
@@ -270,7 +271,7 @@ public class SchemaManagerTest {
 	Assert.assertEquals(1L, delete1);
 
 	Collection<User> afterDelete1 = sm.createCommand(User.class).get().where().field("id").eq(user2.getId())
-		.execute();
+		.execute().getValues();
 	Assert.assertEquals(0, afterDelete1.size());
 	
 	/* test successful delete of objects with other nested objects but without a direct referece to it */
@@ -278,7 +279,7 @@ public class SchemaManagerTest {
 	long delete2 = sm.createCommand(Entity.class).delete().execute();
 	Assert.assertEquals(3L, delete2);
 	
-	Collection<Entity> afterDelete2 = sm.createCommand(Entity.class).get().execute();
+	Collection<Entity> afterDelete2 = sm.createCommand(Entity.class).get().execute().getValues();
 	Assert.assertEquals(0, afterDelete2.size());
 
 	mpm.print(System.out);

@@ -22,18 +22,15 @@ import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.AndObjectConstraintProcessor;
 import ro.zg.mdb.core.filter.ConstraintType;
 import ro.zg.mdb.core.filter.OrObjectConstraintProcessor;
-import ro.zg.mdb.core.meta.data.Schema;
 import ro.zg.mdb.core.meta.data.SchemaConfig;
 import ro.zg.mdb.persistence.PersistenceException;
 import ro.zg.mdb.persistence.PersistenceManager;
 
 public class SchemaManager extends PersistentDataManager {
-    private Schema schema;
     private SchemaContext schemaContext;
 
     public SchemaManager(PersistenceManager persistenceManager, SchemaConfig config) throws MdbException {
 	super(persistenceManager);
-	schema = new Schema(config);
 
 	LinksManager linksManager = null;
 	if (config.isObjectReferenceAllowed()) {
@@ -54,7 +51,7 @@ public class SchemaManager extends PersistentDataManager {
 	}
 	ObjectDataManagersRepository objectsManagersRepository;
 	try {
-	    objectsManagersRepository = new ObjectDataManagersRepository(schema, schemaContext,
+	    objectsManagersRepository = new ObjectDataManagersRepository(schemaContext,
 		    persistenceManager.getPersistenceManager(SpecialPaths.TABLES));
 	} catch (PersistenceException e) {
 	    throw new MdbException(e, MdbErrorType.PERSISTENCE_ERROR);
@@ -63,8 +60,9 @@ public class SchemaManager extends PersistentDataManager {
 	SchemaMetadataManager metadataManager = new SchemaMetadataManager(persistenceManager, config);
 	
 
-	schemaContext = new SchemaContext(schema, sequencesManager, objectsManagersRepository, linksManager,
+	schemaContext = new SchemaContext(sequencesManager, objectsManagersRepository, linksManager,
 		metadataManager);
+	objectsManagersRepository.setSchemaContext(schemaContext);
 
 	schemaContext.addConstraintProcessor(ConstraintType.AND, new AndObjectConstraintProcessor());
 	schemaContext.addConstraintProcessor(ConstraintType.OR, new OrObjectConstraintProcessor());
@@ -90,11 +88,5 @@ public class SchemaManager extends PersistentDataManager {
 	return new SchemaCommandBuilder<T>(new ObjectDataManager<T>(objectName, type, schemaContext));
     }
 
-    /**
-     * @return the schema
-     */
-    public Schema getSchema() {
-	return schema;
-    }
 
 }

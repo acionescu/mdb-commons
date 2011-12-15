@@ -17,7 +17,6 @@ package ro.zg.mdb.core.schema;
 
 import ro.zg.mdb.core.annotations.Link;
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.data.DataModel;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
 import ro.zg.mdb.core.meta.data.LinkModel;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
@@ -31,9 +30,11 @@ public class LinkMapper extends ObjectDataModelAnnotationMapper<Link> {
 	FieldDataModel<?> fdm = amc.getFieldDataModel();
 	fdm.setLinkModel(lm);
 
+	boolean multivalued=fdm.getDataModel().isMultivalued();
+	lm.setMultivalued(multivalued);
 	if (lm.isFirst()) {
 	    ObjectDataModel<?> odm = amc.getObjectDataModel();
-	    if (fdm.getDataModel().isMultivalued()) {
+	    if (multivalued) {
 		Class<?> fieldType = fdm.getType();
 		if (fieldType.equals(odm.getType())) {
 		    odm.addReference(lm);

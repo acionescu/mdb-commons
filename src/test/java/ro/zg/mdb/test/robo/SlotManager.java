@@ -54,7 +54,7 @@ public class SlotManager {
     public Slot readSlot(int position) {
 	try {
 	    reads++;
-	    Collection<Slot> slots = dao.createCommand(Slot.class).get().where().field("position").eq(position).execute();
+	    Collection<Slot> slots = dao.createCommand(Slot.class).get().where().field("position").eq(position).execute().getValues();
 	    if(slots.size()==0) {
 		return null;
 	    }

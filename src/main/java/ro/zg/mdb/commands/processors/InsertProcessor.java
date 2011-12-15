@@ -15,18 +15,19 @@
  ******************************************************************************/
 package ro.zg.mdb.commands.processors;
 
-import ro.zg.mdb.commands.CommandContext;
+import ro.zg.mdb.commands.InsertCommandContext;
 import ro.zg.mdb.core.exceptions.MdbException;
 
-public class InsertProcessor<T> implements CommandProcessor<T,T>{
+public class InsertProcessor<T> implements CommandProcessor<T,InsertCommandContext<T>> {
 
-//    public InsertProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
-//	super(persistenceManager, locksManager);
-//    }
+    // public InsertProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
+    // super(persistenceManager, locksManager);
+    // }
 
     @Override
-    public T process(CommandContext<T> context) throws MdbException {
-	return context.getTransactionManager().create(context.getObjectName(),context.getType(), context.getSource());
+    public void process(InsertCommandContext<T> context) throws MdbException {
+	T result =context.getTransactionManager().create(context.getObjectName(), context.getType(), context.getSource());
+	context.getResultBuilder().setValue(result);
     }
 
 }

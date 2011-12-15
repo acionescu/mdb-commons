@@ -30,16 +30,15 @@ public class SchemaContext {
     private TransactionManagerFactory transactionManagerFactory;
     private LinksManager linksManager;
     private SchemaMetadataManager metadataManager;
-    private Schema schema;
     private Map<ConstraintType, ObjectConstraintProcessor> constraintProcessors = new HashMap<ConstraintType, ObjectConstraintProcessor>();
 
-    public SchemaContext(Schema schema, SequencesManager sequencesManager,
+    public SchemaContext(SequencesManager sequencesManager,
 	    ObjectDataManagersRepository objectsManagersRepository, LinksManager linksManager, SchemaMetadataManager metadataManager) {
 	super();
-	this.schema = schema;
 	this.sequencesManager = sequencesManager;
 	this.objectsManagersRepository = objectsManagersRepository;
 	this.linksManager = linksManager;
+	this.metadataManager=metadataManager;
     }
 
     public long getNextValForSequence(String seqId) throws MdbException {
@@ -60,7 +59,7 @@ public class SchemaContext {
     }
 
     public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type) throws MdbException {
-	return schema.getObjectDataModel(type);
+	return metadataManager.getObjectDataModel(type);
     }
 
     /**
@@ -91,12 +90,6 @@ public class SchemaContext {
 	return linksManager;
     }
 
-    /**
-     * @return the schema
-     */
-    public Schema getSchema() {
-	return schema;
-    }
 
     public void addConstraintProcessor(ConstraintType constraintType, ObjectConstraintProcessor processor) {
 	constraintProcessors.put(constraintType, processor);

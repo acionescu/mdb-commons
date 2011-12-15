@@ -17,6 +17,7 @@ package ro.zg.mdb.core.meta.data;
 
 public class LinkValue {
     private String linkName;
+    private Class<?> nestedType;
     private ObjectsLink link;
     
     
@@ -25,6 +26,19 @@ public class LinkValue {
 	this.linkName = linkName;
 	this.link = link;
     }
+    
+    
+    public LinkValue(String linkName, Class<?> nestedType, ObjectsLink link) {
+	super();
+	this.linkName = linkName;
+	this.nestedType = nestedType;
+	this.link = link;
+    }
+
+
+
+
+
     /**
      * @return the linkName
      */

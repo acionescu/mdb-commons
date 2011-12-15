@@ -13,8 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.constants;
+package ro.zg.mdb.commands;
 
-public enum MdbErrorType {
-    REQUIRED, GET_FIELD_ERROR, SET_FIELD_ERROR, UNKNOWN_FIELD, OBJECT_MATERIALIZATION_ERROR, VALIDATION_ERROR, UNKNOWN_SEQUENCE, UNIQUENESS_VIOLATED, PERSISTENCE_ERROR, UPDATE_ERROR, DUPLICATE_UNIQUE_VALUE, NO_PK_DEFINED, UNKNOWN_OBJECT_TYPE, ONE_TO_ONE_VIOLATED, MULTIPLE_OBEJCT_ID_FIELDS, WRONG_FIELD_TYPE, INVALID_CONSTRAINT, DIRECT_REFERENCE_VIOLATED, WRONG_LINK_TYPE,GENERIC_ERROR;
+import ro.zg.mdb.commands.builders.SimpleResultBuilder;
+import ro.zg.mdb.core.meta.TransactionManager;
+
+public class InsertCommandContext<T> extends CommandContext<T,T,T,SimpleResultBuilder<T>>{
+    private T source;
+
+    public InsertCommandContext(String objectName, Class<T> type, TransactionManager transactionManager,
+	    T source,SimpleResultBuilder<T> resultBuilder) {
+	super(objectName, type, transactionManager, resultBuilder);
+	this.source = source;
+    }
+
+    /**
+     * @return the source
+     */
+    public T getSource() {
+        return source;
+    }
+    
+    
 }

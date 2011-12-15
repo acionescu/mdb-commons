@@ -17,25 +17,29 @@ package ro.zg.mdb.core.meta.data;
 
 import java.util.Arrays;
 
+import ro.zg.mdb.constants.MdbErrorType;
+import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.util.data.GenericNameValue;
+
 public class LinkModel {
     private String name;
     private boolean first;
     private boolean lazy;
     /* in case of polimorfism */
     /**
-     * If allowed types are specified, then the name of the table in which 
-     * the links are stored will be the concatenation between the actual name field and the class name 
-     * of the type
-     * E.g. if the name is 'links_table_' and the allowed types ro.example.A and ro.example.B are specified,
-     * then the links with objects of type A will be stored in a table named 'links_table_ro.example.A'
-     * and links with objects of type B will be stored in a table named 'links_table_ro.example.B'
-     * <br/> 
+     * If allowed types are specified, then the name of the table in which the links are stored will be the
+     * concatenation between the actual name field and the class name of the type E.g. if the name is 'links_table_' and
+     * the allowed types ro.example.A and ro.example.B are specified, then the links with objects of type A will be
+     * stored in a table named 'links_table_ro.example.A' and links with objects of type B will be stored in a table
+     * named 'links_table_ro.example.B' <br/>
      * If no allowed type is specified then only the name field will be used
      */
     private Class<?>[] allowedTypes;
     /* in case of map */
     private String keyName;
     
+    private boolean multivalued;
+
     public LinkModel(String name, boolean first, boolean lazy) {
 	super();
 	this.name = name;
@@ -43,8 +47,6 @@ public class LinkModel {
 	this.lazy = lazy;
     }
 
-    
-    
     public LinkModel(String name, boolean first, boolean lazy, String keyName) {
 	super();
 	this.name = name;
@@ -53,8 +55,6 @@ public class LinkModel {
 	this.keyName = keyName;
     }
 
-
-
     public LinkModel(String name, boolean first, boolean lazy, Class<?>[] allowedTypes) {
 	super();
 	this.name = name;
@@ -62,8 +62,6 @@ public class LinkModel {
 	this.lazy = lazy;
 	this.allowedTypes = allowedTypes;
     }
-
-
 
     public LinkModel(String name, boolean first, boolean lazy, Class<?>[] allowedTypes, String keyName) {
 	super();
@@ -74,52 +72,81 @@ public class LinkModel {
 	this.keyName = keyName;
     }
 
-
-
     /**
      * @return the name
      */
     public String getName() {
-        return name;
+	return name;
     }
 
     /**
      * @return the first
      */
     public boolean isFirst() {
-        return first;
+	return first;
     }
 
     /**
      * @return the lazy
      */
     public boolean isLazy() {
-        return lazy;
+	return lazy;
     }
-    
-    
 
     /**
      * @return the keyName
      */
     public String getKeyName() {
-        return keyName;
+	return keyName;
     }
-
-
 
     /**
      * @return the allowedTypes
      */
     public Class<?>[] getAllowedTypes() {
-        return allowedTypes;
+	return allowedTypes;
     }
 
-
-    public boolean hasAllowedTypes() {
+    public boolean isPolymorphic() {
 	return allowedTypes != null && allowedTypes.length > 0;
     }
+
+    private boolean isTypeAllowed(Class<?> type) {
+	if(type == null) {
+	    return false;
+	}
+	for (Class<?> t : allowedTypes) {
+	    if (t.equals(type)) {
+		return true;
+	    }
+	}
+	return false;
+    }
     
+    public String getFullName(Class<?> type) throws MdbException {
+	if(!isPolymorphic()) {
+	    return name;
+	}
+	if(!isTypeAllowed(type)) {
+	    throw new MdbException(MdbErrorType.WRONG_LINK_TYPE, new GenericNameValue("type",type));
+	}
+	return name+type.getName();
+    }
+
+    
+    /**
+     * @return the multivalued
+     */
+    public boolean isMultivalued() {
+        return multivalued;
+    }
+
+    /**
+     * @param multivalued the multivalued to set
+     */
+    public void setMultivalued(boolean multivalued) {
+        this.multivalued = multivalued;
+    }
 
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
@@ -132,11 +159,10 @@ public class LinkModel {
 	result = prime * result + (first ? 1231 : 1237);
 	result = prime * result + ((keyName == null) ? 0 : keyName.hashCode());
 	result = prime * result + (lazy ? 1231 : 1237);
+	result = prime * result + (multivalued ? 1231 : 1237);
 	result = prime * result + ((name == null) ? 0 : name.hashCode());
 	return result;
     }
-
-
 
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
@@ -161,6 +187,8 @@ public class LinkModel {
 	    return false;
 	if (lazy != other.lazy)
 	    return false;
+	if (multivalued != other.multivalued)
+	    return false;
 	if (name == null) {
 	    if (other.name != null)
 		return false;
@@ -169,6 +197,4 @@ public class LinkModel {
 	return true;
     }
 
-    
-    
 }

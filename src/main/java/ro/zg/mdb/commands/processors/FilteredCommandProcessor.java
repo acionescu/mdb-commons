@@ -18,25 +18,28 @@ package ro.zg.mdb.commands.processors;
 import java.util.Collection;
 import java.util.Set;
 
-import ro.zg.mdb.commands.CommandContext;
+import ro.zg.mdb.commands.FilteredCommandContext;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
 import ro.zg.mdb.core.filter.ObjectConstraintContext;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 
-public abstract class FilteredCommandProcessor<T,R> implements CommandProcessor<T,R>{
+public abstract class FilteredCommandProcessor<T, C extends FilteredCommandContext<T, ?, ?, ?>> implements
+	CommandProcessor<T, C> {
 
-//    public FilteredCommandProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
-//	super(persistenceManager, locksManager);
-//    }
+    // public FilteredCommandProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager)
+    // {
+    // super(persistenceManager, locksManager);
+    // }
 
     @Override
-    public R process(CommandContext<T> context) throws MdbException {
+    public void process(C context) throws MdbException {
 	Filter filter = context.getFilter();
-	ObjectDataModel<T> odm=context.getObjectDataModel();
-	
+	ObjectDataModel<T> odm = context.getObjectDataModel();
+
 	if (filter.isPossible(odm)) {
-	    ObjectConstraintContext<T> occ = new ObjectConstraintContext<T>(context.getObjectName(),context.getType(), context.getTransactionManager());
+	    ObjectConstraintContext<T> occ = new ObjectConstraintContext<T>(context.getObjectName(), context.getType(),
+		    context.getTransactionManager());
 
 	    if (filter.process(occ)) {
 		/* some indexes were hit */
@@ -51,7 +54,8 @@ public abstract class FilteredCommandProcessor<T,R> implements CommandProcessor<
 			isAllowed = false;
 		    } else {
 			/* nothing has been found */
-			return processEmpty(context);
+			processEmpty(context);
+			return;
 		    }
 		} else {
 		    if (restricted != null) {
@@ -60,32 +64,36 @@ public abstract class FilteredCommandProcessor<T,R> implements CommandProcessor<
 			isAllowed = true;
 		    } else {
 			/* nothing has been found */
-			return processEmpty(context);
+			processEmpty(context);
+			return;
 		    }
 		}
 
 		if (isAllowed && !allowed.isEmpty()) {
-		    return processAllowed(context, allowed);
+		    processAllowed(context, allowed);
+		    return;
 		} else if (!isAllowed) {
-		    return processRestricted(context, restricted);
+		    processRestricted(context, restricted);
+		    return;
 		}
-		return processEmpty(context);
+		processEmpty(context);
+		return;
 	    } else {
 		/* no index was hit, we need full scan */
-		return processAll(context);
+		processAll(context);
+		return;
 	    }
 	}
 
-	return processEmpty(context);
+	processEmpty(context);
     }
-    
-    protected abstract R processAllowed(CommandContext<T> context,Collection<String> allowed) throws MdbException;
-    
-    protected abstract R processRestricted(CommandContext<T> context,Collection<String> restricted) throws MdbException;
-    
-    protected abstract R processAll(CommandContext<T> context) throws MdbException;
-    
-    protected abstract R processEmpty(CommandContext<T> context);
 
+    protected abstract void processAllowed(C context, Collection<String> allowed) throws MdbException;
+
+    protected abstract void processRestricted(C context, Collection<String> restricted) throws MdbException;
+
+    protected abstract void processAll(C context) throws MdbException;
+
+    protected abstract void processEmpty(C context);
 
 }

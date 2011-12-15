@@ -15,9 +15,13 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta;
 
-import java.util.Collection;
-
-import ro.zg.mdb.commands.CommandContext;
+import ro.zg.mdb.commands.DeleteCommandContext;
+import ro.zg.mdb.commands.FindCommandContext;
+import ro.zg.mdb.commands.InsertCommandContext;
+import ro.zg.mdb.commands.UpdateCommandContext;
+import ro.zg.mdb.commands.builders.FindResultBuilder;
+import ro.zg.mdb.commands.builders.PersistentCollection;
+import ro.zg.mdb.commands.builders.SimpleResultBuilder;
 import ro.zg.mdb.commands.processors.DeleteProcessor;
 import ro.zg.mdb.commands.processors.FindProcessor;
 import ro.zg.mdb.commands.processors.InsertProcessor;
@@ -34,13 +38,12 @@ public class ObjectDataManager<T> {
     private DeleteProcessor<T> deleteProcessor;
     private UpdateProcessor<T> updateProcessor;
 
-    public ObjectDataManager(String objectName, Class<T> type,
-	    SchemaContext schemaContext) {
+    public ObjectDataManager(String objectName, Class<T> type, SchemaContext schemaContext) {
 
 	this.schemaContext = schemaContext;
 
-	this.objectName=objectName;
-	this.type=type;
+	this.objectName = objectName;
+	this.type = type;
 
 	findProcessor = new FindProcessor<T>();
 	insertProcessor = new InsertProcessor<T>();
@@ -49,25 +52,32 @@ public class ObjectDataManager<T> {
     }
 
     public T create(T target) throws MdbException {
-	return insertProcessor.process(new CommandContext<T>(objectName,type, schemaContext.createTransactionManager(),
-		target));
+	InsertCommandContext<T> commandContext = new InsertCommandContext<T>(objectName, type,
+		schemaContext.createTransactionManager(), target, new SimpleResultBuilder<T>());
+	insertProcessor.process(commandContext);
+	return commandContext.getResultBuilder().getResult();
     }
 
-    public Collection<T> find(Filter filter) throws MdbException {
-	return findProcessor.process(new CommandContext<T>(objectName,type, schemaContext.createTransactionManager(),
-		filter));
+    public <R> PersistentCollection<R> find(Filter filter, FindResultBuilder<T, R> resultBuilder) throws MdbException {
+	FindCommandContext<T, R> commandContext = new FindCommandContext<T, R>(objectName, type,
+		schemaContext.createTransactionManager(), filter, resultBuilder);
+	findProcessor.process(commandContext);
+	return commandContext.getResultBuilder().getResult();
     }
 
     public Long update(T target, Filter filter) throws MdbException {
-	return updateProcessor.process(new CommandContext<T>(objectName,type, schemaContext.createTransactionManager(),
-		target, filter));
+	SimpleResultBuilder<Long> resultBuilder = new SimpleResultBuilder<Long>();
+	updateProcessor.process(new UpdateCommandContext<T>(objectName, type, schemaContext.createTransactionManager(),
+		filter, target, resultBuilder));
+	return resultBuilder.getResult();
     }
 
     public Long delete(Filter filter) throws MdbException {
-	return deleteProcessor.process(new CommandContext<T>(objectName,type, schemaContext.createTransactionManager(),
-		filter));
+	SimpleResultBuilder<Long> resultBuilder = new SimpleResultBuilder<Long>();
+	deleteProcessor.process(new DeleteCommandContext<T>(objectName, type,
+		schemaContext.createTransactionManager(),resultBuilder, filter));
+	return resultBuilder.getResult();
     }
-
 
     /**
      * @return the schemaContext

@@ -13,8 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.constants;
+package ro.zg.mdb.core.meta;
 
-public enum MdbErrorType {
-    REQUIRED, GET_FIELD_ERROR, SET_FIELD_ERROR, UNKNOWN_FIELD, OBJECT_MATERIALIZATION_ERROR, VALIDATION_ERROR, UNKNOWN_SEQUENCE, UNIQUENESS_VIOLATED, PERSISTENCE_ERROR, UPDATE_ERROR, DUPLICATE_UNIQUE_VALUE, NO_PK_DEFINED, UNKNOWN_OBJECT_TYPE, ONE_TO_ONE_VIOLATED, MULTIPLE_OBEJCT_ID_FIELDS, WRONG_FIELD_TYPE, INVALID_CONSTRAINT, DIRECT_REFERENCE_VIOLATED, WRONG_LINK_TYPE,GENERIC_ERROR;
+import ro.zg.mdb.commands.builders.ComplexFindResultBuilder;
+import ro.zg.mdb.commands.builders.PersistentObjectDecorator;
+import ro.zg.mdb.core.meta.data.LinkValue;
+import ro.zg.mdb.core.meta.data.ObjectsLink;
+
+public class LinkValueDecorator implements PersistentObjectDecorator<ObjectsLink, LinkValue>{
+    private String linkName;
+    
+    
+    
+    public LinkValueDecorator(String linkName) {
+	super();
+	this.linkName = linkName;
+    }
+
+
+
+    @Override
+    public LinkValue decorate(ObjectsLink target) {
+	return new LinkValue(linkName, target);
+    }
+
 }

@@ -25,6 +25,9 @@ import java.util.Set;
 import ro.zg.mdb.constants.Constants;
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.mdb.core.meta.LinksSet;
+import ro.zg.mdb.core.meta.PolymorphicLinksSet;
+import ro.zg.mdb.core.meta.SimpleLinksSet;
 import ro.zg.mdb.core.meta.TransactionManager;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
 import ro.zg.mdb.core.meta.data.LinkModel;
@@ -188,18 +191,32 @@ public class ObjectConstraintContext<T> {
 	    return null;
 	}
 	Set<String> parentRows = new HashSet<String>();
-
+	boolean isParentFirst = lm.isFirst();
 	for (String rowId : rows) {
-	    Collection<ObjectsLink> links = transactionManager.getObjectLinks(lm, rowId, true);
-	    for (ObjectsLink link : links) {
-		if (lm.isFirst()) {
+	    LinksSet linksSet = transactionManager.getObjectLinks(lm, rowId, true);
+	    if(lm.isPolymorphic()) {
+		PolymorphicLinksSet pls = (PolymorphicLinksSet)linksSet;
+		for(Class<?> key : pls.getTypes()) {
+		    populateParentRows(pls.getLinks(key), parentRows, isParentFirst);
+		}
+	    }
+	    else {
+		SimpleLinksSet sls = (SimpleLinksSet)linksSet;
+		populateParentRows(sls.getLinks(), parentRows, isParentFirst);
+	    }
+	    
+	}
+	return parentRows;
+    }
+    
+    private void populateParentRows(Collection<ObjectsLink> links,Set<String> parentRows, boolean isParentFirst) {
+	for (ObjectsLink link : links) {
+		if (isParentFirst) {
 		    parentRows.add(link.getFirstRowId());
 		} else {
 		    parentRows.add(link.getSecondRowId());
 		}
 	    }
-	}
-	return parentRows;
     }
 
     private LinkModel getLinkModel(String nestedFieldName) {

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ro.zg.mdb.commands.builders.FindResultBuilder;
 import ro.zg.mdb.constants.Constants;
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.constants.SpecialPaths;
@@ -50,6 +51,7 @@ import ro.zg.mdb.util.MdbObjectHandler;
 import ro.zg.mdb.util.MdbObjectSetHandler;
 import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.ObjectsUtil;
+import ro.zg.util.data.reflection.ReflectionUtility;
 import ro.zg.util.io.file.LineHandler;
 
 public class PersistentObjectDataManager<T> extends PersistentDataManager {
@@ -141,8 +143,8 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	return handler.getData();
     }
 
-    public Collection<T> readAllObjects(final Filter filter, final TransactionManager transactionManager,
-	    final Collection<T> dataHolder) throws MdbException {
+    public void readAllObjects(final Filter filter, final TransactionManager transactionManager,
+	    final FindResultBuilder<T, ?> resultBuilder) throws MdbException {
 
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
 	    private ResourceLock rowLock;
@@ -173,7 +175,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		    return false;
 		}
 		if (object != null) {
-		    dataHolder.add(object);
+		    resultBuilder.add(object);
 		}
 		return true;
 	    }
@@ -188,11 +190,11 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	if (handler.hasError()) {
 	    throw handler.getError();
 	}
-	return dataHolder;
+	
     }
 
-    public Collection<T> readAllObjectsBut(final Filter filter, final TransactionManager transactionManager,
-	    final Collection<T> dataHolder, final Collection<String> restricted) throws MdbException {
+    public void readAllObjectsBut(final Filter filter, final TransactionManager transactionManager,
+	    final FindResultBuilder<T, ?> resultBuilder, final Collection<String> restricted) throws MdbException {
 
 	MdbObjectSetHandler handler = new MdbObjectSetHandler() {
 	    private ResourceLock rowLock;
@@ -226,7 +228,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		    return false;
 		}
 		if (object != null) {
-		    dataHolder.add(object);
+		    resultBuilder.add(object);
 		}
 		return true;
 	    }
@@ -242,11 +244,10 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    throw handler.getError();
 	}
 
-	return dataHolder;
     }
 
-    public Collection<T> readObjects(Collection<String> ids, final Filter filter,
-	    final TransactionManager transactionManager, final Collection<T> dataHolder) throws MdbException {
+    public void readObjects(Collection<String> ids, final Filter filter,
+	    final TransactionManager transactionManager, final FindResultBuilder<T, ?> resultBuilder) throws MdbException {
 
 	MdbObjectHandler handler = new MdbObjectHandler() {
 
@@ -268,7 +269,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		// T object = odm.getObjectFromString(handler.getData(), filter);
 		T object = transactionManager.buildObject(objectName, objectDataModel, handler.getData(), filter, id);
 		if (object != null) {
-		    dataHolder.add(object);
+		    resultBuilder.add(object);
 		}
 	    } catch (PersistenceException e) {
 		throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, e);
@@ -282,8 +283,6 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	if (handler.hasError()) {
 	    throw handler.getError();
 	}
-
-	return dataHolder;
     }
 
     protected void deleteUnusedIndexes(ObjectContext<T> oc, String rowId) {
@@ -778,7 +777,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
 		    continue;
 		}
-		fieldData = fieldValue.toString();
+		fieldData = objectToString(fieldValue);
 	    }
 
 	    /* test if the value is valid for this field */
@@ -907,7 +906,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    Object fieldValue = newValuesMap.get(fieldName);
 	    /* convert value to string */
 	    if (fieldValue != null) {
-		fieldData = fieldValue.toString();
+		fieldData = objectToString(fieldValue);
 	    }
 
 	    /* update the new data with this field value */
@@ -998,7 +997,17 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		continue;
 	    }
 	    /* now let's see if there is a link for this field */
-	    ObjectsLink ol = transactionManager.getPendingLinkForField(fullFieldName);
+	    LinkValue oldLinkValue = transactionManager.getPendingLinkForField(fullFieldName);
+	    ObjectsLink ol = null;
+	    /* we need to use the exact link name when manipulating old links because in case of 
+	     * polymorphic fields the link name will not match the field's link name
+	     */
+	    String oldLinkName=null;
+	    if(oldLinkValue != null) {
+		ol=oldLinkValue.getLink();
+		oldLinkName=oldLinkValue.getLinkName();
+	    }
+	    
 	    /* get the new value */
 	    Object fieldValue = newValuesMap.get(fieldName);
 
@@ -1022,7 +1031,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		    nestedContexts.put(fieldName,
 			    transactionManager.getObjectContext(fodm.getTypeName(), fieldValue, true));
 		    /* remove the old link */
-		    linksToRemove.add(new LinkValue(fdm.getLinkModel().getName(), ol));
+		    linksToRemove.add(new LinkValue(oldLinkName, ol));
 		} else if (nestedRowId.equals(currentValueId)) {
 		    /* same object, we need to see if something has updated */
 		    nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(), fieldValue,
@@ -1032,12 +1041,12 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		    nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(), fieldValue,
 			    filter, currentValueId, oldValuesMap, fullFieldName + Constants.NESTED_FIELD_SEPARATOR));
 		    /* remove the old link */
-		    linksToRemove.add(new LinkValue(fdm.getLinkModel().getName(), ol));
-		    linksToAdd.add(getLinkValue(fdm, rowId, currentValueId));
+		    linksToRemove.add(new LinkValue(oldLinkName, ol));
+		    linksToAdd.add(getLinkValue(fdm, rowId, currentValueId,fieldValue.getClass()));
 		}
 	    } else if (ol != null) {
 		/* the field value was set to null, we need to remove the old link */
-		linksToRemove.add(new LinkValue(fdm.getLinkModel().getName(), ol));
+		linksToRemove.add(new LinkValue(oldLinkName, ol));
 	    } else {
 		/*
 		 * there is no old link, but a new value was set we need to see if this is a completely new object, or a
@@ -1045,9 +1054,11 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		 */
 		String currentValueId = fodm.getObjectId(fieldValue);
 		if (currentValueId == null) {
+		    /* existent object */
 		    nestedContexts.put(fieldName,
 			    transactionManager.getObjectContext(fodm.getTypeName(), fieldValue, true));
 		} else {
+		    /* new object */
 		    /*
 		     * the tricky part here is that this object's data is not found in the oldValuesMap so we need to
 		     * call the main getObjectContext for update
@@ -1056,7 +1067,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		    String nestedData = transactionManager.getDataForRowId(fodm, currentValueId);
 		    nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(), fieldValue,
 			    filter, nestedData, currentValueId, fullFieldName + Constants.NESTED_FIELD_SEPARATOR));
-		    linksToAdd.add(getLinkValue(fdm, rowId, currentValueId));
+		    linksToAdd.add(getLinkValue(fdm, rowId, currentValueId, fieldValue.getClass()));
 		}
 	    }
 	}
@@ -1099,7 +1110,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    if (fieldValue == null) {
 		continue;
 	    }
-	    String fieldData = fieldValue.toString();
+	    String fieldData = objectToString(fieldValue);
 
 	    indexedValues.put(fieldName, fieldData);
 	    String uniqueIndexName = fdm.getUniqueIndexId();
@@ -1134,6 +1145,14 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
     // return getObjectContext(target, , transactionManager);
     //
     // }
+    
+    private String objectToString(Object o) throws MdbException {
+	try {
+	    return ReflectionUtility.objectToString(o);
+	} catch (Exception e) {
+	    throw new MdbException(MdbErrorType.GENERIC_ERROR, e);
+	}
+    }
 
     public ObjectContext<T> getObjectContext(T target, boolean create, TransactionManager transactionManager)
 	    throws MdbException {
@@ -1531,14 +1550,15 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	}
 
 	if (createLink) {
-	    LinkValue lv = getLinkValue(fdm, rowId, noc.getRowId());
+	    LinkValue lv = getLinkValue(fdm, rowId, noc.getRowId(),noc.getType());
 	    transactionManager.saveLinkValue(lv);
 	}
     }
 
-    protected LinkValue getLinkValue(FieldDataModel<?> fdm, String mainRowId, String nestedRowId) {
+    protected LinkValue getLinkValue(FieldDataModel<?> fdm, String mainRowId, String nestedRowId, Class<?> nestedObjectType) throws MdbException {
 	LinkModel linkModel = fdm.getLinkModel();
-	String linkName = linkModel.getName();
+	String linkName = linkModel.getFullName(nestedObjectType);
+	
 	ObjectsLink ol = new ObjectsLink();
 	if (linkModel.isFirst()) {
 	    ol.setFirstRowId(mainRowId);

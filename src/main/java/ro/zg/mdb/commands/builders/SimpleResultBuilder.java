@@ -13,8 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.constants;
+package ro.zg.mdb.commands.builders;
 
-public enum MdbErrorType {
-    REQUIRED, GET_FIELD_ERROR, SET_FIELD_ERROR, UNKNOWN_FIELD, OBJECT_MATERIALIZATION_ERROR, VALIDATION_ERROR, UNKNOWN_SEQUENCE, UNIQUENESS_VIOLATED, PERSISTENCE_ERROR, UPDATE_ERROR, DUPLICATE_UNIQUE_VALUE, NO_PK_DEFINED, UNKNOWN_OBJECT_TYPE, ONE_TO_ONE_VIOLATED, MULTIPLE_OBEJCT_ID_FIELDS, WRONG_FIELD_TYPE, INVALID_CONSTRAINT, DIRECT_REFERENCE_VIOLATED, WRONG_LINK_TYPE,GENERIC_ERROR;
+public class SimpleResultBuilder<T> implements ResultBuilder<T> {
+    private T value;
+    
+    @Override
+    public T getResult() {
+	return value;
+    }
+
+    /**
+     * @param value the value to set
+     */
+    public void setValue(T value) {
+        this.value = value;
+    }
+    
+    
+
 }

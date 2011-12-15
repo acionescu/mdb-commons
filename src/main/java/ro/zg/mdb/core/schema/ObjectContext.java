@@ -294,4 +294,8 @@ public class ObjectContext<T> {
     public void setRowId(String rowId) {
 	rowInfo=new Row(rowId);
     }
+    
+    public Class<T> getType(){
+	return objectDataModel.getType();
+    }
 }

@@ -19,12 +19,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.annotations.Link;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
+import ro.zg.util.parser.utils.JavaCollectionMapParser;
 
 public class FieldDataModel<T> {
     public static Class<?> DEFAULT_SET_IMPLEMENTATION = HashSet.class;
@@ -32,7 +35,8 @@ public class FieldDataModel<T> {
     public static Class<?> DEFAULT_MAP_IMPLEMENTATION = HashMap.class;
 
     private String name;
-    @Link(name = "field_data_model_", lazy = false, allowedTypes = { ObjectDataModel.class, MapDataModel.class, CollectionDataModel.class })
+    @Link(name = "field_data_model_", lazy = false, allowedTypes = { ObjectDataModel.class, MapDataModel.class,
+	    CollectionDataModel.class })
     private DataModel<T> dataModel;
     private Class<? extends T> implementation;
     private boolean required;
@@ -41,6 +45,11 @@ public class FieldDataModel<T> {
     private LinkModel linkModel;
     private String uniqueIndexId;
     private String sequenceId;
+
+    /**
+     * The collection/map parser Lazy initialized
+     */
+    private transient JavaCollectionMapParser collectionMapParser;
 
     public FieldDataModel(String name, DataModel<T> dataModel) {
 	this.name = name;
@@ -67,6 +76,9 @@ public class FieldDataModel<T> {
 			}
 			return ReflectionUtility.createCollection(impl, values);
 		    }
+		    else if(collectionModel.isArray()) {
+			return values.toArray();
+		    }
 		}
 
 		else if (dataModel instanceof MapDataModel) {
@@ -86,6 +98,38 @@ public class FieldDataModel<T> {
 	    return new ArrayList(values).get(0);
 	}
 	return null;
+    }
+    
+    public Object createValueFromString(String data) throws Exception{
+	DataModel dm = getDataModel();
+	if(dm.isMultivalued()) {
+	    Object response = getCollectionMapParser().parse(data);
+	    if(dm instanceof CollectionDataModel) {
+		CollectionDataModel cdm = (CollectionDataModel)dm;
+		if(((CollectionDataModel) dm).isArray()) {
+		    return ((List)response).toArray();
+		}
+	    }
+	    return response;
+	}
+	return ReflectionUtility.createObjectByTypeAndValue(getType(), data);
+    }
+
+    private JavaCollectionMapParser getCollectionMapParser() {
+	if (collectionMapParser != null) {
+	    return collectionMapParser;
+	}
+
+	collectionMapParser = new JavaCollectionMapParser();
+	if (implementation != null) {
+	    MultivaluedDataModel<?, ?> mvdm = (MultivaluedDataModel) getDataModel();
+	    if (mvdm.isCollection()) {
+		collectionMapParser.setCollectionImplType((Class<? extends Collection>) implementation);
+	    } else if (mvdm.isMap()) {
+		collectionMapParser.setMapImplType((Class<? extends Map>) implementation);
+	    }
+	}
+	return collectionMapParser;
     }
 
     /**

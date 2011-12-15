@@ -15,42 +15,24 @@
  ******************************************************************************/
 package ro.zg.mdb.commands;
 
+import ro.zg.mdb.commands.builders.ResultBuilder;
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.filter.Filter;
 import ro.zg.mdb.core.meta.TransactionManager;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 
-public class CommandContext<T> {
+public class CommandContext<T, N, R, B extends ResultBuilder<R>> {
     private String objectName;
     private Class<T> type;
     private TransactionManager transactionManager;
-    private Filter filter;
-    private T source;
+    private B resultBuilder;
+  
 
-    public CommandContext(String objectName, Class<T> type, TransactionManager transactionManager, Filter filter) {
+    public CommandContext(String objectName, Class<T> type, TransactionManager transactionManager, B resultBuilder) {
 	super();
 	this.objectName = objectName;
 	this.type = type;
-	this.filter = filter;
 	this.transactionManager = transactionManager;
-    }
-
-    public CommandContext(String objectName, Class<T> type, TransactionManager transactionManager, T source) {
-	super();
-	this.objectName = objectName;
-	this.type = type;
-	this.source = source;
-	this.transactionManager = transactionManager;
-    }
-
-    public CommandContext(String objectName, Class<T> type, TransactionManager transactionManager, T source,
-	    Filter filter) {
-	super();
-	this.objectName = objectName;
-	this.type = type;
-	this.source = source;
-	this.filter = filter;
-	this.transactionManager = transactionManager;
+	this.resultBuilder = resultBuilder;
     }
 
     public ObjectDataModel<T> getObjectDataModel() throws MdbException {
@@ -59,20 +41,6 @@ public class CommandContext<T> {
 
     public TransactionManager getTransactionManager() {
 	return transactionManager;
-    }
-
-    /**
-     * @return the filter
-     */
-    public Filter getFilter() {
-	return filter;
-    }
-
-    /**
-     * @return the source
-     */
-    public T getSource() {
-	return source;
     }
 
     /**
@@ -87,6 +55,13 @@ public class CommandContext<T> {
      */
     public Class<T> getType() {
 	return type;
+    }
+
+    /**
+     * @return the resultBuilder
+     */
+    public B getResultBuilder() {
+        return resultBuilder;
     }
 
 }

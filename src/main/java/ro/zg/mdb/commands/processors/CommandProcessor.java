@@ -18,8 +18,8 @@ package ro.zg.mdb.commands.processors;
 import ro.zg.mdb.commands.CommandContext;
 import ro.zg.mdb.core.exceptions.MdbException;
 
-public interface CommandProcessor<T,R> {
+public interface CommandProcessor<T, C extends CommandContext<T, ?,?,?>> {
     
-   R process(CommandContext<T> context) throws MdbException;
+   void process(C context) throws MdbException;
 
 }

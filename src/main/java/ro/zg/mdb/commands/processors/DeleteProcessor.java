@@ -17,35 +17,36 @@ package ro.zg.mdb.commands.processors;
 
 import java.util.Collection;
 
-import ro.zg.mdb.commands.CommandContext;
-import ro.zg.mdb.core.concurrency.PersistableObjectLockManager;
+import ro.zg.mdb.commands.DeleteCommandContext;
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.persistence.PersistenceManager;
 
-public class DeleteProcessor<T> extends FilteredCommandProcessor<T,Long>{
+public class DeleteProcessor<T> extends FilteredCommandProcessor<T,DeleteCommandContext<T>>{
 
 //    public DeleteProcessor(PersistenceManager persistenceManager, PersistableObjectLockManager locksManager) {
 //	super(persistenceManager, locksManager);
 //    }
 
     @Override
-    protected Long processAll(CommandContext<T> context) throws MdbException {
-	return context.getTransactionManager().deleteAll(context.getObjectName(),context.getType(), context.getFilter());
+    protected void processAll(DeleteCommandContext<T> context) throws MdbException {
+	long deleted = context.getTransactionManager().deleteAll(context.getObjectName(),context.getType(), context.getFilter());
+	context.getResultBuilder().setValue(deleted);
     }
 
     @Override
-    protected Long processAllowed(CommandContext<T> context, Collection<String> allowed) throws MdbException {
-	return context.getTransactionManager().deleteObjects(context.getObjectName(),context.getType(),allowed, context.getFilter());
+    protected void processAllowed(DeleteCommandContext<T> context, Collection<String> allowed) throws MdbException {
+	long deleted = context.getTransactionManager().deleteObjects(context.getObjectName(),context.getType(),allowed, context.getFilter());
+	context.getResultBuilder().setValue(deleted);
     }
 
     @Override
-    protected Long processRestricted(CommandContext<T> context, Collection<String> restricted) throws MdbException {
-	return context.getTransactionManager().deleteAllBut(context.getObjectName(),context.getType(), context.getFilter(),restricted);
+    protected void processRestricted(DeleteCommandContext<T> context, Collection<String> restricted) throws MdbException {
+	long deleted = context.getTransactionManager().deleteAllBut(context.getObjectName(),context.getType(), context.getFilter(),restricted);
+	context.getResultBuilder().setValue(deleted);
     }
 
     @Override
-    protected Long processEmpty(CommandContext<T> context) {
-	return 0L;
+    protected void processEmpty(DeleteCommandContext<T> context) {
+	context.getResultBuilder().setValue(0L);
     }
 
    

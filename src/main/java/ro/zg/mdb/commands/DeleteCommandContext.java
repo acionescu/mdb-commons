@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.commands.processors;
+package ro.zg.mdb.commands;
 
-import java.util.Collection;
+import ro.zg.mdb.commands.builders.SimpleResultBuilder;
+import ro.zg.mdb.core.filter.Filter;
+import ro.zg.mdb.core.meta.TransactionManager;
 
-import ro.zg.mdb.commands.CommandContext;
+public class DeleteCommandContext<T> extends FilteredCommandContext<T, Long, Long, SimpleResultBuilder<Long>>{
 
-public class CommandProcessorsManager {
-    
-    public <T> Collection<T> find(CommandContext<T> context){
-	
-	return null;
+    public DeleteCommandContext(String objectName, Class<T> type, TransactionManager transactionManager,
+	    SimpleResultBuilder<Long> resultBuilder, Filter filter) {
+	super(objectName, type, transactionManager, resultBuilder, filter);
     }
-    
+
 }

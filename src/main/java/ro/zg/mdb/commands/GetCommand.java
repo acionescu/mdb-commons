@@ -16,25 +16,37 @@
 package ro.zg.mdb.commands;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.LinkedHashSet;
 
 import ro.zg.mdb.commands.builders.CommandBuilderContext;
 import ro.zg.mdb.commands.builders.FilteredCommand;
+import ro.zg.mdb.commands.builders.FindResultBuilderFactory;
+import ro.zg.mdb.commands.builders.PersistentCollection;
+import ro.zg.mdb.commands.builders.SimpleFindResultBuilderFactory;
 import ro.zg.mdb.constants.OperationType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
 
 
-public class GetCommand<T> extends FilteredCommand<T,Collection<T>>{
+public class GetCommand<T,R> extends FilteredCommand<T,PersistentCollection<R>>{
+    private FindResultBuilderFactory<T,R> defaultResultBuilderFactory = new SimpleFindResultBuilderFactory<T,R>(); 
     
     public GetCommand(CommandBuilderContext<T> commandContext) {
 	super(commandContext);
     }
 
 
+    public GetCommand(CommandBuilderContext<T> commandContext,
+	    FindResultBuilderFactory<T, R> defaultResultBuilderFactory) {
+	super(commandContext);
+	this.defaultResultBuilderFactory = defaultResultBuilderFactory;
+    }
+
+
+
+
     @Override
-    public Collection<T> execute() throws MdbException {
+    public PersistentCollection<R> execute() throws MdbException {
 	Filter filter =filterContext.getFilter();
 	filter.setOperationType(OperationType.READ);
 	String[] requiredFields=commandContext.getFields();
@@ -43,7 +55,7 @@ public class GetCommand<T> extends FilteredCommand<T,Collection<T>>{
 	    filter.setTargetFields(new LinkedHashSet<String>(Arrays.asList(requiredFields)));
 	}
 	
-	return commandContext.getObjectDataManager().find(filter);
+	return commandContext.getObjectDataManager().find(filter,defaultResultBuilderFactory.getResultBuilder());
     }
 
     

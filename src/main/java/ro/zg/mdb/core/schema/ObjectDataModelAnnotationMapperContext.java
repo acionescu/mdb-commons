@@ -17,6 +17,7 @@ package ro.zg.mdb.core.schema;
 
 import java.lang.annotation.Annotation;
 
+import ro.zg.mdb.core.meta.SchemaMetadataManager;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 import ro.zg.mdb.core.meta.data.Schema;
@@ -24,10 +25,10 @@ import ro.zg.mdb.core.meta.data.Schema;
 public class ObjectDataModelAnnotationMapperContext<A extends Annotation> extends AnnotationMapperContext<A> {
     private ObjectDataModel<?> objectDataModel;
     private FieldDataModel<?> fieldDataModel;
-    private Schema schema;
+    private SchemaMetadataManager schema;
     
     public ObjectDataModelAnnotationMapperContext(A annotation, ObjectDataModel<?> objectDataModel,
-	    FieldDataModel<?> fieldDataModel, Schema schema) {
+	    FieldDataModel<?> fieldDataModel, SchemaMetadataManager schema) {
 	super(annotation);
 	this.objectDataModel = objectDataModel;
 	this.fieldDataModel = fieldDataModel;
@@ -48,7 +49,7 @@ public class ObjectDataModelAnnotationMapperContext<A extends Annotation> extend
     /**
      * @return the schema
      */
-    public Schema getSchema() {
+    public SchemaMetadataManager getSchema() {
         return schema;
     }
     /* (non-Javadoc)
