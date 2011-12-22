@@ -17,6 +17,8 @@ package ro.zg.mdb.core.meta.data;
 
 import java.util.Map;
 
+import ro.zg.mdb.core.annotations.Persistable;
+@Persistable
 public class MapDataModel<K,T> extends MultivaluedDataModel<Map<K,T>, T>{
     private Class<K> keyType;
     

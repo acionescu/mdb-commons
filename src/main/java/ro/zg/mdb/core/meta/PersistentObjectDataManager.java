@@ -948,7 +948,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
 	    for (UniqueIndex ui : touchedUniqueIndexes) {
 		for (FieldDataModel<?> fdm : ui.getFields()) {
-		    String uniqueIndexName = ui.getId();
+		    String uniqueIndexName = ui.getName();
 		    String fieldName = fdm.getName();
 		    String fullFieldName = path + fieldName;
 		    int position = objectDataModel.getFieldPosition(fieldName);

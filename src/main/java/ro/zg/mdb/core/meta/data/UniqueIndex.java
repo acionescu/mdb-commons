@@ -19,9 +19,13 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import ro.zg.mdb.core.annotations.ObjectId;
+import ro.zg.mdb.core.annotations.Persistable;
+@Persistable
 public class UniqueIndex {
-
+    @ObjectId
     private String id;
+    private String name;
     private Map<String,FieldDataModel<?>> fields = new LinkedHashMap<String,FieldDataModel<?>>();
 
     public UniqueIndex() {
@@ -64,6 +68,28 @@ public class UniqueIndex {
     
     public boolean isComposite() {
 	return fields.size() > 1;
+    }
+    
+
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @param name the name to set
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
+     * @param fields the fields to set
+     */
+    public void setFields(Map<String, FieldDataModel<?>> fields) {
+        this.fields = fields;
     }
 
     /* (non-Javadoc)

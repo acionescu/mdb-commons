@@ -18,10 +18,14 @@ package ro.zg.mdb.core.meta.data;
 import java.util.Arrays;
 
 import ro.zg.mdb.constants.MdbErrorType;
+import ro.zg.mdb.core.annotations.ObjectId;
+import ro.zg.mdb.core.annotations.Persistable;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.util.data.GenericNameValue;
-
+@Persistable
 public class LinkModel {
+    @ObjectId
+    private String id;
     private String name;
     private boolean first;
     private boolean lazy;
@@ -39,6 +43,10 @@ public class LinkModel {
     private String keyName;
     
     private boolean multivalued;
+    
+    public LinkModel() {
+	
+    }
 
     public LinkModel(String name, boolean first, boolean lazy) {
 	super();
@@ -147,6 +155,56 @@ public class LinkModel {
     public void setMultivalued(boolean multivalued) {
         this.multivalued = multivalued;
     }
+    
+
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
+
+    /**
+     * @param id the id to set
+     */
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    /**
+     * @param name the name to set
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
+     * @param first the first to set
+     */
+    public void setFirst(boolean first) {
+        this.first = first;
+    }
+
+    /**
+     * @param lazy the lazy to set
+     */
+    public void setLazy(boolean lazy) {
+        this.lazy = lazy;
+    }
+
+    /**
+     * @param allowedTypes the allowedTypes to set
+     */
+    public void setAllowedTypes(Class<?>[] allowedTypes) {
+        this.allowedTypes = allowedTypes;
+    }
+
+    /**
+     * @param keyName the keyName to set
+     */
+    public void setKeyName(String keyName) {
+        this.keyName = keyName;
+    }
 
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
@@ -195,6 +253,15 @@ public class LinkModel {
 	} else if (!name.equals(other.name))
 	    return false;
 	return true;
+    }
+
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+	return "LinkModel [id=" + id + ", name=" + name + ", first=" + first + ", lazy=" + lazy + ", allowedTypes="
+		+ Arrays.toString(allowedTypes) + ", keyName=" + keyName + ", multivalued=" + multivalued + "]";
     }
 
 }

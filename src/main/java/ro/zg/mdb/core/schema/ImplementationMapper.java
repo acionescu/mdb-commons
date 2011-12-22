@@ -16,7 +16,6 @@
 package ro.zg.mdb.core.schema;
 
 import ro.zg.mdb.core.annotations.Implementation;
-import ro.zg.mdb.core.meta.data.DataModel;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
 
 public class ImplementationMapper extends ObjectDataModelAnnotationMapper<Implementation>{

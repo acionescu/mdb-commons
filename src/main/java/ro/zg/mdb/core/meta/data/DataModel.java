@@ -15,14 +15,24 @@
  ******************************************************************************/
 package ro.zg.mdb.core.meta.data;
 
+import ro.zg.mdb.core.annotations.ObjectId;
 import ro.zg.mdb.core.annotations.Persistable;
 
 @Persistable
 public class DataModel<T> {
+    @ObjectId
+    private String id;
     private Class<T> type;
     private boolean complexType;
     protected boolean multivalued;
     
+    
+    
+    public DataModel() {
+	super();
+    }
+
+
     public DataModel(Class<T> type, boolean complexType) {
 	super();
 	this.type = type;
@@ -61,6 +71,46 @@ public class DataModel<T> {
     
     public String getTypeName() {
 	return type.getName();
+    }
+
+
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
+
+
+    /**
+     * @param id the id to set
+     */
+    public void setId(String id) {
+        this.id = id;
+    }
+
+
+    /**
+     * @param type the type to set
+     */
+    public void setType(Class<T> type) {
+        this.type = type;
+    }
+
+
+    /**
+     * @param complexType the complexType to set
+     */
+    public void setComplexType(boolean complexType) {
+        this.complexType = complexType;
+    }
+
+
+    /**
+     * @param multivalued the multivalued to set
+     */
+    public void setMultivalued(boolean multivalued) {
+        this.multivalued = multivalued;
     }
 
 

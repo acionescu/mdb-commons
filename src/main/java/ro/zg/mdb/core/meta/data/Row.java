@@ -25,7 +25,7 @@ public class Row {
     @ObjectId
     private String id;
     
-    @Unique(id=1)
+    @Unique(name=1)
     private String globalHash;
     
     private long timestamp;

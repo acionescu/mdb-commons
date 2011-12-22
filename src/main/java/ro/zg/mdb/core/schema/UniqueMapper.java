@@ -22,10 +22,10 @@ public class UniqueMapper extends ObjectDataModelAnnotationMapper<Unique>{
 
     @Override
     public void map(ObjectDataModelAnnotationMapperContext<Unique> amc) {
-	FieldDataModel fdm = amc.getFieldDataModel();
-	String indexId=""+amc.getAnnotation().id();
-	amc.getObjectDataModel().addUniqueField(indexId, fdm);
-	fdm.setUniqueIndexId(indexId);
+	FieldDataModel<?> fdm = amc.getFieldDataModel();
+	String uniqueIndexName=""+amc.getAnnotation().name();
+	amc.getObjectDataModel().addUniqueField(uniqueIndexName, fdm);
+	fdm.setUniqueIndexId(uniqueIndexName);
     }
 
 }

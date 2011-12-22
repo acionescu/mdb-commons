@@ -32,6 +32,7 @@ import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.meta.data.CollectionDataModel;
 import ro.zg.mdb.core.meta.data.DataModel;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.data.LinkModel;
 import ro.zg.mdb.core.meta.data.MapDataModel;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 import ro.zg.mdb.core.meta.data.Schema;
@@ -40,6 +41,7 @@ import ro.zg.mdb.core.schema.AnnotationMappersManager;
 import ro.zg.mdb.core.schema.ObjectDataModelAnnotationMapperContext;
 import ro.zg.mdb.persistence.PersistenceException;
 import ro.zg.mdb.persistence.PersistenceManager;
+import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
 
 public class SchemaMetadataManager extends PersistentDataManager {
@@ -54,6 +56,8 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	schema = new Schema();
 	if (config.isMetadataPersistanceAllowed()) {
 	    SchemaConfig metadataConfig = new SchemaConfig(SpecialPaths.META);
+	    metadataConfig.setSequenceUsageAllowed(true);
+	    metadataConfig.setObjectReferenceAllowed(true);
 	    try {
 		metadataSchema = new SchemaManager(persistenceManager.getPersistenceManager(SpecialPaths.META),
 			metadataConfig);
@@ -66,7 +70,10 @@ public class SchemaMetadataManager extends PersistentDataManager {
     }
 
     private void loadSchema() throws MdbException {
-	Collection results = metadataSchema.createCommand(ObjectDataModel.class).get().execute().getValues();
+	Collection results = metadataSchema.createCommand(DataModel.class).get().execute().getValues();
+	schema.addDataModels(results);
+
+	results = metadataSchema.createCommand(ObjectDataModel.class).get().execute().getValues();
 	schema.addDataModels(results);
 
 	results = metadataSchema.createCommand(MapDataModel.class).get().execute().getValues();
@@ -75,15 +82,29 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	results = metadataSchema.createCommand(CollectionDataModel.class).get().execute().getValues();
 	schema.addDataModels(results);
 
-	results = metadataSchema.createCommand(DataModel.class).get().execute().getValues();
-	schema.addDataModels(results);
     }
 
     public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type) throws MdbException {
-	return (ObjectDataModel<T>) getDataModel(type);
+	try {
+	    return (ObjectDataModel<T>) getDataModel(type, true);
+	} catch (Exception e) {
+	    throw new RuntimeException("Failed to get object data model for " + type, e);
+	}
+    }
+
+    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type, boolean saveIfMissing) throws MdbException {
+	try {
+	    return (ObjectDataModel<T>) getDataModel(type, saveIfMissing);
+	} catch (Exception e) {
+	    throw new RuntimeException("Failed to get object data model for " + type, e);
+	}
     }
 
     private <T> DataModel<T> getDataModel(Type type) throws MdbException {
+	return getDataModel(type, true);
+    }
+
+    private <T> DataModel<T> getDataModel(Type type, boolean saveIfMissing) throws MdbException {
 	DataModel<T> odm = null;
 	if (type instanceof Class) {
 	    Class<T> clazz = (Class<T>) type;
@@ -121,7 +142,9 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	} else {
 	    throw new IllegalArgumentException("Unsupported type " + type);
 	}
-	schema.addDataModel(odm);
+	if (saveIfMissing) {
+	    saveDataModel(odm);
+	}
 	return odm;
     }
 
@@ -182,7 +205,8 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	Class<?> currentType = type;
 	do {
 	    for (Field field : currentType.getDeclaredFields()) {
-		if (Modifier.isTransient(field.getModifiers())) {
+		int modifiers = field.getModifiers();
+		if (Modifier.isTransient(modifiers) || Modifier.isStatic(modifiers)) {
 		    continue;
 		}
 		FieldDataModel<?> fdm = null;
@@ -205,5 +229,37 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	    currentType = currentType.getSuperclass();
 	} while (currentType != null);
 	return odm;
+    }
+
+    private synchronized void saveDataModel(DataModel<?> dm) throws MdbException {
+	schema.addDataModel(dm);
+	if (config.isMetadataPersistanceAllowed()) {
+	    metadataSchema.createCommand((Class<DataModel>) dm.getClass()).insert(dm).execute();
+	}
+    }
+
+    public void updateReference(Class<?> type, LinkModel lm) throws MdbException {
+	ObjectDataModel<?> odm = (ObjectDataModel<?>)schema.getDataModelByClass(type);
+	if(odm != null) {
+	    updateReference(odm, lm);
+	}
+	else {
+	    odm = getObjectDataModel(type,false);
+	    odm.addReference(lm);
+	    saveDataModel(odm);
+	}
+    }
+
+    public synchronized void updateReference(ObjectDataModel<?> odm, LinkModel lm) throws MdbException {
+	if (odm.getReferences().contains(lm)) {
+	    return;
+	}
+	if (config.isMetadataPersistanceAllowed()) {
+	    long updated = metadataSchema.createCommand(((Class<ObjectDataModel>) odm.getClass()))
+		    .update(odm, "references").where().field("id").eq(odm.getId()).execute();
+	    if (updated != 1) {
+		throw new MdbException(MdbErrorType.PERSISTENCE_ERROR, new GenericNameValue("object", odm));
+	    }
+	}
     }
 }

@@ -25,6 +25,7 @@ public class Entity {
     private String id;
     private String title;
     private String message;
+    
     @Link(name="entities_users",first=true, lazy=false)
     private User user;
     

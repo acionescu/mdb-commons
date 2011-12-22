@@ -20,8 +20,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import ro.zg.commons.exceptions.ContextAwareException;
+import ro.zg.commons.exceptions.ExceptionContext;
+import ro.zg.mdb.core.annotations.Persistable;
+import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
-
+@Persistable
 public class CollectionDataModel<T> extends MultivaluedDataModel<Collection<T>, T> {
     private boolean set;
     private boolean list;
@@ -71,4 +75,21 @@ public class CollectionDataModel<T> extends MultivaluedDataModel<Collection<T>, 
         return array;
     }
 
+    public Collection<T> fromString(Collection<String> input) throws ContextAwareException{
+	try {
+	    Collection<T> container = multivaluedType.newInstance();
+	    for(String item : input) {
+		container.add((T)ReflectionUtility.createObjectByTypeAndValue(getType(), item));
+	    }
+	    return container;
+	    
+	} catch (Exception e) {
+	    ExceptionContext ec = new ExceptionContext();
+	    ec.put(new GenericNameValue("input",input));
+	    ec.put(new GenericNameValue("collectionType",multivaluedType));
+	    throw new ContextAwareException("CONVERSION_EXCEPTION",e,ec);
+	} 
+    }
+    
+    
 }

@@ -25,16 +25,16 @@ import ro.zg.mdb.core.annotations.Unique;
 public class Book {
     @ObjectId
     private String id;
-    @Unique(id=1)
+    @Unique(name=1)
     private String author;
-    @Unique(id=1)
+    @Unique(name=1)
     private String title;
-    @Unique(id=1)
+    @Unique(name=1)
     private String publisher;
     @Required
     @Indexed
     private Integer releaseYear;    
-    @Unique(id=2)
+    @Unique(name=2)
     private long printTimestamp;
     /**
      * @return the author

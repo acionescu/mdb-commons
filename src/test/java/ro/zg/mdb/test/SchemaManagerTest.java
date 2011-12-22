@@ -144,6 +144,9 @@ public class SchemaManagerTest {
 	Assert.assertTrue(del2 == 1);
 
 	mpm.print(System.out);
+	
+	
+	
     }
 
     @Test
@@ -161,6 +164,11 @@ public class SchemaManagerTest {
 
 	Assert.assertNotNull(post1.getId());
 	Assert.assertNotNull(post1.getUser().getId());
+	
+	
+	/* create a new db instance to test the schema loading */
+	
+	sm =new MdbInstance("TestInstance", mpm, new MdbConfig()).getSchema("TestSchema");
 
 	/* test successful search by nested field */
 	Collection<Entity> afterSave1 = sm.createCommand(Entity.class).get().where().field("user.username").eq("user1")
@@ -197,7 +205,7 @@ public class SchemaManagerTest {
 
 	post2 = sm.createCommand(Entity.class).insert(post2).execute();
 	Assert.assertEquals(user1.getId(), post2.getUser().getId());
-
+	mpm.print(System.out);
 	Collection<Entity> fetchResult1 = sm.createCommand(Entity.class).get().where().field("id").eq(post2.getId())
 		.execute().getValues();
 	Assert.assertEquals(1, fetchResult1.size());

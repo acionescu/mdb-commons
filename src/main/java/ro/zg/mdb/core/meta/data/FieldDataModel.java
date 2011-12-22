@@ -19,37 +19,53 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.annotations.Link;
+import ro.zg.mdb.core.annotations.ObjectId;
+import ro.zg.mdb.core.annotations.Persistable;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
+import ro.zg.util.parser.utils.CollectionMapParseEventHandler;
 import ro.zg.util.parser.utils.JavaCollectionMapParser;
+import ro.zg.util.parser.utils.MapTypeDefinition;
+import ro.zg.util.parser.utils.MultivaluedTypeDefinition;
 
+@Persistable
 public class FieldDataModel<T> {
     public static Class<?> DEFAULT_SET_IMPLEMENTATION = HashSet.class;
     public static Class<?> DEFAULT_LIST_IMPLEMENTATION = ArrayList.class;
     public static Class<?> DEFAULT_MAP_IMPLEMENTATION = HashMap.class;
 
+    @ObjectId
+    private String id;
     private String name;
+
     @Link(name = "field_data_model_", lazy = false, allowedTypes = { ObjectDataModel.class, MapDataModel.class,
-	    CollectionDataModel.class })
+	    CollectionDataModel.class, DataModel.class })
     private DataModel<T> dataModel;
-    private Class<? extends T> implementation;
     private boolean required;
     private boolean objectId;
     private boolean indexed;
+
+    @Link(name = "field_link_model", lazy = false)
     private LinkModel linkModel;
     private String uniqueIndexId;
     private String sequenceId;
+    private Class<? extends T> implementation;
 
     /**
      * The collection/map parser Lazy initialized
      */
-    private transient JavaCollectionMapParser collectionMapParser;
+    private static JavaCollectionMapParser collectionMapParser=new JavaCollectionMapParser();
+
+    private transient CollectionMapParseEventHandler fieldParseHandler;
+
+    public FieldDataModel() {
+
+    }
 
     public FieldDataModel(String name, DataModel<T> dataModel) {
 	this.name = name;
@@ -75,8 +91,7 @@ public class FieldDataModel<T> {
 			    impl = DEFAULT_SET_IMPLEMENTATION;
 			}
 			return ReflectionUtility.createCollection(impl, values);
-		    }
-		    else if(collectionModel.isArray()) {
+		    } else if (collectionModel.isArray()) {
 			return values.toArray();
 		    }
 		}
@@ -99,15 +114,24 @@ public class FieldDataModel<T> {
 	}
 	return null;
     }
-    
-    public Object createValueFromString(String data) throws Exception{
-	DataModel dm = getDataModel();
-	if(dm.isMultivalued()) {
-	    Object response = getCollectionMapParser().parse(data);
-	    if(dm instanceof CollectionDataModel) {
-		CollectionDataModel cdm = (CollectionDataModel)dm;
-		if(((CollectionDataModel) dm).isArray()) {
-		    return ((List)response).toArray();
+
+    public Object createValueFromString(String data) throws Exception {
+	DataModel<?> dm = getDataModel();
+	if (dm.isMultivalued()) {
+	    Object response = collectionMapParser.parse(data, getFieldParseHandler());
+	    if (dm instanceof CollectionDataModel) {
+		CollectionDataModel<?> cdm = (CollectionDataModel<?>) dm;
+		if (cdm.isArray()) {
+		    Collection<?> collectionResp = (Collection<?>) response;
+		    if (collectionResp.size() > 0) {
+			return collectionResp.toArray();
+		    }
+		    return null;
+		}
+	    } else if (dm instanceof MapDataModel) {
+		Map<?, ?> mapResp = (Map<?, ?>) response;
+		if (mapResp.size() == 0) {
+		    return null;
 		}
 	    }
 	    return response;
@@ -115,21 +139,48 @@ public class FieldDataModel<T> {
 	return ReflectionUtility.createObjectByTypeAndValue(getType(), data);
     }
 
-    private JavaCollectionMapParser getCollectionMapParser() {
-	if (collectionMapParser != null) {
-	    return collectionMapParser;
-	}
+//    private JavaCollectionMapParser getCollectionMapParser() {
+//	if (collectionMapParser != null) {
+//	    return collectionMapParser;
+//	}
+//
+//	collectionMapParser = new JavaCollectionMapParser();
+//	if (implementation != null) {
+//	    MultivaluedDataModel<?, ?> mvdm = (MultivaluedDataModel) getDataModel();
+//	    if (mvdm.isCollection()) {
+//		collectionMapParser.setCollectionImplType((Class<? extends Collection>) implementation);
+//	    } else if (mvdm.isMap()) {
+//		collectionMapParser.setMapImplType((Class<? extends Map>) implementation);
+//	    }
+//	}
+//	return collectionMapParser;
+//    }
 
-	collectionMapParser = new JavaCollectionMapParser();
-	if (implementation != null) {
-	    MultivaluedDataModel<?, ?> mvdm = (MultivaluedDataModel) getDataModel();
-	    if (mvdm.isCollection()) {
-		collectionMapParser.setCollectionImplType((Class<? extends Collection>) implementation);
-	    } else if (mvdm.isMap()) {
-		collectionMapParser.setMapImplType((Class<? extends Map>) implementation);
+    private CollectionMapParseEventHandler getFieldParseHandler() {
+	if (fieldParseHandler == null) {
+	    fieldParseHandler = new CollectionMapParseEventHandler();
+	    Class<?> impl = implementation;
+	    if (dataModel instanceof CollectionDataModel) {
+		CollectionDataModel<T> cdm = (CollectionDataModel<T>) dataModel;
+		
+		if (impl == null) {
+		    if (cdm.isSet()) {
+			impl = DEFAULT_SET_IMPLEMENTATION;
+		    } else {
+			impl = DEFAULT_LIST_IMPLEMENTATION;
+		    }
+		}
+		fieldParseHandler.setCollectionTypeDef(new MultivaluedTypeDefinition(impl,cdm.getType()));
+	    }
+	    else { /* assume map type */
+		MapDataModel<?,?> mdm = (MapDataModel<?,?>)dataModel;
+		if(impl == null) {
+		    impl = DEFAULT_MAP_IMPLEMENTATION;
+		}
+		fieldParseHandler.setMapTypeDef(new MapTypeDefinition(impl,mdm.getKeyType(),mdm.getType()));
 	    }
 	}
-	return collectionMapParser;
+	return fieldParseHandler;
     }
 
     /**
@@ -259,6 +310,44 @@ public class FieldDataModel<T> {
 	// ObjectDataModel<T> fodm = (ObjectDataModel<T>) getDataModel();
 	// fodm.addReference(linkModel);
 	// }
+    }
+
+    /**
+     * @return the id
+     */
+    public String getId() {
+	return id;
+    }
+
+    /**
+     * @param id
+     *            the id to set
+     */
+    public void setId(String id) {
+	this.id = id;
+    }
+
+    /**
+     * @return the implementation
+     */
+    public Class<? extends T> getImplementation() {
+	return implementation;
+    }
+
+    /**
+     * @param name
+     *            the name to set
+     */
+    public void setName(String name) {
+	this.name = name;
+    }
+
+    /**
+     * @param dataModel
+     *            the dataModel to set
+     */
+    public void setDataModel(DataModel<T> dataModel) {
+	this.dataModel = dataModel;
     }
 
     /**

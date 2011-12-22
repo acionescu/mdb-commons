@@ -16,17 +16,17 @@
 package ro.zg.mdb.core.meta;
 
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
 import ro.zg.mdb.core.meta.data.LinkValue;
-import ro.zg.mdb.core.meta.data.ObjectsLink;
 import ro.zg.mdb.core.schema.ObjectContext;
 import ro.zg.util.data.ListMap;
 
 public class TransactionContext {
     private ListMap<String, String> pendingRows = new ListMap<String, String>();
-    private Map<String, Object> pendingObjects = new HashMap<String, Object>();
+    private Map<String, Object> pendingObjects = new Hashtable<String, Object>();
     private Map<String, String> pendingFields = new HashMap<String, String>();
     private Map<String, LinkValue> pendingLinks = new HashMap<String, LinkValue>();
     /**
@@ -97,6 +97,10 @@ public class TransactionContext {
     
     public <T> ObjectContext<T> removePendingObjectForWrite(T o) {
 	return (ObjectContext<T>)pendingObjectsForWrite.remove(o);
+    }
+    
+    public void clearPendingFields() {
+	pendingFields.clear();
     }
     
 }

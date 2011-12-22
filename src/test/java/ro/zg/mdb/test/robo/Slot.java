@@ -20,7 +20,7 @@ import ro.zg.mdb.core.annotations.Unique;
 
 @Persistable
 public class Slot {
-    @Unique(id=1)
+    @Unique(name=1)
     private int position;
     private char value; 
     

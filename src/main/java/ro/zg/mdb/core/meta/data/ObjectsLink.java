@@ -23,9 +23,9 @@ import ro.zg.mdb.core.annotations.Unique;
 public class ObjectsLink {
     @ObjectId
     private String id;
-    @Unique(id=1)
+    @Unique(name=1)
     private String firstRowId;
-    @Unique(id=1)
+    @Unique(name=1)
     private String secondRowId;
     /**
      * @return the firstRowId

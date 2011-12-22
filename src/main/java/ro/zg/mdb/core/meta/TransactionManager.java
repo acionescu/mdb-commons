@@ -18,6 +18,7 @@ package ro.zg.mdb.core.meta;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -292,7 +293,7 @@ public class TransactionManager {
 	    Collection<ObjectsLink> links, boolean isNestedFirst) throws MdbException {
 	Collection<String> linkRowsIds = ObjectsLinkUtil.getRows(links, isNestedFirst);
 
-	Collection<Object> values = new HashSet<Object>();
+	Collection<Object> values = new LinkedHashSet<Object>();
 
 	// MultivaluedDataModel<?, ?> multivaluedDataModel = (MultivaluedDataModel<?, ?>) fdm.getDataModel();
 	ObjectDataModel<?> nodm = getObjectDataModel(nestedObjectType);
@@ -301,6 +302,11 @@ public class TransactionManager {
 	    if (nestedObject == null) {
 		String rowData = getDataForRowId(nodm, nesteRowId);
 		nestedObject = buildObject(nodm.getTypeName(), nodm, rowData, new Filter(), nesteRowId);
+		/* 
+		 * we need to clear pending fields after each item was created in order not to
+		 * copy certain values of one item onto others
+		 */
+		transactionContext.clearPendingFields();
 	    }
 
 	    values.add(nestedObject);
@@ -362,8 +368,10 @@ public class TransactionManager {
 	for (FieldDataModel<?> fdm : odm.getFields().values()) {
 	    String fieldName = fdm.getName();
 	    String fullFieldName = path + fieldName;
-
-	    if (fdm.getDataModel().isMultivalued()) {
+	    LinkModel lm = fdm.getLinkModel();
+	    
+	    /* skip linked multivalued fields */
+	    if (lm != null && fdm.getDataModel().isMultivalued()) {
 		continue;
 	    }
 
@@ -372,13 +380,17 @@ public class TransactionManager {
 	    }
 
 	    Object fieldValue = null;
-	    LinkModel lm = fdm.getLinkModel();
+	    
 	    if (lm != null) {
 		if (!targetFieldsExist && lm.isLazy()) {
 		    continue;
 		}
 
 		String nestedRowId = transactionContext.getRowIdForPendingField(fullFieldName);
+		if(nestedRowId == null) {
+		    /* this may happen for collections of complex objects */
+		    continue;
+		}
 		fieldValue = transactionContext.getPendingObject(nestedRowId);
 		if (fieldValue == null) {
 		    fieldValue = getObjectFromValuesMap(fdm.getType(), valuesMap, targetFields, fullFieldName

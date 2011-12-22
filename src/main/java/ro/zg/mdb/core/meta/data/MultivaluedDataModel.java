@@ -72,6 +72,4 @@ public class MultivaluedDataModel<M,T> extends DataModel<T>{
         return parameteriezedTypeHash;
     }
     
-    
-    
 }

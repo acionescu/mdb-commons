@@ -40,11 +40,13 @@ public class LinkMapper extends ObjectDataModelAnnotationMapper<Link> {
 		    odm.addReference(lm);
 		}
 		else {
-		    amc.getSchema().getObjectDataModel(fieldType).addReference(lm);
+//		    amc.getSchema().getObjectDataModel(fieldType).addReference(lm);
+		    amc.getSchema().updateReference(fieldType, lm);
 		}
 	    }
 	    else {
-		((ObjectDataModel<?>)fdm.getDataModel()).addReference(lm);
+//		((ObjectDataModel<?>)fdm.getDataModel()).addReference(lm);
+		amc.getSchema().updateReference((ObjectDataModel<?>)fdm.getDataModel(), lm);
 	    }
 	}
 
