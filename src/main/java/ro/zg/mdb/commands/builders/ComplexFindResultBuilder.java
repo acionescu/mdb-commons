@@ -22,10 +22,38 @@ public class ComplexFindResultBuilder<T, N> extends FindResultBuilder<T, N> {
 	super();
 	this.objectDecorator = objectDecorator;
     }
+    
+    
+
+    public ComplexFindResultBuilder() {
+	super();
+    }
+
+
 
     @Override
     protected N build(T value) {
 	return objectDecorator.decorate(value);
     }
 
+
+
+    /**
+     * @return the objectDecorator
+     */
+    public PersistentObjectDecorator<T, N> getObjectDecorator() {
+        return objectDecorator;
+    }
+
+
+
+    /**
+     * @param objectDecorator the objectDecorator to set
+     */
+    public void setObjectDecorator(PersistentObjectDecorator<T, N> objectDecorator) {
+        this.objectDecorator = objectDecorator;
+    }
+
+    
+    
 }

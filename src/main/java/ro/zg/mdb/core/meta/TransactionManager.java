@@ -234,6 +234,14 @@ public class TransactionManager {
     public LinksSet getObjectLinks(LinkModel linkModel, String rowId, boolean reversed) throws MdbException {
 	return schemaContext.getLinksManager().getObjectLinks(linkModel, rowId, reversed);
     }
+    
+    public Collection<String> getLinksIds(LinkModel linkModel, String rowId, boolean reversed) throws MdbException{
+	return schemaContext.getLinksManager().getLinksIds(linkModel, rowId, reversed);
+    }
+    
+    public Collection<LinkValue> getLinkValues(LinkModel linkModel, String rowId, boolean reversed) throws MdbException{
+	return schemaContext.getLinksManager().getLinksValues(linkModel, rowId, reversed);
+    }
 
     /**
      * Iterates over all the possible references for this object type and checks for direct references to the object

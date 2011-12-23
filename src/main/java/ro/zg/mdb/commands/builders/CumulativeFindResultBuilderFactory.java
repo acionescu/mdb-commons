@@ -13,27 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.core.meta;
+package ro.zg.mdb.commands.builders;
 
-import ro.zg.mdb.commands.builders.PersistentObjectDecorator;
-import ro.zg.mdb.core.meta.data.LinkValue;
-import ro.zg.mdb.core.meta.data.ObjectsLink;
+public class CumulativeFindResultBuilderFactory<T,R> implements FindResultBuilderFactory<T, R>{
 
-public class LinkValueDecorator implements PersistentObjectDecorator<ObjectsLink, LinkValue>{
-    private String linkName;
+    private FindResultBuilder<T, R> findResultBuilder;
     
     
     
-    public LinkValueDecorator(String linkName) {
+    public CumulativeFindResultBuilderFactory(FindResultBuilder<T, R> findResultBuilder) {
 	super();
-	this.linkName = linkName;
+	this.findResultBuilder = findResultBuilder;
     }
 
 
 
     @Override
-    public LinkValue decorate(ObjectsLink target) {
-	return new LinkValue(linkName, target);
+    public FindResultBuilder<T, R> getResultBuilder() {
+	return findResultBuilder;
     }
-
 }

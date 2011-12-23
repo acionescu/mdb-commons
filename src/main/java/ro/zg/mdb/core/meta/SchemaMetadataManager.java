@@ -92,7 +92,7 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	}
     }
 
-    public <T> ObjectDataModel<T> getObjectDataModel(Class<T> type, boolean saveIfMissing) throws MdbException {
+    private <T> ObjectDataModel<T> getObjectDataModel(Class<T> type, boolean saveIfMissing) throws MdbException {
 	try {
 	    return (ObjectDataModel<T>) getDataModel(type, saveIfMissing);
 	} catch (Exception e) {
@@ -106,49 +106,53 @@ public class SchemaMetadataManager extends PersistentDataManager {
 
     private <T> DataModel<T> getDataModel(Type type, boolean saveIfMissing) throws MdbException {
 	DataModel<T> odm = null;
-	if (type instanceof Class) {
-	    Class<T> clazz = (Class<T>) type;
-	    odm = schema.getDataModelByClass(clazz);
-	    if (odm == null) {
-		if (config.isAutomaticObjectModelCreationOn()) {
-		    if (ReflectionUtility.checkSimpleFieldType(clazz) || clazz.isAssignableFrom(Class.class)) {
-			odm = new DataModel<T>(clazz);
+	synchronized (type) {
+	    if (type instanceof Class) {
+		Class<T> clazz = (Class<T>) type;
+
+		odm = schema.getDataModelByClass(clazz);
+		if (odm == null) {
+		    if (config.isAutomaticObjectModelCreationOn()) {
+			if (ReflectionUtility.checkSimpleFieldType(clazz) || clazz.isAssignableFrom(Class.class)) {
+			    odm = new DataModel<T>(clazz);
+			} else {
+			    odm = createObjectDataModel(clazz);
+			}
+
 		    } else {
-			odm = createObjectDataModel(clazz);
+			throw new RuntimeException("Object data model does not exist for type " + clazz.getName());
 		    }
-
 		} else {
-		    throw new RuntimeException("Object data model does not exist for type " + clazz.getName());
+		    return odm;
 		}
+
+	    } else if (type instanceof ParameterizedType) {
+		ParameterizedType pt = (ParameterizedType) type;
+		odm = schema.getMultivaluedDataModel(pt);
+		if (odm != null) {
+		    return odm;
+		}
+
+		odm = createDataModelForParameterizedType((ParameterizedType) type);
+	    } else if (type instanceof GenericArrayType) {
+		GenericArrayType gat = (GenericArrayType) type;
+		odm = schema.getMultivaluedDataModel(gat);
+		if (odm != null) {
+		    return odm;
+		}
+
+		odm = createDataModelForGenericArrayType(gat);
 	    } else {
-		return odm;
+		throw new IllegalArgumentException("Unsupported type " + type);
 	    }
-	} else if (type instanceof ParameterizedType) {
-	    ParameterizedType pt = (ParameterizedType) type;
-	    odm = schema.getMultivaluedDataModel(pt);
-	    if (odm != null) {
-		return odm;
+	    if (saveIfMissing) {
+		saveDataModel(odm);
 	    }
-
-	    odm = createDataModelForParameterizedType((ParameterizedType) type);
-	} else if (type instanceof GenericArrayType) {
-	    GenericArrayType gat = (GenericArrayType) type;
-	    odm = schema.getMultivaluedDataModel(gat);
-	    if (odm != null) {
-		return odm;
-	    }
-
-	    odm = createDataModelForGenericArrayType(gat);
-	} else {
-	    throw new IllegalArgumentException("Unsupported type " + type);
-	}
-	if (saveIfMissing) {
-	    saveDataModel(odm);
 	}
 	return odm;
     }
 
-    public <T> DataModel<T> createDataModelForParameterizedType(ParameterizedType pt) throws MdbException {
+    private <T> DataModel<T> createDataModelForParameterizedType(ParameterizedType pt) throws MdbException {
 	Class<T> clazz = (Class<T>) pt.getRawType();
 	if (ReflectionUtility.checkInstanceOf(clazz, Collection.class)) {
 	    return createCollectionDataModel(pt);
@@ -159,7 +163,7 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	// throw new IllegalArgumentException("Unsupported parameterized type " + pt);
     }
 
-    public DataModel createDataModelForGenericArrayType(GenericArrayType gat) {
+    private DataModel createDataModelForGenericArrayType(GenericArrayType gat) {
 	Type arrayType = gat.getGenericComponentType();
 	return new CollectionDataModel(getRawType(arrayType), Array.class);
 
@@ -174,7 +178,7 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	throw new IllegalArgumentException("Unknown type " + type);
     }
 
-    public <T> DataModel<T> createCollectionDataModel(ParameterizedType pt) {
+    private <T> DataModel<T> createCollectionDataModel(ParameterizedType pt) {
 
 	Type[] typeArguments = pt.getActualTypeArguments();
 	if (typeArguments.length == 0) {
@@ -187,7 +191,7 @@ public class SchemaMetadataManager extends PersistentDataManager {
 
     }
 
-    public <K, T> DataModel<T> createMapDataModel(ParameterizedType pt) {
+    private <K, T> DataModel<T> createMapDataModel(ParameterizedType pt) {
 	Type[] typeArguments = pt.getActualTypeArguments();
 	if (typeArguments.length < 2) {
 	    throw new IllegalArgumentException("Expecting two generic type arguments but there were less");
@@ -199,7 +203,7 @@ public class SchemaMetadataManager extends PersistentDataManager {
 
     }
 
-    public <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) throws MdbException {
+    private <T> ObjectDataModel<T> createObjectDataModel(Class<T> type) throws MdbException {
 	Set<Class<? extends Annotation>> annotationTypes = annotationMappersManager.getKnownAnnotations();
 	ObjectDataModel<T> odm = new ObjectDataModel<T>(type);
 	Class<?> currentType = type;
@@ -239,12 +243,11 @@ public class SchemaMetadataManager extends PersistentDataManager {
     }
 
     public void updateReference(Class<?> type, LinkModel lm) throws MdbException {
-	ObjectDataModel<?> odm = (ObjectDataModel<?>)schema.getDataModelByClass(type);
-	if(odm != null) {
+	ObjectDataModel<?> odm = (ObjectDataModel<?>) schema.getDataModelByClass(type);
+	if (odm != null) {
 	    updateReference(odm, lm);
-	}
-	else {
-	    odm = getObjectDataModel(type,false);
+	} else {
+	    odm = getObjectDataModel(type, false);
 	    odm.addReference(lm);
 	    saveDataModel(odm);
 	}
@@ -254,6 +257,7 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	if (odm.getReferences().contains(lm)) {
 	    return;
 	}
+	odm.addReference(lm);
 	if (config.isMetadataPersistanceAllowed()) {
 	    long updated = metadataSchema.createCommand(((Class<ObjectDataModel>) odm.getClass()))
 		    .update(odm, "references").where().field("id").eq(odm.getId()).execute();

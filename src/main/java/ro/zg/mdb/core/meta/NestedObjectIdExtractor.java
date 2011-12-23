@@ -16,24 +16,23 @@
 package ro.zg.mdb.core.meta;
 
 import ro.zg.mdb.commands.builders.PersistentObjectDecorator;
-import ro.zg.mdb.core.meta.data.LinkValue;
 import ro.zg.mdb.core.meta.data.ObjectsLink;
 
-public class LinkValueDecorator implements PersistentObjectDecorator<ObjectsLink, LinkValue>{
-    private String linkName;
-    
-    
-    
-    public LinkValueDecorator(String linkName) {
+public class NestedObjectIdExtractor implements PersistentObjectDecorator<ObjectsLink, String>{
+    private boolean returnFirst;
+
+    public NestedObjectIdExtractor(boolean returnFirst) {
 	super();
-	this.linkName = linkName;
+	this.returnFirst = returnFirst;
     }
-
-
 
     @Override
-    public LinkValue decorate(ObjectsLink target) {
-	return new LinkValue(linkName, target);
+    public String decorate(ObjectsLink target) {
+	if(returnFirst) {
+	    return target.getFirstRowId();
+	}
+	return target.getSecondRowId();
     }
-
+    
+    
 }

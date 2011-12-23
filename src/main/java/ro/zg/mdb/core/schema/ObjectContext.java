@@ -56,7 +56,7 @@ public class ObjectContext<T> {
     
     public ObjectContext(ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
 	    Map<String, UniqueIndexValue> uniqueValues, Map<String, String> oldIndexedValues,
-	    Map<String, UniqueIndexValue> oldUniqueValues, String rowId, Map<String, ObjectContext<?>> nestedContexts, Set<LinkValue> linksToRemove, Set<LinkValue> linksToAdd) {
+	    Map<String, UniqueIndexValue> oldUniqueValues, String rowId, Map<String, ObjectContext<?>> nestedContexts, Set<LinkValue> linksToRemove, Set<LinkValue> linksToAdd, Map<String, List<ObjectContext<?>>> nestedMultivaluedObjectContexts) {
 	super();
 	this.objectDataModel = objectDataModel;
 	this.data = data;
@@ -70,6 +70,7 @@ public class ObjectContext<T> {
 	this.nestedObjectContexts=nestedContexts;
 	this.linksToRemove=linksToRemove;
 	this.linksToAdd=linksToAdd;
+	this.nestedMultivaluedObjectContexts=nestedMultivaluedObjectContexts;
     }
 
 

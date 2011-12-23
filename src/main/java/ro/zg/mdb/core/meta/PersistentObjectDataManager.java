@@ -35,10 +35,12 @@ import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.FieldConstraintContext;
 import ro.zg.mdb.core.filter.Filter;
 import ro.zg.mdb.core.filter.constraints.Range;
+import ro.zg.mdb.core.meta.data.CollectionDataModel;
 import ro.zg.mdb.core.meta.data.DataModel;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
 import ro.zg.mdb.core.meta.data.LinkModel;
 import ro.zg.mdb.core.meta.data.LinkValue;
+import ro.zg.mdb.core.meta.data.MapDataModel;
 import ro.zg.mdb.core.meta.data.MultivaluedDataModel;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 import ro.zg.mdb.core.meta.data.ObjectsLink;
@@ -50,6 +52,7 @@ import ro.zg.mdb.persistence.PersistenceManager;
 import ro.zg.mdb.util.MdbObjectHandler;
 import ro.zg.mdb.util.MdbObjectSetHandler;
 import ro.zg.util.data.GenericNameValue;
+import ro.zg.util.data.ListMap;
 import ro.zg.util.data.ObjectsUtil;
 import ro.zg.util.data.reflection.ReflectionUtility;
 import ro.zg.util.io.file.LineHandler;
@@ -190,7 +193,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	if (handler.hasError()) {
 	    throw handler.getError();
 	}
-	
+
     }
 
     public void readAllObjectsBut(final Filter filter, final TransactionManager transactionManager,
@@ -246,8 +249,8 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 
     }
 
-    public void readObjects(Collection<String> ids, final Filter filter,
-	    final TransactionManager transactionManager, final FindResultBuilder<T, ?> resultBuilder) throws MdbException {
+    public void readObjects(Collection<String> ids, final Filter filter, final TransactionManager transactionManager,
+	    final FindResultBuilder<T, ?> resultBuilder) throws MdbException {
 
 	MdbObjectHandler handler = new MdbObjectHandler() {
 
@@ -988,6 +991,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	Map<String, ObjectContext<?>> nestedContexts = new HashMap<String, ObjectContext<?>>();
 	Set<LinkValue> linksToRemove = new HashSet<LinkValue>();
 	Set<LinkValue> linksToAdd = new HashSet<LinkValue>();
+	Map<String, List<ObjectContext<?>>> nestedMultivaluedObjectContexts = new HashMap<String, List<ObjectContext<?>>>();
 
 	for (FieldDataModel<?> fdm : objectDataModel.getLinkedFields()) {
 	    String fieldName = fdm.getName();
@@ -996,78 +1000,164 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    if (targetFields != null && !targetFields.contains(fullFieldName)) {
 		continue;
 	    }
-	    /* now let's see if there is a link for this field */
-	    LinkValue oldLinkValue = transactionManager.getPendingLinkForField(fullFieldName);
-	    ObjectsLink ol = null;
-	    /* we need to use the exact link name when manipulating old links because in case of 
-	     * polymorphic fields the link name will not match the field's link name
-	     */
-	    String oldLinkName=null;
-	    if(oldLinkValue != null) {
-		ol=oldLinkValue.getLink();
-		oldLinkName=oldLinkValue.getLinkName();
-	    }
-	    
+
+	    DataModel<?> fieldType = fdm.getDataModel();
+
 	    /* get the new value */
 	    Object fieldValue = newValuesMap.get(fieldName);
 
-	    /* get the object data model of the field */
-	    ObjectDataModel<?> fodm = (ObjectDataModel<?>) fdm.getDataModel();
+	    /* process simple nested fields */
+	    if (!fieldType.isMultivalued()) {
+		/* get the object data model of the field */
+		ObjectDataModel<?> fodm = (ObjectDataModel<?>) fdm.getDataModel();
 
-	    /* let's test different cases */
-	    if (ol == null && fieldValue == null) {
-		/* nothing to do */
-		continue;
-	    } else if (ol != null && fieldValue != null) {
+		/* now let's see if there is a link for this field */
+		LinkValue oldLinkValue = transactionManager.getPendingLinkForField(fullFieldName);
+		ObjectsLink ol = null;
 		/*
-		 * so, there already is a link for this field and a new value was also specified
+		 * we need to use the exact link name when manipulating old links because in case of polymorphic fields
+		 * the link name will not match the field's link name
 		 */
-		/* nestedRowId should not be null, because the link is not null */
-		String nestedRowId = transactionManager.getPendingRowIdForField(fullFieldName);
-		String currentValueId = fodm.getObjectId(fieldValue);
-
-		if (currentValueId == null) {
-		    /* new object */
-		    nestedContexts.put(fieldName,
-			    transactionManager.getObjectContext(fodm.getTypeName(), fieldValue, true));
-		    /* remove the old link */
-		    linksToRemove.add(new LinkValue(oldLinkName, ol));
-		} else if (nestedRowId.equals(currentValueId)) {
-		    /* same object, we need to see if something has updated */
-		    nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(), fieldValue,
-			    filter, nestedRowId, oldValuesMap, fullFieldName + Constants.NESTED_FIELD_SEPARATOR));
-		} else {
-		    /* reference has changed to another object */
-		    nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(), fieldValue,
-			    filter, currentValueId, oldValuesMap, fullFieldName + Constants.NESTED_FIELD_SEPARATOR));
-		    /* remove the old link */
-		    linksToRemove.add(new LinkValue(oldLinkName, ol));
-		    linksToAdd.add(getLinkValue(fdm, rowId, currentValueId,fieldValue.getClass()));
+		String oldLinkName = null;
+		if (oldLinkValue != null) {
+		    ol = oldLinkValue.getLink();
+		    oldLinkName = oldLinkValue.getLinkName();
 		}
-	    } else if (ol != null) {
-		/* the field value was set to null, we need to remove the old link */
-		linksToRemove.add(new LinkValue(oldLinkName, ol));
-	    } else {
-		/*
-		 * there is no old link, but a new value was set we need to see if this is a completely new object, or a
-		 * reference to an existing one which should be updated if changed
-		 */
-		String currentValueId = fodm.getObjectId(fieldValue);
-		if (currentValueId == null) {
-		    /* existent object */
-		    nestedContexts.put(fieldName,
-			    transactionManager.getObjectContext(fodm.getTypeName(), fieldValue, true));
-		} else {
-		    /* new object */
-		    /*
-		     * the tricky part here is that this object's data is not found in the oldValuesMap so we need to
-		     * call the main getObjectContext for update
-		     */
 
-		    String nestedData = transactionManager.getDataForRowId(fodm, currentValueId);
-		    nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(), fieldValue,
-			    filter, nestedData, currentValueId, fullFieldName + Constants.NESTED_FIELD_SEPARATOR));
-		    linksToAdd.add(getLinkValue(fdm, rowId, currentValueId, fieldValue.getClass()));
+		/* let's test different cases */
+		if (ol == null && fieldValue == null) {
+		    /* nothing to do */
+		    continue;
+		} else if (ol != null && fieldValue != null) {
+		    /*
+		     * so, there already is a link for this field and a new value was also specified
+		     */
+		    /* nestedRowId should not be null, because the link is not null */
+		    String nestedRowId = transactionManager.getPendingRowIdForField(fullFieldName);
+		    String currentValueId = fodm.getObjectId(fieldValue);
+
+		    if (currentValueId == null) {
+			/* new object */
+			nestedContexts.put(fieldName,
+				transactionManager.getObjectContext(fodm.getTypeName(), fieldValue, true));
+			/* remove the old link */
+			linksToRemove.add(new LinkValue(oldLinkName, ol));
+		    } else if (nestedRowId.equals(currentValueId)) {
+			/* same object, we need to see if something has updated */
+			nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(),
+				fieldValue, filter, nestedRowId, oldValuesMap, fullFieldName
+					+ Constants.NESTED_FIELD_SEPARATOR));
+		    } else {
+			/* reference has changed to another object */
+			nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(),
+				fieldValue, filter, currentValueId, oldValuesMap, fullFieldName
+					+ Constants.NESTED_FIELD_SEPARATOR));
+			/* remove the old link */
+			linksToRemove.add(new LinkValue(oldLinkName, ol));
+			linksToAdd.add(getLinkValue(fdm, rowId, currentValueId, fieldValue.getClass()));
+		    }
+		} else if (ol != null) {
+		    /* the field value was set to null, we need to remove the old link */
+		    linksToRemove.add(new LinkValue(oldLinkName, ol));
+		} else {
+		    /*
+		     * there is no old link, but a new value was set we need to see if this is a completely new object,
+		     * or a reference to an existing one which should be updated if changed
+		     */
+		    String currentValueId = fodm.getObjectId(fieldValue);
+		    if (currentValueId == null) {
+			/* new object */
+			nestedContexts.put(fieldName,
+				transactionManager.getObjectContext(fodm.getTypeName(), fieldValue, true));
+		    } else {
+
+			/* existent object */
+			/*
+			 * the tricky part here is that this object's data is not found in the oldValuesMap so we need
+			 * to call the main getObjectContext for update
+			 */
+
+			String nestedData = transactionManager.getDataForRowId(fodm, currentValueId);
+			nestedContexts.put(fieldName, transactionManager.getObjectContext(fodm.getTypeName(),
+				fieldValue, filter, nestedData, currentValueId, fullFieldName
+					+ Constants.NESTED_FIELD_SEPARATOR));
+			linksToAdd.add(getLinkValue(fdm, rowId, currentValueId, fieldValue.getClass()));
+		    }
+		}
+	    }
+	    /* process nested multivalued fields (collections and maps) */
+	    else {
+		LinkModel lm = fdm.getLinkModel();
+		/*
+		 * get old links for this rowId and current field
+		 */
+		Collection<LinkValue> linkValues = transactionManager.getLinkValues(lm, rowId, false);
+		Map<String, LinkValue> linksMap = mapLinkValues(linkValues, !lm.isFirst());
+		Set<String> addedIds = new HashSet<String>();
+
+		if (fieldValue != null) {
+
+		    Collection<Object> currentValues = null;
+		    MultivaluedDataModel<?, ?> multivaluedType = (MultivaluedDataModel<?, ?>) fieldType;
+		    ObjectDataModel<?> ndm = transactionManager.getObjectDataModel(multivaluedType.getType());
+		    if (multivaluedType.isCollection()) {
+			CollectionDataModel<?> cdm = (CollectionDataModel<?>) multivaluedType;
+			if (cdm.isArray()) {
+			    currentValues = Arrays.asList((Object[]) fieldValue);
+			} else {
+			    currentValues = (Collection<Object>) fieldValue;
+			}
+		    } else if (multivaluedType.isMap()) {
+			currentValues = ((Map) fieldValue).values();
+		    }
+
+		    ListMap<String, Object> newNestedValuesMap = new ListMap<String, Object>();
+
+		    /*
+		     * iterate over new values and check if they are amongst the old values
+		     */
+		    for (Object nv : currentValues) {
+			if (nv == null) {
+			    continue;
+			}
+			String currentValueId = ndm.getObjectId(nv);
+			Class<?> currentObjectType = nv.getClass();
+			if (currentValueId == null) {
+			    /* new object */
+
+			    newNestedValuesMap.add(currentObjectType.getName(), nv);
+			} else {
+			    /* this object is already persisted, so we only need to create a link */
+
+			    if (linksMap.containsKey(currentValueId)) {
+				/* this object is already present in the old links, do nothing */
+
+				/*
+				 * store this id, because we need it in order to check, the old links that were removed
+				 */
+				addedIds.add(currentValueId);
+				continue;
+			    } else {
+				/* this object is not defined as a link, so we should add it */
+				linksToAdd.add(getLinkValue(fdm, rowId, currentValueId, currentObjectType));
+			    }
+			}
+		    }
+		    /* add contexts for new nested values */
+		    List<ObjectContext<?>> allNestedContexts = new ArrayList<ObjectContext<?>>();
+		    for (String type : newNestedValuesMap.keySet()) {
+			allNestedContexts.addAll(transactionManager.getObjectContextsList(type,
+				newNestedValuesMap.get(type), true));
+		    }
+		    if(allNestedContexts.size() > 0) {
+			nestedMultivaluedObjectContexts.put(fieldName, allNestedContexts );
+		    }
+		}
+		/* get the links that need to be removed */
+		for (String linkId : linksMap.keySet()) {
+		    if (!addedIds.contains(linkId)) {
+			linksToRemove.add(linksMap.get(linkId));
+		    }
 		}
 	    }
 	}
@@ -1075,8 +1165,20 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	/* build object context */
 
 	return new ObjectContext<T>(objectDataModel, data, indexedValues, uniqueValues, outdatedIndexValues,
-		outdatedUniqueValues, rowId, nestedContexts, linksToRemove, linksToAdd);
+		outdatedUniqueValues, rowId, nestedContexts, linksToRemove, linksToAdd, nestedMultivaluedObjectContexts);
 
+    }
+
+    private Map<String, LinkValue> mapLinkValues(Collection<LinkValue> links, boolean useFirstAsKey) {
+	Map<String, LinkValue> map = new HashMap<String, LinkValue>();
+	for (LinkValue lv : links) {
+	    if (useFirstAsKey) {
+		map.put(lv.getLink().getFirstRowId(), lv);
+	    } else {
+		map.put(lv.getLink().getSecondRowId(), lv);
+	    }
+	}
+	return map;
     }
 
     public ObjectContext<T> getObjectContextForDelete(String data, Filter filter, String rowId,
@@ -1145,7 +1247,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
     // return getObjectContext(target, , transactionManager);
     //
     // }
-    
+
     private String objectToString(Object o) throws MdbException {
 	try {
 	    return ReflectionUtility.objectToString(o);
@@ -1485,7 +1587,11 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    FieldDataModel<?> fdm = objectDataModel.getField(e.getKey());
 
 	    for (ObjectContext<?> noc : e.getValue()) {
-		processNestedObjectContext(fdm, noc, transactionManager, rowId);
+		try {
+		    processNestedObjectContext(fdm, noc, transactionManager, rowId);
+		} catch (Exception e2) {
+		    e2.printStackTrace();
+		}
 	    }
 	}
 
@@ -1550,15 +1656,16 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	}
 
 	if (createLink) {
-	    LinkValue lv = getLinkValue(fdm, rowId, noc.getRowId(),noc.getType());
+	    LinkValue lv = getLinkValue(fdm, rowId, noc.getRowId(), noc.getType());
 	    transactionManager.saveLinkValue(lv);
 	}
     }
 
-    protected LinkValue getLinkValue(FieldDataModel<?> fdm, String mainRowId, String nestedRowId, Class<?> nestedObjectType) throws MdbException {
+    protected LinkValue getLinkValue(FieldDataModel<?> fdm, String mainRowId, String nestedRowId,
+	    Class<?> nestedObjectType) throws MdbException {
 	LinkModel linkModel = fdm.getLinkModel();
 	String linkName = linkModel.getFullName(nestedObjectType);
-	
+
 	ObjectsLink ol = new ObjectsLink();
 	if (linkModel.isFirst()) {
 	    ol.setFirstRowId(mainRowId);
