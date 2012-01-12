@@ -731,8 +731,8 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	boolean addSeparator = false;
 	String objectIdFieldName = objectDataModel.getObjectIdFieldName();
 
-	for (FieldDataModel<?> fdm : objectDataModel.getFields().values()) {
-	    String fieldName = fdm.getName();
+	for (String fieldName : objectDataModel.getSimpleFields()) {
+	    FieldDataModel<?> fdm = objectDataModel.getField(fieldName);
 	    if (fieldName.equals(objectIdFieldName)) {
 		continue;
 	    }
@@ -750,36 +750,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 		    }
 		}
 	    } else {
-		/* see if this is a link */
-		LinkModel linkModel = fdm.getLinkModel();
-		boolean isLink = linkModel != null;
 
-		if (isLink) {
-		    /*
-		     * if the linked object already exists, get the rowId, otherwise create an ObjectContext for it
-		     */
-		    if (fieldValue != null) {
-			DataModel<?> fieldType = fdm.getDataModel();
-
-			if (fieldType.isMultivalued()) {
-			    MultivaluedDataModel<?, ?> multivaluedModel = (MultivaluedDataModel) fieldType;
-			    if (multivaluedModel.isCollection()) {
-				nestedMultivaluedObjectContexts.put(fieldName, transactionManager
-					.getObjectContextsList(fdm.getType().getName(), (Collection) fieldValue, true));
-			    } else if (multivaluedModel.isMap()) {
-				nestedMultivaluedObjectContexts.put(fieldName, transactionManager
-					.getObjectContextsList(fdm.getType().getName(), ((Map) fieldValue).values(),
-						true));
-			    }
-			} else {
-			    ObjectContext<?> nestedObjectContext = transactionManager.getObjectContext(fdm.getType()
-				    .getName(), fieldValue, true);
-			    nestedObjectContexts.put(fieldName, nestedObjectContext);
-			}
-		    }
-
-		    continue;
-		}
 		fieldData = objectToString(fieldValue);
 	    }
 
@@ -819,6 +790,39 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	    }
 
 	}
+
+	/* process linked fields */
+	for (FieldDataModel<?> fdm : objectDataModel.getLinkedFields()) {
+	    String fieldName = fdm.getName();
+	    /* see if this is a link */
+	    LinkModel linkModel = fdm.getLinkModel();
+	    Object fieldValue = valuesMap.get(fieldName);
+	    /*
+	     * if the linked object already exists, get the rowId, otherwise create an ObjectContext for it
+	     */
+	    if (fieldValue != null) {
+		DataModel<?> fieldType = fdm.getDataModel();
+
+		if (fieldType.isMultivalued()) {
+		    MultivaluedDataModel<?, ?> multivaluedModel = (MultivaluedDataModel) fieldType;
+		    if (multivaluedModel.isCollection()) {
+			nestedMultivaluedObjectContexts.put(fieldName, transactionManager.getObjectContextsList(fdm
+				.getType().getName(), (Collection) fieldValue, true));
+		    } else if (multivaluedModel.isMap()) {
+			nestedMultivaluedObjectContexts.put(
+				fieldName,
+				transactionManager.getObjectContextsList(fdm.getType().getName(),
+					((Map) fieldValue).values(), true));
+		    }
+		} else {
+		    ObjectContext<?> nestedObjectContext = transactionManager.getObjectContext(fdm.getType().getName(),
+			    fieldValue, true);
+		    nestedObjectContexts.put(fieldName, nestedObjectContext);
+		}
+	    }
+
+	}
+
 	/* build object context */
 
 	return new ObjectContext<T>(target, objectDataModel, data, indexedValues, uniqueValues, nestedObjectContexts,
@@ -886,11 +890,11 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	Set<String> targetFields = filter.getTargetFields();
 	Set<String> changedFields = new HashSet<String>();
 
-	Set<FieldDataModel<?>> simpleFields = objectDataModel.getSimpleFields();
+	Set<String> simpleFields = objectDataModel.getSimpleFields();
 	String[] newData = new String[simpleFields.size()];
 
-	for (FieldDataModel<?> fdm : simpleFields) {
-	    String fieldName = fdm.getName();
+	for (String fieldName : simpleFields) {
+	    FieldDataModel<?> fdm = objectDataModel.getField(fieldName);
 	    /* the full field name in the nested hierarchy */
 	    String fullFieldName = path + fieldName;
 	    int position = objectDataModel.getFieldPosition(fieldName);
@@ -1149,8 +1153,8 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 			allNestedContexts.addAll(transactionManager.getObjectContextsList(type,
 				newNestedValuesMap.get(type), true));
 		    }
-		    if(allNestedContexts.size() > 0) {
-			nestedMultivaluedObjectContexts.put(fieldName, allNestedContexts );
+		    if (allNestedContexts.size() > 0) {
+			nestedMultivaluedObjectContexts.put(fieldName, allNestedContexts);
 		    }
 		}
 		/* get the links that need to be removed */

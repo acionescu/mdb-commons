@@ -49,20 +49,22 @@ public class ObjectDataModel<T> extends DataModel<T> {
     @Link(name = "object_type_indexed_fields", lazy = false)
     private Set<FieldDataModel<?>> indexedFields = new LinkedHashSet<FieldDataModel<?>>();
 
-    @Implementation(type=LinkedHashMap.class)
+    @Implementation(type = LinkedHashMap.class)
     @Link(name = "object_type_fields", key = "name", lazy = false)
-    private Map<String, FieldDataModel<?>> fields = new LinkedHashMap<String, FieldDataModel<?>>();
+    private Map<String, FieldDataModel<?>> fields;
 
-    @Implementation(type=LinkedHashMap.class)
-    private Map<String, Integer> fieldsPositions = new LinkedHashMap<String, Integer>();
+    @Implementation(type = LinkedHashMap.class)
+    private Map<String, Integer> fieldsPositions;
 
-    @Implementation(type=LinkedHashSet.class)
+    @Implementation(type = LinkedHashSet.class)
     @Link(name = "object_type_linked_fields", lazy = false)
-    private Set<FieldDataModel<?>> linkedFields = new LinkedHashSet<FieldDataModel<?>>();
+    private Set<FieldDataModel<?>> linkedFields=new LinkedHashSet<FieldDataModel<?>>();
 
-    @Implementation(type=LinkedHashSet.class)
-    @Link(name = "object_type_simple_fields", lazy = false)
-    private Set<FieldDataModel<?>> simpleFields = new LinkedHashSet<FieldDataModel<?>>();
+    
+    // @Link(name = "object_type_simple_fields", lazy = false)
+    // private Set<FieldDataModel<?>> simpleFields = new LinkedHashSet<FieldDataModel<?>>();
+    @Implementation(type = LinkedHashSet.class)
+    private Set<String> simpleFields=new LinkedHashSet<String>();
 
     @Link(name = "object_type_references", lazy = false)
     private Set<LinkModel> references = new HashSet<LinkModel>();
@@ -74,8 +76,16 @@ public class ObjectDataModel<T> extends DataModel<T> {
     public ObjectDataModel(Class<T> type) {
 	super(type, true);
     }
+    
+    private void initFields() {
+	fieldsPositions=new LinkedHashMap<String, Integer>();
+	fields = new LinkedHashMap<String, FieldDataModel<?>>();
+    }
 
     public synchronized void addFieldDataModel(FieldDataModel<?> fdm) {
+	if(fields == null) {
+	    initFields();
+	}
 	String fieldName = fdm.getName();
 	fields.put(fieldName, fdm);
 
@@ -85,7 +95,7 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	    if (fieldName.equals(getObjectIdFieldName())) {
 		return;
 	    }
-	    simpleFields.add(fdm);
+	    simpleFields.add(fieldName);
 	    int pos = simpleFields.size() - 1;
 	    fieldsPositions.put(fieldName, pos);
 	    // fdm.setPosition(pos);
@@ -382,9 +392,12 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	    valuesMap = new HashMap<String, Object>();
 	}
 	String[] columns = data.split(Constants.COLUMN_SEPARATOR);
-	for (FieldDataModel<?> fdm : simpleFields) {
-
-	    String fullFieldName = path + fdm.getName();
+	for (String fieldName : simpleFields) {
+	    FieldDataModel<?> fdm = fields.get(fieldName);
+	    if(fdm == null) {
+		throw new RuntimeException("No field data model for "+fieldName+ " on "+this);
+	    }
+	    String fullFieldName = path + fieldName;
 	    try {
 		valuesMap.put(fullFieldName, getValueForField(fdm, columns));
 	    } catch (Exception e) {
@@ -562,7 +575,7 @@ public class ObjectDataModel<T> extends DataModel<T> {
     /**
      * @return the simpleFields
      */
-    public Set<FieldDataModel<?>> getSimpleFields() {
+    public Set<String> getSimpleFields() {
 	return simpleFields;
     }
 
@@ -649,6 +662,7 @@ public class ObjectDataModel<T> extends DataModel<T> {
      */
     public void setFields(Map<String, FieldDataModel<?>> fields) {
 	this.fields = fields;
+//	matchFieldsWithFieldsPositions();
     }
 
     /**
@@ -657,6 +671,8 @@ public class ObjectDataModel<T> extends DataModel<T> {
      */
     public void setFieldsPositions(Map<String, Integer> fieldsPositions) {
 	this.fieldsPositions = fieldsPositions;
+//	matchFieldsWithFieldsPositions();
+	matchSimpleFieldsWithFieldsPositions();
     }
 
     /**
@@ -671,8 +687,9 @@ public class ObjectDataModel<T> extends DataModel<T> {
      * @param simpleFields
      *            the simpleFields to set
      */
-    public void setSimpleFields(Set<FieldDataModel<?>> simpleFields) {
+    public void setSimpleFields(Set<String> simpleFields) {
 	this.simpleFields = simpleFields;
+	matchSimpleFieldsWithFieldsPositions();
     }
 
     /**
@@ -683,7 +700,37 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	this.references = references;
     }
 
-    /* (non-Javadoc)
+    private void matchFieldsWithFieldsPositions() {
+	if (fieldsPositions != null && fields != null) {
+	    Map<String, FieldDataModel<?>> orderedFields = new LinkedHashMap<String, FieldDataModel<?>>();
+	    for (String fieldName : fieldsPositions.keySet()) {
+		orderedFields.put(fieldName, fields.get(fieldName));
+	    }
+	    for(FieldDataModel<?> fdm : fields.values()) {
+		if(!fieldsPositions.containsKey(fdm.getName())) {
+		    
+		}
+	    }
+	    fields = orderedFields;
+//	    System.out.println("set fields to "+orderedFields);
+	}
+    }
+
+    private void matchSimpleFieldsWithFieldsPositions() {
+//	if (fieldsPositions != null && simpleFields != null) {
+//	    Set<String> orderedSimpleFields = new LinkedHashSet<String>();
+//	    for (String fieldName : fieldsPositions.keySet()) {
+//		if (simpleFields.contains(fieldName)) {
+//		    orderedSimpleFields.add(fieldName);
+//		}
+//	    }
+//	    simpleFields = orderedSimpleFields;
+//	}
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#toString()
      */
     @Override
@@ -693,6 +740,5 @@ public class ObjectDataModel<T> extends DataModel<T> {
 		+ ", fieldsPositions=" + fieldsPositions + ", linkedFields=" + linkedFields + ", simpleFields="
 		+ simpleFields + ", references=" + references + "]";
     }
-
 
 }
