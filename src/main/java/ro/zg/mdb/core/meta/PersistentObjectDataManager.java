@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +41,6 @@ import ro.zg.mdb.core.meta.data.DataModel;
 import ro.zg.mdb.core.meta.data.FieldDataModel;
 import ro.zg.mdb.core.meta.data.LinkModel;
 import ro.zg.mdb.core.meta.data.LinkValue;
-import ro.zg.mdb.core.meta.data.MapDataModel;
 import ro.zg.mdb.core.meta.data.MultivaluedDataModel;
 import ro.zg.mdb.core.meta.data.ObjectDataModel;
 import ro.zg.mdb.core.meta.data.ObjectsLink;
@@ -726,7 +726,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	Map<String, String> indexedValues = new HashMap<String, String>();
 	Map<String, UniqueIndexValue> uniqueValues = new HashMap<String, UniqueIndexValue>();
 	Map<String, ObjectContext<?>> nestedObjectContexts = new HashMap<String, ObjectContext<?>>();
-	Map<String, List<ObjectContext<?>>> nestedMultivaluedObjectContexts = new HashMap<String, List<ObjectContext<?>>>();
+	Map<String, List<ObjectContext<?>>> nestedMultivaluedObjectContexts = new LinkedHashMap<String, List<ObjectContext<?>>>();
 	String data = "";
 	boolean addSeparator = false;
 	String objectIdFieldName = objectDataModel.getObjectIdFieldName();
@@ -991,7 +991,7 @@ public class PersistentObjectDataManager<T> extends PersistentDataManager {
 	Map<String, ObjectContext<?>> nestedContexts = new HashMap<String, ObjectContext<?>>();
 	Set<LinkValue> linksToRemove = new HashSet<LinkValue>();
 	Set<LinkValue> linksToAdd = new HashSet<LinkValue>();
-	Map<String, List<ObjectContext<?>>> nestedMultivaluedObjectContexts = new HashMap<String, List<ObjectContext<?>>>();
+	Map<String, List<ObjectContext<?>>> nestedMultivaluedObjectContexts = new LinkedHashMap<String, List<ObjectContext<?>>>();
 
 	for (FieldDataModel<?> fdm : objectDataModel.getLinkedFields()) {
 	    String fieldName = fdm.getName();

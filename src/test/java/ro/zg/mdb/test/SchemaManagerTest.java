@@ -205,11 +205,15 @@ public class SchemaManagerTest {
 
 	post2 = sm.createCommand(Entity.class).insert(post2).execute();
 	Assert.assertEquals(user1.getId(), post2.getUser().getId());
+	
 	mpm.print(System.out);
 	Collection<Entity> fetchResult1 = sm.createCommand(Entity.class).get().where().field("id").eq(post2.getId())
 		.execute().getValues();
 	Assert.assertEquals(1, fetchResult1.size());
 	Entity fetchedPost2 = new ArrayList<Entity>(fetchResult1).get(0);
+	if(!post2.equals(fetchedPost2)) {
+	    System.out.println("error");
+	}
 	Assert.assertEquals(post2, fetchedPost2);
 
 	User user2 = new User("user2", "password", "user2@mdb.com");

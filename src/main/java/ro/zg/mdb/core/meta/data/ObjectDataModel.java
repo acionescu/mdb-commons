@@ -37,7 +37,7 @@ import ro.zg.util.data.reflection.ReflectionUtility;
 @Persistable
 public class ObjectDataModel<T> extends DataModel<T> {
 
-    @Link(name = "object_typ_object_id_field", lazy = false)
+    @Link(name = "object_type_object_id_field", lazy = false)
     private FieldDataModel<String> objectIdField;
 
     @Link(name = "object_type_required_fields", lazy = false)
@@ -57,7 +57,7 @@ public class ObjectDataModel<T> extends DataModel<T> {
     private Map<String, Integer> fieldsPositions = new LinkedHashMap<String, Integer>();
 
     @Implementation(type=LinkedHashSet.class)
-    @Link(name = "object_type_fields_positions", lazy = false)
+    @Link(name = "object_type_linked_fields", lazy = false)
     private Set<FieldDataModel<?>> linkedFields = new LinkedHashSet<FieldDataModel<?>>();
 
     @Implementation(type=LinkedHashSet.class)
@@ -683,15 +683,16 @@ public class ObjectDataModel<T> extends DataModel<T> {
 	this.references = references;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
+    /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
     @Override
     public String toString() {
-	return super.toString() + "[fields=" + fields + ", requiredFields=" + requiredFields + ", uniqueIndexes="
-		+ uniqueIndexes + ", indexedFields=" + indexedFields + "]";
+	return "ObjectDataModel [objectIdField=" + objectIdField + ", requiredFields=" + requiredFields
+		+ ", uniqueIndexes=" + uniqueIndexes + ", indexedFields=" + indexedFields + ", fields=" + fields
+		+ ", fieldsPositions=" + fieldsPositions + ", linkedFields=" + linkedFields + ", simpleFields="
+		+ simpleFields + ", references=" + references + "]";
     }
+
 
 }

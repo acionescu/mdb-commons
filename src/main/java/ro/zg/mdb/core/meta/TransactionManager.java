@@ -276,7 +276,7 @@ public class TransactionManager {
 	    LinkModel lm = fdm.getLinkModel();
 	    boolean isNestedFirst = !lm.isFirst();
 	    LinksSet linksSet = getObjectLinks(lm, rowId, false);
-	    Collection<Object> values = new HashSet<Object>();
+	    Collection<Object> values = new LinkedHashSet<Object>();
 
 	    if (lm.isPolymorphic()) {
 		PolymorphicLinksSet pls = (PolymorphicLinksSet) linksSet;
@@ -292,6 +292,7 @@ public class TransactionManager {
 			isNestedFirst);
 	    }
 	    if (values.size() > 0) {
+//		System.out.println(target.getClass()+", "+fieldName+", "+values);
 		odm.populateComplexFields(target, fieldName, values);
 	    }
 	}

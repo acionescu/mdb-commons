@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package ro.zg.mdb.history;
+package ro.zg.mdb.core.meta.data;
 
-import java.util.Map;
-
-import ro.zg.mdb.core.annotations.Link;
 
 public class SchemaMetadata {
-    @Link(name="schema_changes_counters",key="accessLevel",first=false)
-    private Map<String,ChangesCounter> changesCounters;
+       
 }

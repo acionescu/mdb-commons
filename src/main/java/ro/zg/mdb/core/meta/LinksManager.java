@@ -20,7 +20,6 @@ import java.util.List;
 
 import ro.zg.mdb.commands.GetCommand;
 import ro.zg.mdb.commands.builders.ComplexFindResultBuilder;
-import ro.zg.mdb.commands.builders.ComplexFindResultBuilderFactory;
 import ro.zg.mdb.commands.builders.CumulativeFindResultBuilderFactory;
 import ro.zg.mdb.commands.builders.FindResultBuilderFactory;
 import ro.zg.mdb.constants.SpecialPaths;

@@ -1,0 +1,18 @@
+Concept:
+
+All the changes made by the current user of the schema will be saved into a special structure, in such a way
+that will allow later recovery of those changes
+Changes will occur at different granularities such as: schema, table and row
+Changes need to be saved for each granularity if the current granularity supports versioning
+So we need to keep track of the last transaction for the schema, table and row 
+
+
+
+
+
+Management: 
+
+-each transaction has an unique id
+-the unique ids will be provided by a sequence managed by the SchemaMetadataManager
+-when a change occurs, a new transaction id is stored for the schema, the table and the row on which
+the change occured
