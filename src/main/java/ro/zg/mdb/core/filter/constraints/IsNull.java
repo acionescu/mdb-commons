@@ -17,7 +17,7 @@ package ro.zg.mdb.core.filter.constraints;
 
 import ro.zg.mdb.core.filter.Constraint;
 import ro.zg.mdb.core.filter.FieldConstraintContext;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadata;
 
 public class IsNull<T> implements Constraint<T>{
 
@@ -27,7 +27,7 @@ public class IsNull<T> implements Constraint<T>{
     }
 
     @Override
-    public boolean isPossible(FieldDataModel fieldDataModel) {
+    public boolean isPossible(PersistentFieldMetadata fieldDataModel) {
 	if(fieldDataModel.isRequired()) {
 	    /*
 	     * if IsNull constraint is present and the field is marked as required, then there is now way that

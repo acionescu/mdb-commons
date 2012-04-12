@@ -17,18 +17,20 @@ package ro.zg.mdb.core.schema;
 
 import java.lang.annotation.Annotation;
 
-import ro.zg.mdb.core.meta.SchemaMetadataManager;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
-import ro.zg.mdb.core.meta.data.Schema;
+import ro.zg.mdb.core.meta.persistence.SchemaMetadataManager;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadata;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadataImpl;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadata;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadataImpl;
+import ro.zg.metadata.commons.AnnotationProcessorContext;
 
-public class ObjectDataModelAnnotationMapperContext<A extends Annotation> extends AnnotationMapperContext<A> {
-    private ObjectDataModel<?> objectDataModel;
-    private FieldDataModel<?> fieldDataModel;
+public class ObjectDataModelAnnotationMapperContext<A extends Annotation> extends AnnotationProcessorContext<A> {
+    private PersistentObjectMetadataImpl<?> objectDataModel;
+    private PersistentFieldMetadataImpl<?> fieldDataModel;
     private SchemaMetadataManager schema;
     
-    public ObjectDataModelAnnotationMapperContext(A annotation, ObjectDataModel<?> objectDataModel,
-	    FieldDataModel<?> fieldDataModel, SchemaMetadataManager schema) {
+    public ObjectDataModelAnnotationMapperContext(A annotation, PersistentObjectMetadataImpl<?> objectDataModel,
+	    PersistentFieldMetadataImpl<?> fieldDataModel, SchemaMetadataManager schema) {
 	super(annotation);
 	this.objectDataModel = objectDataModel;
 	this.fieldDataModel = fieldDataModel;
@@ -37,13 +39,13 @@ public class ObjectDataModelAnnotationMapperContext<A extends Annotation> extend
     /**
      * @return the objectDataModel
      */
-    public ObjectDataModel<?> getObjectDataModel() {
+    public PersistentObjectMetadataImpl<?> getObjectDataModel() {
         return objectDataModel;
     }
     /**
      * @return the fieldDataModel
      */
-    public FieldDataModel<?> getFieldDataModel() {
+    public PersistentFieldMetadataImpl<?> getFieldDataModel() {
         return fieldDataModel;
     }
     /**

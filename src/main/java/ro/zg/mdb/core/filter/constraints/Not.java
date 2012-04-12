@@ -18,7 +18,7 @@ package ro.zg.mdb.core.filter.constraints;
 import ro.zg.mdb.core.filter.ComplexConstraint;
 import ro.zg.mdb.core.filter.Constraint;
 import ro.zg.mdb.core.filter.FieldConstraintContext;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadata;
 
 public class Not<T> extends ComplexConstraint<T> {
     private Constraint<T> negated;
@@ -46,7 +46,7 @@ public class Not<T> extends ComplexConstraint<T> {
     }
 
     @Override
-    public boolean isPossible(FieldDataModel fieldDataModel) {
+    public boolean isPossible(PersistentFieldMetadata fieldDataModel) {
 	return true;
     }
 

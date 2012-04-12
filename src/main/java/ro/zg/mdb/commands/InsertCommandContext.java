@@ -16,7 +16,7 @@
 package ro.zg.mdb.commands;
 
 import ro.zg.mdb.commands.builders.SimpleResultBuilder;
-import ro.zg.mdb.core.meta.TransactionManager;
+import ro.zg.mdb.core.meta.persistence.TransactionManager;
 
 public class InsertCommandContext<T> extends CommandContext<T,T,T,SimpleResultBuilder<T>>{
     private T source;

@@ -16,14 +16,14 @@
 package ro.zg.mdb.util;
 
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.SchemaContext;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.persistence.SchemaContext;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadata;
 
 public class SchemaContextRowIdProvider<T> implements RowIdProvider {
     private SchemaContext schemaContext;
-    private ObjectDataModel<T> objectDataModel;
+    private PersistentObjectMetadata<T> objectDataModel;
 
-    public SchemaContextRowIdProvider(SchemaContext schemaContext, ObjectDataModel<T> objectDataModel) {
+    public SchemaContextRowIdProvider(SchemaContext schemaContext, PersistentObjectMetadata<T> objectDataModel) {
 	super();
 	this.schemaContext = schemaContext;
 	this.objectDataModel = objectDataModel;

@@ -16,13 +16,13 @@
 package ro.zg.mdb.core.schema;
 
 import ro.zg.mdb.core.annotations.Unique;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadataImpl;
 
 public class UniqueMapper extends ObjectDataModelAnnotationMapper<Unique>{
 
     @Override
     public void map(ObjectDataModelAnnotationMapperContext<Unique> amc) {
-	FieldDataModel<?> fdm = amc.getFieldDataModel();
+	PersistentFieldMetadataImpl<?> fdm = amc.getFieldDataModel();
 	String uniqueIndexName=""+amc.getAnnotation().name();
 	amc.getObjectDataModel().addUniqueField(uniqueIndexName, fdm);
 	fdm.setUniqueIndexId(uniqueIndexName);

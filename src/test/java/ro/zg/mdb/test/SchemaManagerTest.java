@@ -23,9 +23,9 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.MdbInstance;
-import ro.zg.mdb.core.meta.SchemaManager;
-import ro.zg.mdb.core.meta.data.MdbConfig;
+import ro.zg.mdb.core.meta.persistence.MdbInstance;
+import ro.zg.mdb.core.meta.persistence.SchemaManager;
+import ro.zg.mdb.core.meta.persistence.data.MdbConfig;
 import ro.zg.mdb.persistence.MemoryPersistenceManager;
 import ro.zg.mdb.test.model.Book;
 import ro.zg.mdb.test.model.Entity;

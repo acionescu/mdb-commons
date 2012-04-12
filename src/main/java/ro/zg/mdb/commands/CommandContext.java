@@ -17,8 +17,8 @@ package ro.zg.mdb.commands;
 
 import ro.zg.mdb.commands.builders.ResultBuilder;
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.TransactionManager;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.persistence.TransactionManager;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadata;
 
 public class CommandContext<T, N, R, B extends ResultBuilder<R>> {
     private String objectName;
@@ -35,7 +35,7 @@ public class CommandContext<T, N, R, B extends ResultBuilder<R>> {
 	this.resultBuilder = resultBuilder;
     }
 
-    public ObjectDataModel<T> getObjectDataModel() throws MdbException {
+    public PersistentObjectMetadata<T> getObjectDataModel() throws MdbException {
 	return transactionManager.getObjectDataModel(type);
     }
 

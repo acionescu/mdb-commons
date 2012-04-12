@@ -44,5 +44,10 @@
   		<artifactId>commons</artifactId>
   		<version>0.0.1-SNAPSHOT</version>
   	</dependency>
+  	<dependency>
+  	   <groupId>ro.zg</groupId>
+  	   <artifactId>metadata-commons</artifactId>
+  	   <version>0.0.1-SNAPSHOT</version>
+  	</dependency>
   </dependencies>
 </project>

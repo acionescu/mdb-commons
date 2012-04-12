@@ -23,7 +23,7 @@ import ro.zg.mdb.constants.Constants;
 import ro.zg.mdb.constants.OperationType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.constraints.All;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadata;
 
 public class Filter implements ObjectConstraint {
     private ObjectConstraint constraint = new All<Object>();
@@ -102,7 +102,7 @@ public class Filter implements ObjectConstraint {
     }
 
     @Override
-    public boolean isPossible(ObjectDataModel<?> objectDataModel) {
+    public boolean isPossible(PersistentObjectMetadata<?> objectDataModel) {
 	return constraint.isPossible(objectDataModel);
     }
 

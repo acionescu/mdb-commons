@@ -27,8 +27,8 @@ import ro.zg.mdb.core.filter.ConstraintSet;
 import ro.zg.mdb.core.filter.FieldConstraintContext;
 import ro.zg.mdb.core.filter.ObjectConstraint;
 import ro.zg.mdb.core.filter.ObjectConstraintContext;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadata;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadata;
 
 public class And<T> extends ConstraintSet<T> implements ObjectConstraint {
 
@@ -60,7 +60,7 @@ public class And<T> extends ConstraintSet<T> implements ObjectConstraint {
     }
 
     @Override
-    public boolean isPossible(FieldDataModel fieldDataModel) {
+    public boolean isPossible(PersistentFieldMetadata fieldDataModel) {
 	Constraint<T> result = getCompiledValue();
 	if (result == null) {
 	    return false;
@@ -168,7 +168,7 @@ public class And<T> extends ConstraintSet<T> implements ObjectConstraint {
     }
 
     @Override
-    public boolean isPossible(ObjectDataModel objectDataModel) {
+    public boolean isPossible(PersistentObjectMetadata objectDataModel) {
 	for (Constraint<T> c : constraints) {
 	    ObjectConstraint oc = (ObjectConstraint) c;
 	    if (!oc.isPossible(objectDataModel)) {

@@ -15,7 +15,7 @@
  ******************************************************************************/
 package ro.zg.mdb.core.filter;
 
-import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadata;
 
 
 public interface Constraint<T> {
@@ -30,12 +30,12 @@ public interface Constraint<T> {
      * @param context
      * @return true if possible, false otherwise
      */
-    boolean isPossible(FieldDataModel<?> fieldDataModel);
+    boolean isPossible(PersistentFieldMetadata<?> fieldDataModel);
     
     /**
      * Processes the possible values that a constraint allows
      * and does also some checks if such a value is at all possible
-     * with the current {@link FieldDataModel}
+     * with the current {@link PersistentFieldMetadata}
      * @param context
      * @return - true if there is a possibility for this constrain to be satisfied, false otherwise
      */

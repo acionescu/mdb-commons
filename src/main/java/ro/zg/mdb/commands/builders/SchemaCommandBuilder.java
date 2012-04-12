@@ -19,7 +19,7 @@ import ro.zg.mdb.commands.DeleteCommand;
 import ro.zg.mdb.commands.GetCommand;
 import ro.zg.mdb.commands.InsertCommand;
 import ro.zg.mdb.commands.UpdateCommand;
-import ro.zg.mdb.core.meta.ObjectDataManager;
+import ro.zg.mdb.core.meta.persistence.ObjectDataManager;
 
 public class SchemaCommandBuilder<T> {
     private ObjectDataManager<T> objectDataManager;

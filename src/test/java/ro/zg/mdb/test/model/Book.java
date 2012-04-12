@@ -18,8 +18,8 @@ package ro.zg.mdb.test.model;
 import ro.zg.mdb.core.annotations.Indexed;
 import ro.zg.mdb.core.annotations.Persistable;
 import ro.zg.mdb.core.annotations.ObjectId;
-import ro.zg.mdb.core.annotations.Required;
 import ro.zg.mdb.core.annotations.Unique;
+import ro.zg.metadata.annotations.validation.Required;
 
 @Persistable
 public class Book {

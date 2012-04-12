@@ -18,10 +18,10 @@ package ro.zg.mdb.core.filter;
 import java.util.Map;
 
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadata;
 
 public interface ObjectConstraint {
     boolean process(ObjectConstraintContext<?> objectContext) throws MdbException;
     boolean isSatisfied(Map<String,Object> values);
-    boolean isPossible(ObjectDataModel<?> objectDataModel);
+    boolean isPossible(PersistentObjectMetadata<?> objectDataModel);
 }

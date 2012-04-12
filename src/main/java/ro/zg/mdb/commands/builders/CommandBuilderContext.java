@@ -15,7 +15,7 @@
  ******************************************************************************/
 package ro.zg.mdb.commands.builders;
 
-import ro.zg.mdb.core.meta.ObjectDataManager;
+import ro.zg.mdb.core.meta.persistence.ObjectDataManager;
 
 public class CommandBuilderContext<T> {
     private ObjectDataManager<T> objectDataManager;

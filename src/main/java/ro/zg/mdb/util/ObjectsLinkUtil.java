@@ -18,7 +18,7 @@ package ro.zg.mdb.util;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import ro.zg.mdb.core.meta.data.ObjectsLink;
+import ro.zg.mdb.core.meta.persistence.data.ObjectsLink;
 
 public class ObjectsLinkUtil {
     public static Collection<String> getRows(Collection<ObjectsLink> links, boolean first){

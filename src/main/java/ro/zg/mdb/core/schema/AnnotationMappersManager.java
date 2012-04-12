@@ -24,10 +24,10 @@ import ro.zg.mdb.core.annotations.Implementation;
 import ro.zg.mdb.core.annotations.Indexed;
 import ro.zg.mdb.core.annotations.Link;
 import ro.zg.mdb.core.annotations.ObjectId;
-import ro.zg.mdb.core.annotations.Required;
 import ro.zg.mdb.core.annotations.Sequenced;
 import ro.zg.mdb.core.annotations.Unique;
 import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.metadata.annotations.validation.Required;
 
 public class AnnotationMappersManager<A extends Annotation>{
     private Map<Class<? extends Annotation>,ObjectDataModelAnnotationMapper<? extends Annotation>> mappers;

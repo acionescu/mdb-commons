@@ -23,15 +23,15 @@ import java.util.Set;
 
 import ro.zg.mdb.core.concurrency.ResourceLock;
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.data.LinkValue;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
-import ro.zg.mdb.core.meta.data.Row;
-import ro.zg.mdb.core.meta.data.UniqueIndexValue;
+import ro.zg.mdb.core.meta.persistence.data.LinkValue;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadata;
+import ro.zg.mdb.core.meta.persistence.data.Row;
+import ro.zg.mdb.core.meta.persistence.data.UniqueIndexValue;
 
 public class ObjectContext<T> {
     private T target;
     private ResourceLock rowLock;
-    private ObjectDataModel<T> objectDataModel;
+    private PersistentObjectMetadata<T> objectDataModel;
     private Map<String, String> indexedValues;
     private Map<String,UniqueIndexValue> uniqueValues;
     private Map<String, String> oldIndexedValues;
@@ -54,7 +54,7 @@ public class ObjectContext<T> {
     private Set<LinkValue> linksToAdd=new HashSet<LinkValue>();
     private Set<LinkValue> linksToRemove=new HashSet<LinkValue>();
     
-    public ObjectContext(ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
+    public ObjectContext(PersistentObjectMetadata<T> objectDataModel, String data, Map<String, String> indexedValues,
 	    Map<String, UniqueIndexValue> uniqueValues, Map<String, String> oldIndexedValues,
 	    Map<String, UniqueIndexValue> oldUniqueValues, String rowId, Map<String, ObjectContext<?>> nestedContexts, Set<LinkValue> linksToRemove, Set<LinkValue> linksToAdd, Map<String, List<ObjectContext<?>>> nestedMultivaluedObjectContexts) {
 	super();
@@ -74,7 +74,7 @@ public class ObjectContext<T> {
     }
 
 
-    public ObjectContext(T target, ObjectDataModel<T> objectDataModel, String data, Map<String, String> indexedValues,
+    public ObjectContext(T target, PersistentObjectMetadata<T> objectDataModel, String data, Map<String, String> indexedValues,
 	    Map<String, UniqueIndexValue> uniqueValues, Map<String, ObjectContext<?>> nestedContexts, Map<String, List<ObjectContext<?>>> nestedMultivaluedObjectContexts) throws MdbException {
 	super();
 	this.target=target;
@@ -89,7 +89,7 @@ public class ObjectContext<T> {
     }
 
 
-    public ObjectContext(ObjectDataModel<T> objectDataModel, Map<String, String> oldIndexedValues, Map<String, UniqueIndexValue> oldUniqueValues) {
+    public ObjectContext(PersistentObjectMetadata<T> objectDataModel, Map<String, String> oldIndexedValues, Map<String, UniqueIndexValue> oldUniqueValues) {
 	super();
 	this.oldIndexedValues = oldIndexedValues;
 	this.oldUniqueValues = oldUniqueValues;
@@ -98,14 +98,14 @@ public class ObjectContext<T> {
 	this.objectName=objectDataModel.getTypeName();
     }
     
-    public ObjectContext(ObjectDataModel<T> objectDataModel, String rowId) {
+    public ObjectContext(PersistentObjectMetadata<T> objectDataModel, String rowId) {
 	this.rowInfo=new Row(rowId);
 	this.alreadyCreated=true;
 	this.objectDataModel=objectDataModel;
 	this.objectName=objectDataModel.getTypeName();
     }
     
-    public ObjectContext(ObjectDataModel<T> objectDataModel) {
+    public ObjectContext(PersistentObjectMetadata<T> objectDataModel) {
 	this.alreadyCreated=true;
 	this.objectDataModel=objectDataModel;
 	this.objectName=objectDataModel.getTypeName();
@@ -158,13 +158,13 @@ public class ObjectContext<T> {
     /**
      * @return the objectDataModel
      */
-    public ObjectDataModel<T> getObjectDataModel() {
+    public PersistentObjectMetadata<T> getObjectDataModel() {
         return objectDataModel;
     }
     /**
      * @param objectDataModel the objectDataModel to set
      */
-    public void setObjectDataModel(ObjectDataModel<T> objectDataModel) {
+    public void setObjectDataModel(PersistentObjectMetadata<T> objectDataModel) {
         this.objectDataModel = objectDataModel;
     }
     /**

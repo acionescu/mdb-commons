@@ -15,14 +15,14 @@
  ******************************************************************************/
 package ro.zg.mdb.core.schema;
 
-import ro.zg.mdb.core.annotations.Required;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadataImpl;
+import ro.zg.metadata.annotations.validation.Required;
 
 public class RequiredMapper extends ObjectDataModelAnnotationMapper<Required>{
 
     @Override
     public void map(ObjectDataModelAnnotationMapperContext<Required> amc) {
-	FieldDataModel fdm = amc.getFieldDataModel();
+	PersistentFieldMetadataImpl<?> fdm = amc.getFieldDataModel();
 	amc.getObjectDataModel().addRequiredField(fdm);
 	fdm.setRequired(true);
     }

@@ -19,16 +19,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 import ro.zg.mdb.core.filter.constraints.Range;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadata;
 
 public class FieldConstraintContext<T extends Comparable<T>> {
-    private FieldDataModel<T> fieldDataModel;
+    private PersistentFieldMetadata<T> fieldDataModel;
     private Set<String> values = new HashSet<String>();
     private Range<T> range;
     private boolean restricted;
     private Constraint<T> constraint;
 
-    public FieldConstraintContext(FieldDataModel<T> fdm, Constraint<T> constraint) {
+    public FieldConstraintContext(PersistentFieldMetadata<T> fdm, Constraint<T> constraint) {
 	fieldDataModel = fdm;
 	this.constraint=constraint;
     }
@@ -75,7 +75,7 @@ public class FieldConstraintContext<T extends Comparable<T>> {
     /**
      * @return the fieldDataModel
      */
-    public FieldDataModel getFieldDataModel() {
+    public PersistentFieldMetadata getFieldDataModel() {
 	return fieldDataModel;
     }
 
@@ -83,7 +83,7 @@ public class FieldConstraintContext<T extends Comparable<T>> {
      * @param fieldDataModel
      *            the fieldDataModel to set
      */
-    public void setFieldDataModel(FieldDataModel fieldDataModel) {
+    public void setFieldDataModel(PersistentFieldMetadata fieldDataModel) {
 	this.fieldDataModel = fieldDataModel;
     }
 

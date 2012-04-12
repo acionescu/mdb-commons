@@ -25,18 +25,18 @@ import java.util.Set;
 import ro.zg.mdb.constants.Constants;
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.LinksSet;
-import ro.zg.mdb.core.meta.PolymorphicLinksSet;
-import ro.zg.mdb.core.meta.SimpleLinksSet;
-import ro.zg.mdb.core.meta.TransactionManager;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
-import ro.zg.mdb.core.meta.data.LinkModel;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
-import ro.zg.mdb.core.meta.data.ObjectsLink;
+import ro.zg.mdb.core.meta.persistence.LinksSet;
+import ro.zg.mdb.core.meta.persistence.PolymorphicLinksSet;
+import ro.zg.mdb.core.meta.persistence.SimpleLinksSet;
+import ro.zg.mdb.core.meta.persistence.TransactionManager;
+import ro.zg.mdb.core.meta.persistence.data.LinkMetadata;
+import ro.zg.mdb.core.meta.persistence.data.ObjectsLink;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadata;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadata;
 import ro.zg.util.data.GenericNameValue;
 
 public class ObjectConstraintContext<T> {
-    private ObjectDataModel<T> objectDataModel;
+    private PersistentObjectMetadata<T> objectDataModel;
     private String objectName;
     private Class<T> type;
     private ObjectConstraintContext<?> parentContext;
@@ -62,7 +62,7 @@ public class ObjectConstraintContext<T> {
 	this.objectDataModel = transactionManager.getObjectDataModel(type);
     }
 
-    private ObjectConstraintContext(String fieldName, ObjectDataModel<T> objectDataModel,
+    private ObjectConstraintContext(String fieldName, PersistentObjectMetadata<T> objectDataModel,
 	    TransactionManager transactionManager, ObjectConstraintContext<?> parentContext) {
 	this.objectDataModel = objectDataModel;
 	this.transactionManager = transactionManager;
@@ -96,13 +96,13 @@ public class ObjectConstraintContext<T> {
     /**
      * @return the objectDataModel
      */
-    public ObjectDataModel<T> getObjectDataModel() {
+    public PersistentObjectMetadata<T> getObjectDataModel() {
 	return objectDataModel;
     }
 
     private void addFieldConstraintContext(FieldConstraintContext<?> context) throws MdbException {
 	// fieldsConstraintContexts.put(context.getFieldName(), context);
-	FieldDataModel<?> fdm = context.getFieldDataModel();
+	PersistentFieldMetadata<?> fdm = context.getFieldDataModel();
 	if (fdm.isObjectId()) {
 	    processObjectIdConstraint(context);
 	    return;
@@ -170,7 +170,7 @@ public class ObjectConstraintContext<T> {
     }
 
     public boolean extractRowsFromNested(ObjectConstraintContext<?> nestedContext) throws MdbException {
-	LinkModel lm = getLinkModel(nestedContext.fieldName);
+	LinkMetadata lm = getLinkModel(nestedContext.fieldName);
 
 	Set<String> allowed = getReverseLinkedRows(lm, nestedContext.getAllowed());
 	if (allowed != null) {
@@ -186,7 +186,7 @@ public class ObjectConstraintContext<T> {
 	return false;
     }
 
-    private Set<String> getReverseLinkedRows(LinkModel lm, Collection<String> rows) throws MdbException {
+    private Set<String> getReverseLinkedRows(LinkMetadata lm, Collection<String> rows) throws MdbException {
 	if (rows == null) {
 	    return null;
 	}
@@ -219,9 +219,9 @@ public class ObjectConstraintContext<T> {
 	    }
     }
 
-    private LinkModel getLinkModel(String nestedFieldName) {
-	FieldDataModel<?> fdm = objectDataModel.getField(nestedFieldName);
-	LinkModel lm = fdm.getLinkModel();
+    private LinkMetadata getLinkModel(String nestedFieldName) {
+	PersistentFieldMetadata<?> fdm = objectDataModel.getField(nestedFieldName);
+	LinkMetadata lm = fdm.getLinkMetadata();
 	return lm;
     }
 

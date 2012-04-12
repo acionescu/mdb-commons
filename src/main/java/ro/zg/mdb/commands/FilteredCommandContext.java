@@ -17,7 +17,7 @@ package ro.zg.mdb.commands;
 
 import ro.zg.mdb.commands.builders.ResultBuilder;
 import ro.zg.mdb.core.filter.Filter;
-import ro.zg.mdb.core.meta.TransactionManager;
+import ro.zg.mdb.core.meta.persistence.TransactionManager;
 
 public class FilteredCommandContext<T, N, R, B extends ResultBuilder<R>> extends CommandContext<T, N, R, B> {
     private Filter filter;

@@ -17,7 +17,7 @@ package ro.zg.mdb.commands;
 
 import ro.zg.mdb.commands.builders.SimpleResultBuilder;
 import ro.zg.mdb.core.filter.Filter;
-import ro.zg.mdb.core.meta.TransactionManager;
+import ro.zg.mdb.core.meta.persistence.TransactionManager;
 
 public class DeleteCommandContext<T> extends FilteredCommandContext<T, Long, Long, SimpleResultBuilder<Long>>{
 

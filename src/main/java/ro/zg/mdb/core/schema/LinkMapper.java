@@ -17,23 +17,23 @@ package ro.zg.mdb.core.schema;
 
 import ro.zg.mdb.core.annotations.Link;
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
-import ro.zg.mdb.core.meta.data.LinkModel;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.persistence.data.LinkMetadata;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadataImpl;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadataImpl;
 
 public class LinkMapper extends ObjectDataModelAnnotationMapper<Link> {
 
     @Override
     public void map(ObjectDataModelAnnotationMapperContext<Link> amc) throws MdbException {
 	Link al = amc.getAnnotation();
-	LinkModel lm = new LinkModel(al.name(), al.first(), al.lazy(), al.allowedTypes(), al.key());
-	FieldDataModel<?> fdm = amc.getFieldDataModel();
-	fdm.setLinkModel(lm);
+	LinkMetadata lm = new LinkMetadata(al.name(), al.first(), al.lazy(), al.allowedTypes(), al.key());
+	PersistentFieldMetadataImpl<?> fdm = amc.getFieldDataModel();
+	fdm.setLinkMetadata(lm);
 
-	boolean multivalued=fdm.getDataModel().isMultivalued();
+	boolean multivalued=fdm.getValueMetadata().isMultivalued();
 	lm.setMultivalued(multivalued);
 	if (lm.isFirst()) {
-	    ObjectDataModel<?> odm = amc.getObjectDataModel();
+	    PersistentObjectMetadataImpl<?> odm = amc.getObjectDataModel();
 	    if (multivalued) {
 		Class<?> fieldType = fdm.getType();
 		if (fieldType.equals(odm.getType())) {
@@ -45,8 +45,8 @@ public class LinkMapper extends ObjectDataModelAnnotationMapper<Link> {
 		}
 	    }
 	    else {
-//		((ObjectDataModel<?>)fdm.getDataModel()).addReference(lm);
-		amc.getSchema().updateReference((ObjectDataModel<?>)fdm.getDataModel(), lm);
+//		((PersistentObjectMetadata<?>)fdm.getDataModel()).addReference(lm);
+		amc.getSchema().updateReference((PersistentObjectMetadataImpl<?>)fdm.getValueMetadata(), lm);
 	    }
 	}
 

@@ -17,8 +17,8 @@ package ro.zg.mdb.test;
 
 import org.junit.Test;
 
-import ro.zg.mdb.core.meta.data.Schema;
-import ro.zg.mdb.core.meta.data.SchemaConfig;
+import ro.zg.mdb.core.meta.persistence.data.Schema;
+import ro.zg.mdb.core.meta.persistence.data.SchemaConfig;
 import ro.zg.mdb.test.model.Book;
 
 public class SchemaTest {
@@ -42,7 +42,7 @@ public class SchemaTest {
 	book.setPrintTimestamp(System.currentTimeMillis());
 
 //	ObjectContext oc = null;
-//	ObjectDataModel<Book> odModel=schema.getObjectDataModel(Book.class);
+//	PersistentObjectMetadata<Book> odModel=schema.getObjectDataModel(Book.class);
 //	SchemaContext schemaContext = new SchemaContext(new SequencesManager());
 //	ObjectDataManager<Book> sm=new ObjectDataManager<Book>(null, odModel, schemaContext);
 //

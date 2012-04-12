@@ -16,13 +16,13 @@
 package ro.zg.mdb.core.schema;
 
 import ro.zg.mdb.core.annotations.Implementation;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadataImpl;
 
 public class ImplementationMapper extends ObjectDataModelAnnotationMapper<Implementation>{
 
     @Override
     public void map(ObjectDataModelAnnotationMapperContext<Implementation> amc) {
-	FieldDataModel<?> fdm = amc.getFieldDataModel();
+	PersistentFieldMetadataImpl<?> fdm = amc.getFieldDataModel();
 	fdm.setImplementation(amc.getAnnotation().type());
     }
 

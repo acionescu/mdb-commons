@@ -18,7 +18,7 @@ package ro.zg.mdb.commands;
 import ro.zg.mdb.commands.builders.FindResultBuilder;
 import ro.zg.mdb.commands.builders.PersistentCollection;
 import ro.zg.mdb.core.filter.Filter;
-import ro.zg.mdb.core.meta.TransactionManager;
+import ro.zg.mdb.core.meta.persistence.TransactionManager;
 
 public class FindCommandContext<T, N> extends
 	FilteredCommandContext<T, N, PersistentCollection<N>, FindResultBuilder<T, N>> {

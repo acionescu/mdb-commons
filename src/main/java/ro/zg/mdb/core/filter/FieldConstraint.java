@@ -20,8 +20,8 @@ import java.util.Map;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.constraints.And;
 import ro.zg.mdb.core.filter.constraints.Or;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadata;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadata;
 
 public class FieldConstraint<T> implements Constraint<T>, ObjectConstraint {
     private String fieldName;
@@ -34,8 +34,8 @@ public class FieldConstraint<T> implements Constraint<T>, ObjectConstraint {
     }
 
     public boolean process(ObjectConstraintContext<?> objectContext) throws MdbException {
-	ObjectDataModel<?> odm = objectContext.getObjectDataModel();
-	FieldDataModel<?> fdm = odm.getField(fieldName);
+	PersistentObjectMetadata<?> odm = objectContext.getObjectDataModel();
+	PersistentFieldMetadata<?> fdm = odm.getField(fieldName);
 	
 	if (!fdm.isIndexed() && !fdm.isObjectId()) {
 	    return false;
@@ -54,7 +54,7 @@ public class FieldConstraint<T> implements Constraint<T>, ObjectConstraint {
     }
 
     @Override
-    public boolean isPossible(FieldDataModel fieldDataModel) {
+    public boolean isPossible(PersistentFieldMetadata fieldDataModel) {
 	return constraint.isPossible(fieldDataModel);
     }
 
@@ -85,7 +85,7 @@ public class FieldConstraint<T> implements Constraint<T>, ObjectConstraint {
     }
 
     @Override
-    public boolean isPossible(ObjectDataModel objectDataModel) {
+    public boolean isPossible(PersistentObjectMetadata<?> objectDataModel) {
 	return constraint.isPossible(objectDataModel.getField(fieldName));
     }
 

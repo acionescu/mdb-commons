@@ -18,20 +18,20 @@ package ro.zg.mdb.core.schema;
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.annotations.ObjectId;
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadataImpl;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadataImpl;
 import ro.zg.util.data.GenericNameValue;
 
 public class ObjectIdMapper extends ObjectDataModelAnnotationMapper<ObjectId>{
 
     @Override
     public void map(ObjectDataModelAnnotationMapperContext<ObjectId> amc) throws MdbException {
-	ObjectDataModel<?> odm=amc.getObjectDataModel();
+	PersistentObjectMetadataImpl<?> odm=amc.getObjectDataModel();
 	
 	if(odm.getObjectIdField() != null) {
 	    throw new MdbException(MdbErrorType.MULTIPLE_OBEJCT_ID_FIELDS, new GenericNameValue("type",odm.getType()));
 	}
-	FieldDataModel<String> fdm = (FieldDataModel<String>)amc.getFieldDataModel();
+	PersistentFieldMetadataImpl<String> fdm = (PersistentFieldMetadataImpl<String>)amc.getFieldDataModel();
 	if(!fdm.getType().equals(String.class)) {
 	    throw new MdbException(MdbErrorType.WRONG_FIELD_TYPE, new GenericNameValue("objectType",odm.getType()),new GenericNameValue("field",fdm.getName()),new GenericNameValue("expectedType","String"));
 	}

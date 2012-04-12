@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import ro.zg.mdb.core.exceptions.MdbException;
-import ro.zg.mdb.core.meta.SchemaManager;
+import ro.zg.mdb.core.meta.persistence.SchemaManager;
 
 public class SlotManager {
     private SchemaManager dao;

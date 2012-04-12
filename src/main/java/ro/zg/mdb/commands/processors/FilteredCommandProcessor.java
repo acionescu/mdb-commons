@@ -22,7 +22,7 @@ import ro.zg.mdb.commands.FilteredCommandContext;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
 import ro.zg.mdb.core.filter.ObjectConstraintContext;
-import ro.zg.mdb.core.meta.data.ObjectDataModel;
+import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadata;
 
 public abstract class FilteredCommandProcessor<T, C extends FilteredCommandContext<T, ?, ?, ?>> implements
 	CommandProcessor<T, C> {
@@ -35,7 +35,7 @@ public abstract class FilteredCommandProcessor<T, C extends FilteredCommandConte
     @Override
     public void process(C context) throws MdbException {
 	Filter filter = context.getFilter();
-	ObjectDataModel<T> odm = context.getObjectDataModel();
+	PersistentObjectMetadata<T> odm = context.getObjectDataModel();
 
 	if (filter.isPossible(odm)) {
 	    ObjectConstraintContext<T> occ = new ObjectConstraintContext<T>(context.getObjectName(), context.getType(),

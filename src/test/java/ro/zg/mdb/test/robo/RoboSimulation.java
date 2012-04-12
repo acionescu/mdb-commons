@@ -18,9 +18,9 @@ package ro.zg.mdb.test.robo;
 import java.util.HashSet;
 import java.util.Set;
 
-import ro.zg.mdb.core.meta.MdbInstance;
-import ro.zg.mdb.core.meta.SchemaManager;
-import ro.zg.mdb.core.meta.data.MdbConfig;
+import ro.zg.mdb.core.meta.persistence.MdbInstance;
+import ro.zg.mdb.core.meta.persistence.SchemaManager;
+import ro.zg.mdb.core.meta.persistence.data.MdbConfig;
 import ro.zg.mdb.persistence.MemoryPersistenceManager;
 import ro.zg.util.statistics.Monitor;
 

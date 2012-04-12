@@ -16,14 +16,14 @@
 package ro.zg.mdb.core.schema;
 
 import ro.zg.mdb.core.annotations.Sequenced;
-import ro.zg.mdb.core.meta.data.FieldDataModel;
-import ro.zg.mdb.core.meta.data.Sequence;
+import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadataImpl;
+import ro.zg.mdb.core.meta.persistence.data.Sequence;
 
 public class SequenceMapper extends ObjectDataModelAnnotationMapper<Sequenced>{
 
     @Override
     public void map(ObjectDataModelAnnotationMapperContext<Sequenced> amc) {
-	FieldDataModel<?> fdm = amc.getFieldDataModel();
+	PersistentFieldMetadataImpl<?> fdm = amc.getFieldDataModel();
 	Sequenced a = amc.getAnnotation();
 //	Schema schema = amc.getSchema();
 //	Sequence sequence = schema.getSequenceById(a.id());
