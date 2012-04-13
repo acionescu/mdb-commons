@@ -17,27 +17,33 @@ package ro.zg.mdb.core.meta.persistence.data;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.annotations.Link;
 import ro.zg.mdb.core.annotations.Persistable;
 import ro.zg.mdb.core.exceptions.MdbException;
+import ro.zg.metadata.commons.CollectionMetadata;
 import ro.zg.metadata.commons.FieldMetadata;
+import ro.zg.metadata.commons.MapMetadata;
 import ro.zg.metadata.commons.Metadata;
-import ro.zg.metadata.commons.MetadataDecorator;
+import ro.zg.metadata.commons.MetadataDecoratorImpl;
 import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
 
 @Persistable
-public class PersistentFieldMetadataImpl<T> extends MetadataDecorator<T, FieldMetadata<T>> implements PersistentFieldMetadata<T>{
-   
+public class PersistentFieldMetadataImpl<T> extends MetadataDecoratorImpl<T, FieldMetadata<T, ? extends Metadata<T>>> implements PersistentFieldMetadata<T>{
+    public static Class<?> DEFAULT_SET_IMPLEMENTATION = HashSet.class;
+    public static Class<?> DEFAULT_LIST_IMPLEMENTATION = ArrayList.class;
+    public static Class<?> DEFAULT_MAP_IMPLEMENTATION = HashMap.class;
 
 //    @ObjectId
 //    private String id;
 //    private String name;
 //
 //    @Link(name = "field_data_model_", lazy = false, allowedTypes = { PersistentObjectMetadata.class, MapDataModel.class,
-//	    CollectionDataModel.class, Metadata.class })
+//	    CollectionMetadata.class, Metadata.class })
 //    private Metadata<T> valueMetadata;
 //    private boolean required;
     private boolean objectId;
@@ -56,13 +62,12 @@ public class PersistentFieldMetadataImpl<T> extends MetadataDecorator<T, FieldMe
     }
 
     public Object createFromValue(Collection<?> values) throws MdbException {
-
-	if (valueMetadata.isMultivalued()) {
-	    Class<?> impl = implementation;
-
+	if (nestedMetadata.isMultivalued()) {
+	    Class<?> impl = getImplementation();
+	    Metadata<?> valueMetadata = getValueMetadata();
 	    try {
-		if (valueMetadata instanceof CollectionDataModel) {
-		    CollectionDataModel<T> collectionModel = (CollectionDataModel<T>) valueMetadata;
+		if (valueMetadata instanceof CollectionMetadata) {
+		    CollectionMetadata<T> collectionModel = (CollectionMetadata<T>) valueMetadata;
 
 		    if (collectionModel.isList()) {
 			if (impl == null) {
@@ -79,7 +84,7 @@ public class PersistentFieldMetadataImpl<T> extends MetadataDecorator<T, FieldMe
 		    }
 		}
 
-		else if (valueMetadata instanceof MapDataModel) {
+		else if (valueMetadata instanceof MapMetadata) {
 
 		    if (impl == null) {
 			impl = DEFAULT_MAP_IMPLEMENTATION;
@@ -121,7 +126,6 @@ public class PersistentFieldMetadataImpl<T> extends MetadataDecorator<T, FieldMe
      */
     public void setUniqueIndexId(String uniqueIndexId) {
 	this.uniqueIndexId = uniqueIndexId;
-	nestedMetadata.setRequired(true);
 	this.indexed = true;
     }
 
@@ -256,20 +260,17 @@ public class PersistentFieldMetadataImpl<T> extends MetadataDecorator<T, FieldMe
 	return nestedMetadata.getImplementation();
     }
 
-    @Override
-    public Metadata<T> getValueMetadata() {
-	return nestedMetadata.getValueMetadata();
-    }
+   
 
-    @Override
-    public boolean isRequired() {
-	return nestedMetadata.isRequired();
-    }
 
     @Override
     public Object createValueFromString(String data) throws Exception {
 	return nestedMetadata.createValueFromString(data);
     }
 
+    @Override
+    public Metadata<T> getValueMetadata() {
+	return nestedMetadata.getValueMetadata();
+    }
   
 }

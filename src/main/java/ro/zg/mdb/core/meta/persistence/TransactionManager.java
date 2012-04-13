@@ -17,7 +17,6 @@ package ro.zg.mdb.core.meta.persistence;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +37,6 @@ import ro.zg.mdb.core.meta.persistence.data.PersistentFieldMetadata;
 import ro.zg.mdb.core.meta.persistence.data.PersistentObjectMetadata;
 import ro.zg.mdb.core.schema.ObjectContext;
 import ro.zg.mdb.util.ObjectsLinkUtil;
-import ro.zg.metadata.commons.MultivaluedDataModel;
 import ro.zg.util.data.GenericNameValue;
 
 public class TransactionManager {

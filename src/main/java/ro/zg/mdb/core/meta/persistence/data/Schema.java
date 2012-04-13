@@ -27,14 +27,14 @@ import ro.zg.mdb.constants.MdbErrorType;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.schema.AnnotationMappersManager;
 import ro.zg.metadata.commons.Metadata;
-import ro.zg.metadata.commons.MultivaluedDataModel;
+import ro.zg.metadata.commons.MultivaluedTypeMetadata;
 import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.hash.HashUtil;
 
 public class Schema {
     private SchemaConfig config;
     private Map<Class<?>, Metadata<?>> objectsModels = new HashMap<Class<?>, Metadata<?>>();
-    private Map<String, MultivaluedDataModel<?, ?>> multivaluedDataModels = new HashMap<String, MultivaluedDataModel<?, ?>>();
+    private Map<String, MultivaluedTypeMetadata<?, ?>> multivaluedDataModels = new HashMap<String, MultivaluedTypeMetadata<?, ?>>();
     private AnnotationMappersManager<Annotation> annotationMappersManager = new AnnotationMappersManager<Annotation>();
 
     public Schema(SchemaConfig config) {
@@ -53,7 +53,7 @@ public class Schema {
 
     public void addDataModel(Metadata<?> odm) {
 	if (odm.isMultivalued()) {
-	    MultivaluedDataModel<?, ?> mvdm = (MultivaluedDataModel<?, ?>) odm;
+	    MultivaluedTypeMetadata<?, ?> mvdm = (MultivaluedTypeMetadata<?, ?>) odm;
 	    multivaluedDataModels.put(mvdm.getParameteriezedTypeHash(), mvdm);
 	} else {
 	    objectsModels.put(odm.getType(), odm);

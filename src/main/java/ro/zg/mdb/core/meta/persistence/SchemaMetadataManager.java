@@ -39,8 +39,8 @@ import ro.zg.mdb.core.schema.AnnotationMappersManager;
 import ro.zg.mdb.core.schema.ObjectDataModelAnnotationMapperContext;
 import ro.zg.mdb.persistence.PersistenceException;
 import ro.zg.mdb.persistence.PersistenceManager;
-import ro.zg.metadata.commons.CollectionDataModel;
-import ro.zg.metadata.commons.MapDataModel;
+import ro.zg.metadata.commons.CollectionMetadata;
+import ro.zg.metadata.commons.MapMetadata;
 import ro.zg.metadata.commons.Metadata;
 import ro.zg.metadata.commons.MetadataImpl;
 import ro.zg.util.data.GenericNameValue;
@@ -78,10 +78,10 @@ public class SchemaMetadataManager extends PersistentDataManager {
 	results = metadataSchema.createCommand(PersistentObjectMetadata.class).get().execute().getValues();
 	schema.addDataModels(results);
 
-	results = metadataSchema.createCommand(MapDataModel.class).get().execute().getValues();
+	results = metadataSchema.createCommand(MapMetadata.class).get().execute().getValues();
 	schema.addDataModels(results);
 
-	results = metadataSchema.createCommand(CollectionDataModel.class).get().execute().getValues();
+	results = metadataSchema.createCommand(CollectionMetadata.class).get().execute().getValues();
 	schema.addDataModels(results);
 
     }

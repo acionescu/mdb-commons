@@ -33,6 +33,7 @@ import ro.zg.mdb.core.annotations.Persistable;
 import ro.zg.mdb.core.exceptions.MdbException;
 import ro.zg.mdb.core.filter.Filter;
 import ro.zg.metadata.commons.ObjectMetadataImpl;
+import ro.zg.metadata.exceptions.MetadataException;
 import ro.zg.util.data.GenericNameValue;
 import ro.zg.util.data.reflection.ReflectionUtility;
 
@@ -154,7 +155,11 @@ public class PersistentObjectMetadataImpl<T> extends ObjectMetadataImpl<T, Persi
 
     public void setObjectId(T target, String id) throws MdbException {
 	if (objectIdField != null) {
-	    setFieldValue(target, objectIdField.getName(), id);
+	    try {
+		setFieldValue(target, objectIdField.getName(), id);
+	    } catch (MetadataException e) {
+		throw new MdbException(MdbErrorType.GENERIC_ERROR, e);
+	    }
 	}
     }
 
@@ -412,7 +417,11 @@ public class PersistentObjectMetadataImpl<T> extends ObjectMetadataImpl<T, Persi
 	if (objectIdField == null) {
 	    return null;
 	}
-	return (String) getValueForField((T) object, objectIdField.getName());
+	try {
+	    return (String) getValueForField((T) object, objectIdField.getName());
+	} catch (MetadataException e) {
+	    throw new MdbException(MdbErrorType.GENERIC_ERROR, e);
+	}
     }
 
     public UniqueIndexValue getUniqueIndexValue(T target, String indexId) throws MdbException {
@@ -429,7 +438,12 @@ public class PersistentObjectMetadataImpl<T> extends ObjectMetadataImpl<T, Persi
     private UniqueIndexValue getCompositeUniqueIndexValue(UniqueIndex ui, T target) throws MdbException {
 	UniqueIndexValue uiv = new UniqueIndexValue(ui.getName());
 	for (PersistentFieldMetadata<?> fdm : ui.getFields()) {
-	    Object fieldValue = getValueForField(target, fdm.getName());
+	    Object fieldValue;
+	    try {
+		fieldValue = getValueForField(target, fdm.getName());
+	    } catch (MetadataException e) {
+		throw new MdbException(MdbErrorType.GENERIC_ERROR, e);
+	    }
 	    if (fieldValue == null) {
 		return null;
 	    }
@@ -442,7 +456,12 @@ public class PersistentObjectMetadataImpl<T> extends ObjectMetadataImpl<T, Persi
 	UniqueIndexValue uiv = null;
 	for (PersistentFieldMetadata<?> fdm : ui.getFields()) {
 	    String fieldName = fdm.getName();
-	    Object fieldValue = getValueForField(target, fieldName);
+	    Object fieldValue;
+	    try {
+		fieldValue = getValueForField(target, fieldName);
+	    } catch (MetadataException e) {
+		throw new MdbException(MdbErrorType.GENERIC_ERROR, e);
+	    }
 	    if (fieldValue == null) {
 		return null;
 	    }
