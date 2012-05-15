@@ -1,3 +1,1 @@
-Constraint - implement a isPossible method to check if that constraint can ever be fulfilled
-FilterContext - make sure that if the same field is used twice the constraints are cummulated
-in a single one
+update mappers to use the interfaces defined in metadata-commons project
